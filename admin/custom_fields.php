@@ -1,0 +1,182 @@
+<?php
+// admin/custom_fields.php - Dynamic Custom Fields Builder
+require_once 'auth.php';
+if (!admin_can('custom_fields')) { header('Location: index.php'); exit; }
+if (!is_module_enabled('custom_fields')) { header('Location: index.php'); exit; }
+
+$error = '';
+$success = '';
+$action = isset($_GET['action']) ? $_GET['action'] : 'list';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $target_entity = trim($_POST['target_entity'] ?? '');
+    $field_name = trim($_POST['field_name'] ?? '');
+    $field_label = trim($_POST['field_label'] ?? '');
+    $field_type = trim($_POST['field_type'] ?? '');
+    $allowed_entities = ['customer', 'project', 'product'];
+    $allowed_types = ['text', 'textarea', 'number', 'date'];
+    if (!in_array($target_entity, $allowed_entities, true) || !in_array($field_type, $allowed_types, true)) {
+        $error = 'نوع موجودیت یا نوع فیلد نامعتبر است.';
+    }
+    $is_required = isset($_POST['is_required']) ? 1 : 0;
+    $show_in_customer_panel = isset($_POST['show_in_customer_panel']) ? 1 : 0;
+
+    if ($error || empty($field_name) || empty($field_label)) {
+        $error = 'نام سیستمی و برچسب فیلد الزامی است.';
+    } else {
+        // Slugify field_name
+        $field_name = preg_replace('/[^a-z0-9_]/', '_', strtolower($field_name));
+
+        try {
+            $stmt = $pdo->prepare("INSERT INTO custom_fields (target_entity, field_name, field_label, field_type, is_required, show_in_customer_panel) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$target_entity, $field_name, $field_label, $field_type, $is_required, $show_in_customer_panel]);
+            log_activity($_SESSION['user_id'], "ایجاد فیلد سفارشی جدید: {$field_label} ({$target_entity})");
+            $success = 'فیلد سفارشی با موفقیت ایجاد شد.';
+            $action = 'list';
+        } catch (Exception $e) {
+            $error = 'خطا در ایجاد فیلد (احتمالا نام سیستمی تکراری است): ' . $e->getMessage();
+        }
+    }
+}
+
+// Handle Delete
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
+    $del_id = intval($_POST['delete_id'] ?? 0);
+    $stmt = $pdo->prepare("DELETE FROM custom_fields WHERE id = ?");
+    $stmt->execute([$del_id]);
+    log_activity($_SESSION['user_id'], "حذف فیلد سفارشی ID: {$del_id}");
+    $success = 'فیلد سفارشی با موفقیت حذف شد.';
+    $action = 'list';
+}
+
+// Fetch all custom fields
+$fields = $pdo->query("SELECT * FROM custom_fields ORDER BY id DESC")->fetchAll();
+?>
+<?php render_admin_header(
+    'فیلدهای سفارشی پویا (Custom Fields Builder)',
+    'p-8 max-w-7xl w-full mx-auto space-y-6',
+    '',
+    ''
+); ?>
+
+
+            <?php if ($success): ?>
+                <div class="alert alert-success">
+                    <?php echo htmlspecialchars($success); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+                <div class="alert alert-danger">
+                    <?php echo htmlspecialchars($error); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($action === 'add'): ?>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-2xl mx-auto">
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-800">تعریف فیلد سفارشی جدید</h3>
+                        <a href="custom_fields.php" class="text-sm text-slate-500 hover:text-slate-700">بازگشت</a>
+                    </div>
+
+                    <form method="POST" class="space-y-6"><?php echo csrf_input(); ?>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">موجودیت هدف *</label>
+                            <select name="target_entity" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                                <option value="customer">مشتری (کاربر)</option>
+                                <option value="project">پروژه</option>
+                                <option value="product">محصول</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">برچسب نمایشی فیلد (Label) *</label>
+                            <input type="text" name="field_label" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="مثلا: کد ملی یا آدرس دقیق">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">نام سیستمی (انگلیسی، بدون فاصله) *</label>
+                            <input type="text" name="field_name" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm font-mono" placeholder="national_code">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">نوع فیلد</label>
+                            <select name="field_type" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                                <option value="text">متن کوتاه (Text)</option>
+                                <option value="textarea">متن طولانی (Textarea)</option>
+                                <option value="number">عدد (Number)</option>
+                                <option value="date">تاریخ (Date)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-3 pt-2">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" name="is_required" value="1" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-sm font-medium text-slate-700">فیلد اجباری باشد؟</span>
+                            </label>
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" name="show_in_customer_panel" value="1" checked class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-sm font-medium text-slate-700">در پنل مشتری نمایش داده شود؟</span>
+                            </label>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                            <a href="custom_fields.php" class="btn btn-secondary">انصراف</a>
+                            <button type="submit" class="btn btn-primary">ذخیره فیلد سفارشی</button>
+                        </div>
+                    </form>
+                </div>
+
+            <?php else: ?>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-slate-800">لیست فیلدهای سفارشی (<?php echo count($fields); ?>)</h3>
+                    <a href="custom_fields.php?action=add" class="btn btn-primary">
+                        <?= icon('plus') ?><span>تعریف فیلد جدید</span>
+                    </a>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="table table-card-mobile">
+                            <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">
+                                <tr>
+                                    <th class="p-4">برچسب فیلد</th>
+                                    <th class="p-4">نام سیستمی</th>
+                                    <th class="p-4">موجودیت هدف</th>
+                                    <th class="p-4">نوع فیلد</th>
+                                    <th class="p-4">تنظیمات</th>
+                                    <th class="p-4 text-center">عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <?php if (empty($fields)): ?>
+                                    <tr>
+                                        <td colspan="6" class="p-8 text-center text-slate-400"><?php echo empty_state('هیچ فیلد سفارشی تعریف نشده است.', '', 'info'); ?></td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($fields as $f): ?>
+                                        <tr class="hover:bg-slate-50 transition">
+                                            <td class="p-4 font-medium text-slate-900"><?php echo htmlspecialchars($f['field_label']); ?></td>
+                                            <td class="p-4 font-mono text-xs text-slate-600"><?php echo htmlspecialchars($f['field_name']); ?></td>
+                                            <td class="p-4">
+                                                <?php 
+                                                    $te = $f['target_entity'];
+                                                    if ($te === 'customer') echo '<span class="bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-medium">مشتری</span>';
+                                                    elseif ($te === 'project') echo '<span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium">پروژه</span>';
+                                                    else echo '<span class="bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full font-medium">محصول</span>';
+                                                ?>
+                                            </td>
+                                            <td class="p-4 text-xs text-slate-600"><?php echo htmlspecialchars($f['field_type']); ?></td>
+                                            <td class="p-4 text-xs space-y-1">
+                                                <div><?php echo $f['is_required'] ? '<span class="text-red-600 font-bold">اجباری</span>' : 'اختیاری'; ?></div>
+                                                <div><?php echo $f['show_in_customer_panel'] ? '<span class="text-emerald-600">نمایش در پنل مشتری</span>' : 'مخفی در پنل مشتری'; ?></div>
+                                            </td>
+                                            <td class="p-4 text-center">
+                                                <form method="POST" style="display:inline" data-confirm-msg="آیا از حذف این مورد اطمینان دارید؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$f['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger">حذف</button></form>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+        <?php render_admin_footer(); ?>

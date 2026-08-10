@@ -1,0 +1,11 @@
+{
+    "name": "portal2/portal",
+    "description": "پورتال مشتریان - ابزار اکسل با PhpSpreadsheet",
+    "require": {
+        "php": ">=8.1",
+        "phpoffice/phpspreadsheet": "^1.29",
+        "ext-zip": "*",
+        "ext-xml": "*",
+        "ext-mbstring": "*"
+    }
+}
