@@ -2,6 +2,12 @@
 // logout.php — خروج امن: پاک‌سازی کامل سشن و کوکی
 require_once 'config.php';
 
+// محافظت CSRF برای خروج از طریق GET (لینک‌های داخل سایت توکن دارند)
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && !hash_equals(csrf_token(), (string) ($_GET['t'] ?? ''))) {
+    header('Location: index.php');
+    exit;
+}
+
 // پاک کردن کامل داده‌های سشن
 $_SESSION = [];
 

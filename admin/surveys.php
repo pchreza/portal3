@@ -81,8 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = 'فرم با موفقیت ویرایش شد.';
         }
     } elseif ($a === 'question') {
+        $allowed_qtypes = ['rating_1_10', 'yes_no', 'star_rating'];
+        $qtype = in_array($_POST['question_type'] ?? '', $allowed_qtypes, true) ? $_POST['question_type'] : 'yes_no';
         $q = $pdo->prepare("INSERT INTO survey_questions (survey_id, question_text, question_type) VALUES (?, ?, ?)");
-        $q->execute([(int) ($_POST['survey_id'] ?? 0), trim($_POST['question_text'] ?? ''), $_POST['question_type'] ?? 'yes_no']);
+        $q->execute([(int) ($_POST['survey_id'] ?? 0), trim($_POST['question_text'] ?? ''), $qtype]);
         $msg = 'سؤال اضافه شد.';
     } elseif ($a === 'delete') {
         $id = (int) ($_POST['delete_id'] ?? 0);
@@ -96,7 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($a === 'update_question') {
         $qid = (int) ($_POST['question_id'] ?? 0);
         $qtext = trim($_POST['question_text'] ?? '');
-        $qtype = $_POST['question_type'] ?? 'yes_no';
+        $allowed_qtypes = ['rating_1_10', 'yes_no', 'star_rating'];
+        $qtype = in_array($_POST['question_type'] ?? '', $allowed_qtypes, true) ? $_POST['question_type'] : 'yes_no';
         if ($qid > 0 && $qtext !== '') {
             $pdo->prepare('UPDATE survey_questions SET question_text = ?, question_type = ? WHERE id = ?')->execute([$qtext, $qtype, $qid]);
             $msg = 'سؤال ویرایش شد.';

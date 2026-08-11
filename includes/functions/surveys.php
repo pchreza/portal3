@@ -75,15 +75,32 @@ function ensure_survey_assignments(int $customer_id): void
                         continue;
                     }
 
-                    $available = date('Y-m-d H:i:s', strtotime($completedAt . ' +' . max(0, (int) $form['delay_days']) . ' days'));
+                    // چندمین دوره است؟ (تعداد پاسخ‌های قبلی به همین فرم دوره‌ای)
+                    $kc = $pdo->prepare("SELECT COUNT(*) FROM survey_responses WHERE survey_id = ? AND customer_id = ? AND entity_type = ? AND entity_id = ?");
+                    $kc->execute([$form['id'], $customer_id, $type, $item['id']]);
+                    $k = (int) $kc->fetchColumn();
+                    $delay = max(0, (int) $form['delay_days']);
+
+                    // فعال‌سازی دوره بعدی: parent + delay × (تعداد دوره‌های تکمیل‌شده + 1)
+                    $available = date('Y-m-d H:i:s', strtotime($completedAt . ' +' . ($delay * ($k + 1)) . ' days'));
                 } else {
                     $available = date('Y-m-d H:i:s');
                 }
 
-                $ins = $pdo->prepare(
-                    "INSERT IGNORE INTO survey_assignments (survey_id, customer_id, entity_type, entity_id, available_at, token)
-                     VALUES (?, ?, ?, ?, ?, ?)"
-                );
+                if ((int) $form['is_periodic'] === 1) {
+                    // دوره‌ای: فقط available_at دوره‌ی بعد جلو می‌رود؛ توکن ثابت می‌ماند تا لینک‌های پیامک نشکنند
+                    $ins = $pdo->prepare(
+                        "INSERT INTO survey_assignments (survey_id, customer_id, entity_type, entity_id, available_at, token)
+                         VALUES (?, ?, ?, ?, ?, ?)
+                         ON DUPLICATE KEY UPDATE available_at = VALUES(available_at)"
+                    );
+                } else {
+                    // غیر دوره‌ای: available_at فقط بار اول ثبت می‌شود — جلوی پاسخ تکراری بعد از تکمیل
+                    $ins = $pdo->prepare(
+                        "INSERT IGNORE INTO survey_assignments (survey_id, customer_id, entity_type, entity_id, available_at, token)
+                         VALUES (?, ?, ?, ?, ?, ?)"
+                    );
+                }
                 $ins->execute([$form['id'], $customer_id, $type, $item['id'], $available, survey_assignment_token()]);
             }
         }

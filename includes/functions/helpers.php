@@ -211,6 +211,12 @@ function render_pagination(array $pi, string $baseUrl = ''): string
     if ($baseUrl === '') {
         $baseUrl = basename($_SERVER['PHP_SELF'] ?? '');
     }
+    // حفظ فیلترهای موجود در آدرس (مثلاً ?status=...) هنگام تغییر صفحه
+    $qs = $_GET;
+    unset($qs['page']);
+    if ($qs) {
+        $baseUrl .= (str_contains($baseUrl, '?') ? '&' : '?') . http_build_query($qs);
+    }
     $sep = str_contains($baseUrl, '?') ? '&' : '?';
     $html = '<div class="flex items-center justify-center gap-1.5 pt-4 flex-wrap">';
 
@@ -648,8 +654,8 @@ function admin_can(string $permission): bool
         return false;
     }
 
-    // مدیریت مدیران فقط برای سوپر ادمین
-    if ($permission === 'admins') {
+    // مدیریت مدیران و تنظیمات سیستم (شامل کلیدهای پیامک) فقط برای سوپر ادمین
+    if ($permission === 'admins' || $permission === 'settings') {
         return false;
     }
 
@@ -663,7 +669,9 @@ function admin_can(string $permission): bool
         $q->execute([$permission]);
         return (bool) $q->fetchColumn();
     } catch (Throwable $e) {
-        return true; // اگر جدول وجود نداشت، به‌صورت پیش‌فرض اجازه بده
+        // fail-closed: خطای دیتابیس نباید دسترسی را باز کند (امنیت)
+        error_log('[Portal Perm] ' . $e->getMessage());
+        return false;
     }
 }
 
@@ -938,9 +946,14 @@ function send_otp_code(string $mobile): array
 
     // ارسال پیامک
     if (get_setting('sms_api_key', '') === '') {
-        // حالت تست: هنوز پیامک پیکربندی نشده — کد در session ذخیره می‌شود تا سیستم قابل تست باشد
-        $_SESSION['otp_test_code'] = $code;
-        return ['ok' => true, 'message' => 'کد تایید (حالت تست): ' . $code];
+        // حالت تست (بدون درگاه پیامک): کد فقط در محیط توسعه در پاسخ/سشن می‌آید.
+        // در تولید (PORTAL_DEV_MODE=false) کد فقط در لاگ سرور ثبت می‌شود — امنیت ورود
+        if (defined('PORTAL_DEV_MODE') && PORTAL_DEV_MODE) {
+            $_SESSION['otp_test_code'] = $code;
+            return ['ok' => true, 'message' => 'کد تایید (حالت تست): ' . $code];
+        }
+        error_log('[Portal OTP test-mode] code for ' . $m . ': ' . $code);
+        return ['ok' => true, 'message' => 'کد تایید برای شما ارسال شد.'];
     }
 
     $sent = send_sms_via_ippanel($m, $code);
@@ -1200,7 +1213,9 @@ function verify_otp_code(string $mobile, string $code): bool
 
     // مقایسه با زمان PHP (نه NOW()) — حل مشکل timezone
     if (strtotime($row['expires_at']) < time()) {
-        return false; // منقضی شده
+        // کد منقضی: باطلش کن و در شمارنده تلاش‌ها لحاظ کن
+        $pdo->prepare("UPDATE otp_codes SET is_used = 1, attempts = attempts + 1 WHERE id = ?")->execute([$row['id']]);
+        return false;
     }
 
     $pdo->prepare("UPDATE otp_codes SET is_used = 1 WHERE id = ?")->execute([$row['id']]);
@@ -1360,27 +1375,72 @@ function error_report_module_enabled(): bool
     return get_setting('module_error_reports', '1') === '1';
 }
 
-/** ثبت گزارش خطا (از دکمه شناور) */
+/** اطمینان از وجود جدول گزارش‌های خطا (نصب‌های قدیمی/بازیابی‌شده که migration 22 اجرا نشده) */
+function portal_ensure_error_reports_table(PDO $pdo): void
+{
+    $pdo->exec("CREATE TABLE IF NOT EXISTS error_reports (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
+        reporter_name VARCHAR(120) DEFAULT '',
+        reporter_role VARCHAR(20) DEFAULT '',
+        url VARCHAR(500) DEFAULT '',
+        message TEXT,
+        status VARCHAR(20) DEFAULT 'new',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+
+/** ثبت گزارش خطا (از دکمه شناور) — خود-ترمیمی: اگر جدول نبود، ساخته و دوباره تلاش می‌کند */
 function create_error_report(array $data): bool
 {
     global $pdo;
     if (!$pdo) return false;
-    $q = $pdo->prepare("INSERT INTO error_reports (user_id, reporter_name, reporter_role, url, message) VALUES (?, ?, ?, ?, ?)");
-    return $q->execute([
+    $params = [
         isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null,
         mb_substr(trim((string) ($data['reporter_name'] ?? '')), 0, 120),
         (string) ($_SESSION['role'] ?? 'guest'),
         mb_substr(trim((string) ($data['url'] ?? '')), 0, 500),
         mb_substr(trim((string) ($data['message'] ?? '')), 0, 3000),
-    ]);
+    ];
+    $sql = "INSERT INTO error_reports (user_id, reporter_name, reporter_role, url, message) VALUES (?, ?, ?, ?, ?)";
+    try {
+        $q = $pdo->prepare($sql);
+        return $q->execute($params);
+    } catch (PDOException $e) {
+        // 42S02 / 1146: جدول وجود ندارد — خود-ترمیمی و تلاش مجدد
+        $msg = $e->getMessage();
+        if ($e->getCode() === '42S02' || str_contains($msg, "doesn't exist") || str_contains($msg, 'no such table')) {
+            try {
+                portal_ensure_error_reports_table($pdo);
+                $q = $pdo->prepare($sql);
+                return $q->execute($params);
+            } catch (Throwable $t) {
+                error_log('[Portal ErrorReport] ' . $t->getMessage());
+                return false;
+            }
+        }
+        error_log('[Portal ErrorReport] ' . $msg);
+        return false;
+    }
 }
 
-/** لیست گزارش‌های خطا (برای پنل مدیریت) */
+/** لیست گزارش‌های خطا (برای پنل مدیریت) — بدون خطای مرگبار اگر جدول هنوز ساخته نشده باشد */
 function error_reports_list(int $limit = 100): array
 {
     global $pdo;
     if (!$pdo) return [];
-    return $pdo->query("SELECT r.*, u.first_name, u.last_name, u.username FROM error_reports r LEFT JOIN users u ON u.id = r.user_id ORDER BY r.id DESC LIMIT " . (int) $limit)->fetchAll();
+    $sql = "SELECT r.*, u.first_name, u.last_name, u.username FROM error_reports r LEFT JOIN users u ON u.id = r.user_id ORDER BY r.id DESC LIMIT " . (int) $limit;
+    try {
+        return $pdo->query($sql)->fetchAll();
+    } catch (Throwable $e) {
+        try {
+            portal_ensure_error_reports_table($pdo);
+            return $pdo->query($sql)->fetchAll();
+        } catch (Throwable $t) {
+            error_log('[Portal ErrorReport] ' . $t->getMessage());
+            return [];
+        }
+    }
 }
 
 /** مارک‌آپ دکمه + مودال شناور گزارش خطا */
@@ -1391,8 +1451,9 @@ function error_report_widget(): string
     $reporter = trim(($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? ''));
     if ($reporter === '') $reporter = $_SESSION['username'] ?? '';
 
-    $html = '<button type="button" id="error-report-fab" onclick="document.getElementById(\'error-report-modal\').classList.remove(\'hidden\');document.getElementById(\'error-report-modal\').classList.add(\'flex\');" class="fixed bottom-5 start-5 z-[1800] inline-flex items-center gap-2 px-4 h-11 rounded-full shadow-lg text-white text-sm font-medium transition" style="background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 8px 20px -6px rgba(220,38,38,.5)">'
-        . icon('alert', 'w-4 h-4') . '<span>گزارش خطا</span></button>'
+    // دکمه شناور فقط-آیکن و کوچک — گوشه پایین-چپ، کم‌جلب‌توجه (باز شدن با اسکریپت پایین)
+    $html = '<button type="button" id="error-report-fab" class="fixed bottom-20 md:bottom-4 end-4 z-[1800] flex items-center justify-center h-10 w-10 rounded-full text-white transition hover:scale-105 active:scale-95" style="background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 6px 16px -4px rgba(220,38,38,.45)" aria-label="گزارش خطا" title="گزارش خطا">'
+        . icon('alert', 'w-5 h-5') . '</button>'
         . '<div id="error-report-modal" role="dialog" aria-modal="true" aria-labelledby="error-report-title" class="hidden fixed inset-0 z-[2000] items-center justify-center p-4">'
         . '<div class="absolute inset-0 bg-black/50" onclick="document.getElementById(\'error-report-modal\').classList.add(\'hidden\');document.getElementById(\'error-report-modal\').classList.remove(\'flex\')"></div>'
         . '<div class="relative w-full max-w-md card !rounded-2xl p-6 shadow-2xl">'
@@ -1412,7 +1473,15 @@ function error_report_widget(): string
         . '<button type="button" class="btn btn-secondary" onclick="document.getElementById(\'error-report-modal\').classList.add(\'hidden\');document.getElementById(\'error-report-modal\').classList.remove(\'flex\')">انصراف</button>'
         . '<button type="submit" class="btn btn-danger">' . icon('send') . '<span>ارسال گزارش</span></button>'
         . '</div>'
-        . '</form></div></div>';
+        . '</form></div></div>'
+        . '<script>'
+        . '(function(){var fab=document.getElementById(\'error-report-fab\'),modal=document.getElementById(\'error-report-modal\');if(!fab||!modal)return;'
+        . 'function openM(){modal.classList.remove(\'hidden\');modal.classList.add(\'flex\');document.body.style.overflow=\'hidden\';var f=modal.querySelector(\'input,textarea\');if(f)setTimeout(function(){f.focus();},60);}'
+        . 'function closeM(){modal.classList.add(\'hidden\');modal.classList.remove(\'flex\');document.body.style.overflow=\'\';}'
+        . 'fab.onclick=openM;'
+        . 'document.addEventListener(\'keydown\',function(e){if(e.key===\'Escape\'&&!modal.classList.contains(\'hidden\'))closeM();});'
+        . '})();'
+        . '</script>';
     return $html;
 }
 
@@ -1463,6 +1532,62 @@ function jalali_parts(int $gy, int $gm, int $gd): array
     }
 
     return [(int) $jy, (int) $jm, (int) $jd];
+}
+
+/**
+ * تبدیل تاریخ شمسی به میلادی (رشته Y-m-d) — با جستجوی عددی روی jalali_parts()
+ * ورودی: 1404/05/20 یا 1404-05-20 — خروجی: 2025-08-11 یا null
+ */
+function jalali_to_gregorian_str(string $jalali): ?string
+{
+    if (!preg_match('#^(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})$#', trim($jalali), $m)) {
+        return null;
+    }
+    [$jy, $jm, $jd] = [(int) $m[1], (int) $m[2], (int) $m[3]];
+    if ($jy < 1200 || $jy > 1500 || $jm < 1 || $jm > 12 || $jd < 1 || $jd > 31) {
+        return null;
+    }
+    // شروع تقریبی: اول فروردین ≈ ۲۱ مارس
+    $base = mktime(0, 0, 0, 3, 21, $jy + 621) - 5 * 86400;
+    for ($i = -400; $i <= 400; $i++) {
+        $t = $base + $i * 86400;
+        [$py, $pm, $pd] = jalali_parts((int) date('Y', $t), (int) date('n', $t), (int) date('j', $t));
+        if ($py === $jy && $pm === $jm && $pd === $jd) {
+            return date('Y-m-d', $t);
+        }
+    }
+    return null;
+}
+
+/**
+ * نرمال‌سازی تاریخ ورودی فرم → میلادی Y-m-d (اگر شمسی بود تبدیل می‌کند)
+ * ورودی‌های از-قبل-میلادی یا غیرقابل‌تبدیل دست‌نخورده برمی‌گردند.
+ */
+function portal_date_to_db(string $value): string
+{
+    $v = trim($value);
+    if ($v === '') {
+        return '';
+    }
+    if (preg_match('#^\d{4}-\d{2}-\d{2}$#', $v)) {
+        return $v; // از قبل میلادی
+    }
+    $c = jalali_to_gregorian_str($v);
+    return $c ?? $v;
+}
+
+/** نمایش تاریخ ذخیره‌شده (میلادی) به شمسی — اگر قبلاً شمسی بود همان را برمی‌گرداند */
+function portal_date_to_display(string $value): string
+{
+    $v = trim($value);
+    if ($v === '') {
+        return '';
+    }
+    if (preg_match('#^(\d{4})-(\d{2})-(\d{2})$#', $v, $m)) {
+        [$jy, $jm, $jd] = jalali_parts((int) $m[1], (int) $m[2], (int) $m[3]);
+        return sprintf('%04d/%02d/%02d', $jy, $jm, $jd);
+    }
+    return $v;
 }
 
 /** نام ماه‌های شمسی */

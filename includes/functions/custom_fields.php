@@ -63,7 +63,7 @@ function save_custom_fields_values(string $entity_type, int $entity_id): void
         return;
     }
 
-    $stmt = $pdo->prepare("SELECT id FROM custom_fields WHERE target_entity = ?");
+    $stmt = $pdo->prepare("SELECT id, field_type FROM custom_fields WHERE target_entity = ?");
     $stmt->execute([$entity_type]);
 
     foreach ($stmt->fetchAll() as $field) {
@@ -72,15 +72,21 @@ function save_custom_fields_values(string $entity_type, int $entity_id): void
             continue;
         }
 
+        $val = trim((string) $_POST[$key]);
+        // فیلد تاریخ: اگر ورودی شمسی بود → ذخیره میلادی (یکپارچه با بقیه سیستم)
+        if (($field['field_type'] ?? '') === 'date') {
+            $val = portal_date_to_db($val);
+        }
+
         $check = $pdo->prepare("SELECT id FROM custom_field_values WHERE field_id = ? AND entity_id = ?");
         $check->execute([$field['id'], $entity_id]);
 
         if ($check->fetchColumn()) {
             $up = $pdo->prepare("UPDATE custom_field_values SET field_value = ? WHERE field_id = ? AND entity_id = ?");
-            $up->execute([trim((string) $_POST[$key]), $field['id'], $entity_id]);
+            $up->execute([$val, $field['id'], $entity_id]);
         } else {
             $in = $pdo->prepare("INSERT INTO custom_field_values (field_id, entity_id, field_value) VALUES (?, ?, ?)");
-            $in->execute([$field['id'], $entity_id, trim((string) $_POST[$key])]);
+            $in->execute([$field['id'], $entity_id, $val]);
         }
     }
 }

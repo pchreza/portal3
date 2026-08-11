@@ -81,7 +81,7 @@ $site_title_short = get_setting('site_title', 'پورتال مشتریان');
         <?php if ($is_super || admin_can('profile')): ?>
         <a href="profile.php" class="nav-item <?php echo $current_page === 'profile.php' ? 'active' : ''; ?> mb-1"><?= icon('user') ?><span>پروفایل مدیر</span></a>
         <?php endif; ?>
-        <a href="../logout.php" class="nav-item mb-1 text-red-400 hover:!text-red-300 hover:!bg-red-900/40"><?= icon('logout') ?><span>خروج از حساب</span></a>
+        <a href="../logout.php?t=<?= csrf_token() ?>" class="nav-item mb-1 text-red-400 hover:!text-red-300 hover:!bg-red-900/40"><?= icon('logout') ?><span>خروج از حساب</span></a>
     </div>
 </aside>
 <script>

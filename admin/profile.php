@@ -12,14 +12,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'profi
     $first_name = trim($_POST['first_name'] ?? '');
     $last_name  = trim($_POST['last_name'] ?? '');
     $mobile     = fa_digits_to_en(trim($_POST['mobile'] ?? ''));
-    $mobile_db  = $mobile !== '' ? normalize_mobile_db($mobile) : '';
+    $mobile_db  = $mobile !== '' ? normalize_mobile_db($mobile) : null;
 
     // اعتبارسنجی موبایل (اختیاری — اگر وارد شد باید معتبر باشد)
-    if ($mobile_db !== '' && (strlen($mobile_db) !== 11 || !str_starts_with($mobile_db, '09'))) {
+    if ($mobile_db !== null && $mobile_db !== '' && (strlen($mobile_db) !== 11 || !str_starts_with($mobile_db, '09'))) {
         $err = 'شماره موبایل معتبر نیست (مثال: 09123456789).';
     } else {
         // بررسی تکراری نبودن موبایل بین کاربران دیگر (مشتری یا مدیر)
-        if ($mobile_db !== '' && mobile_exists($mobile_db, $uid)) {
+        if ($mobile_db !== null && $mobile_db !== '' && mobile_exists($mobile_db, $uid)) {
             $err = 'این شماره موبایل قبلاً برای کاربر دیگری (مشتری یا مدیر) ثبت شده است.';
         }
         if (!$err) {

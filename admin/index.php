@@ -3,23 +3,31 @@
 require_once 'auth.php';
 if (!admin_can('dashboard')) { header('Location: index.php'); exit; }
 
-// Fetch stats
-$customers_count = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'customer'")->fetchColumn();
-$projects_count = $pdo->query("SELECT COUNT(*) FROM projects WHERE status != 'completed'")->fetchColumn();
-$products_count = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
-$tickets_count = $pdo->query("SELECT COUNT(*) FROM tickets WHERE status = 'open'")->fetchColumn();
-
-// Recent customers
-$recent_customers = $pdo->query("SELECT * FROM users WHERE role = 'customer' ORDER BY id DESC LIMIT 5")->fetchAll();
-
-// Recent activity logs
-$recent_logs = $pdo->query("SELECT al.*, u.first_name, u.last_name, u.username FROM activity_logs al LEFT JOIN users u ON al.user_id = u.id ORDER BY al.id DESC LIMIT 5")->fetchAll();
+// Fetch stats — با کش فایل (آمار داشبورد تا ۶۰ ثانیه در کش می‌ماند)
+$admin_dash = portal_cache_get('admin_dash_stats');
+if (!is_array($admin_dash)) {
+    $admin_dash = [
+        'customers' => (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'customer'")->fetchColumn(),
+        'projects'  => (int) $pdo->query("SELECT COUNT(*) FROM projects WHERE status != 'completed'")->fetchColumn(),
+        'products'  => (int) $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn(),
+        'tickets'   => (int) $pdo->query("SELECT COUNT(*) FROM tickets WHERE status = 'open'")->fetchColumn(),
+        'recent_customers' => $pdo->query("SELECT * FROM users WHERE role = 'customer' ORDER BY id DESC LIMIT 5")->fetchAll(),
+        'recent_logs' => $pdo->query("SELECT al.*, u.first_name, u.last_name, u.username FROM activity_logs al LEFT JOIN users u ON al.user_id = u.id ORDER BY al.id DESC LIMIT 5")->fetchAll(),
+    ];
+    portal_cache_set('admin_dash_stats', $admin_dash, 60);
+}
+$customers_count = $admin_dash['customers'];
+$projects_count  = $admin_dash['projects'];
+$products_count  = $admin_dash['products'];
+$tickets_count   = $admin_dash['tickets'];
+$recent_customers = $admin_dash['recent_customers'];
+$recent_logs      = $admin_dash['recent_logs'];
 ?>
 <?php render_admin_header(
     'داشبورد مدیریت پیشرفته',
     'p-8 max-w-7xl w-full mx-auto space-y-8',
     '',
-    '<a href="../logout.php" class="md:hidden text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">خروج</a>'
+    '<a href="../logout.php?t=<?= csrf_token() ?>" class="md:hidden text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">خروج</a>'
 ); ?>
 
             

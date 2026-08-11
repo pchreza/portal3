@@ -151,6 +151,11 @@ function sms_send_survey_reminder_for_assignment(array $row): bool
     $vars['survey_title'] = (string) ($row['survey_title'] ?? '');
     $vars['entity_title'] = (string) ($row['entity_title'] ?? '');
     $vars['survey_link']  = sms_survey_link((int) $row['id'], (string) ($row['token'] ?? ''));
+    if ($vars['survey_link'] === '') {
+        // site_url در تنظیمات خالی است (کرون‌جاب دامنه ندارد) — پیامک بدون لینک بی‌فایده است
+        error_log('[Portal SMS] site_url تنظیم نشده؛ ارسال یادآوری نظرسنجی لغو شد (assignment #' . (int) $row['id'] . ').');
+        return false;
+    }
 
     $r = send_event_sms('survey_reminder', $u['mobile'], $vars, (int) $u['id']);
     if ($r['ok']) {
@@ -176,7 +181,8 @@ function sms_survey_reminder_query(string $customer_where = ''): string
               AND ((sa.entity_type = 'project' AND p.id IS NOT NULL) OR (sa.entity_type = 'product' AND pr.id IS NOT NULL))
               AND NOT EXISTS (SELECT 1 FROM survey_responses r
                               WHERE r.survey_id = sa.survey_id AND r.customer_id = sa.customer_id
-                                AND r.entity_type = sa.entity_type AND r.entity_id = sa.entity_id)
+                                AND r.entity_type = sa.entity_type AND r.entity_id = sa.entity_id
+                                AND r.created_at >= sa.available_at)
               " . $customer_where;
 }
 
@@ -225,7 +231,7 @@ function sms_broadcast_survey_reminder(): int
         return 0;
     }
     $sent = 0;
-    $q = $pdo->query("SELECT DISTINCT customer_id FROM survey_assignments sa JOIN surveys s ON s.id = sa.survey_id WHERE s.is_active = 1 AND sa.available_at <= NOW() AND NOT EXISTS (SELECT 1 FROM survey_responses r WHERE r.survey_id = sa.survey_id AND r.customer_id = sa.customer_id AND r.entity_type = sa.entity_type AND r.entity_id = sa.entity_id)");
+    $q = $pdo->query("SELECT DISTINCT customer_id FROM survey_assignments sa JOIN surveys s ON s.id = sa.survey_id WHERE s.is_active = 1 AND sa.available_at <= NOW() AND NOT EXISTS (SELECT 1 FROM survey_responses r WHERE r.survey_id = sa.survey_id AND r.customer_id = sa.customer_id AND r.entity_type = sa.entity_type AND r.entity_id = sa.entity_id AND r.created_at >= sa.available_at)");
     foreach ($q->fetchAll() as $row) {
         sms_trigger_survey_reminder((int) $row['customer_id']);
         $sent++;

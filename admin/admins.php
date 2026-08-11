@@ -20,11 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $first_name  = trim($_POST['first_name'] ?? '');
         $last_name   = trim($_POST['last_name'] ?? '');
         $mobile      = fa_digits_to_en(trim($_POST['mobile'] ?? ''));
-        $mobile_db   = $mobile !== '' ? normalize_mobile_db($mobile) : '';
+        $mobile_db   = $mobile !== '' ? normalize_mobile_db($mobile) : null;
 
         if ($username === '' || strlen($password) < 8) {
             $err = 'نام کاربری و رمز عبور (حداقل ۸ کاراکتر) الزامی است.';
-        } elseif ($mobile_db !== '' && mobile_exists($mobile_db)) {
+        } elseif ($mobile_db !== null && $mobile_db !== '' && mobile_exists($mobile_db)) {
             $err = 'این شماره موبایل قبلاً برای کاربر دیگری (مشتری یا مدیر) ثبت شده است.';
         } else {
             try {

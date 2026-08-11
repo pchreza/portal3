@@ -3,6 +3,14 @@
 require_once 'auth.php';
 if (!admin_can('error_reports')) { header('Location: index.php'); exit; }
 
+// اگر جدول به هر دلیل وجود نداشت (نصب قدیمی/بازیابی‌شده)، همین‌جا ساخته شود تا صفحه خطای مرگبار ندهد
+try {
+    portal_ensure_error_reports_table($pdo);
+} catch (Throwable $t) {
+    error_log('[Portal ErrorReports] ' . $t->getMessage());
+    die('خطا در دسترسی به جدول گزارش‌های خطا. لاگ سرور را بررسی کنید.');
+}
+
 $msg = '';
 $err = '';
 
@@ -86,6 +94,7 @@ render_admin_header('گزارش‌های خطا', 'p-8 max-w-7xl w-full mx-auto 
                     <td data-label="زمان" class="text-xs text-slate-500 whitespace-nowrap"><?= htmlspecialchars(fa_datetime($r['created_at'])) ?></td>
                     <td data-label="عملیات">
                         <div class="inline-flex items-center gap-1.5 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="openReportDetail(<?= (int) $r['id'] ?>)"><?= icon('eye') ?><span>جزئیات</span></button>
                             <form method="post">
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="status">
@@ -111,5 +120,135 @@ render_admin_header('گزارش‌های خطا', 'p-8 max-w-7xl w-full mx-auto 
     </div>
     <?php endif; ?>
 </div>
+
+<?php $reports_json = json_encode(array_map(static function ($r) {
+    $name = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
+    return [
+        'id'         => (int) $r['id'],
+        'reporter'   => $name !== '' ? $name : (($r['reporter_name'] ?? '') ?: ($r['username'] ?? '—')),
+        'role'       => (string) ($r['reporter_role'] ?? '—'),
+        'url'        => (string) ($r['url'] ?? ''),
+        'message'    => (string) ($r['message'] ?? ''),
+        'status'     => (string) ($r['status'] ?? 'new'),
+        'created_at' => fa_datetime($r['created_at']),
+    ];
+}, $reports), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
+
+<!-- پاپ‌آپ جزئیات کامل گزارش خطا -->
+<div id="report-detail-modal" role="dialog" aria-modal="true" aria-labelledby="report-detail-title" class="hidden fixed inset-0 z-[2000] items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50" onclick="closeReportDetail()"></div>
+    <div class="relative w-full max-w-lg card !rounded-2xl p-6 shadow-2xl">
+        <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <span class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center"><?= icon('alert','w-5 h-5') ?></span>
+                <div>
+                    <h3 id="report-detail-title" class="text-lg font-bold text-slate-900">جزئیات گزارش خطا</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">گزارش <span id="rd-id" class="font-mono"></span></p>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-ghost" onclick="closeReportDetail()" aria-label="بستن"><?= icon('x') ?></button>
+        </div>
+        <dl class="space-y-3 text-sm">
+            <div class="flex gap-3 border-b border-slate-100 pb-3"><dt class="w-24 shrink-0 text-slate-500">گزارش‌دهنده</dt><dd id="rd-reporter" class="text-slate-800 font-medium"></dd></div>
+            <div class="flex gap-3 border-b border-slate-100 pb-3"><dt class="w-24 shrink-0 text-slate-500">نقش</dt><dd id="rd-role" class="text-slate-800"></dd></div>
+            <div class="flex gap-3 border-b border-slate-100 pb-3"><dt class="w-24 shrink-0 text-slate-500">صفحه</dt><dd id="rd-url" class="text-slate-800 break-all" dir="ltr" style="text-align:left"></dd></div>
+            <div class="flex gap-3 border-b border-slate-100 pb-3"><dt class="w-24 shrink-0 text-slate-500">زمان</dt><dd id="rd-time" class="text-slate-800"></dd></div>
+            <div class="flex gap-3"><dt class="w-24 shrink-0 text-slate-500">شرح خطا</dt><dd id="rd-message" class="text-slate-800 whitespace-pre-wrap"></dd></div>
+        </dl>
+        <div class="flex justify-end mt-5 pt-4 border-t border-slate-100">
+            <button type="button" class="btn btn-secondary" onclick="closeReportDetail()">بستن</button>
+        </div>
+    </div>
+</div>
+<script>
+window.__reportData = <?= $reports_json ?>;
+function openReportDetail(id){
+    var d = window.__reportData || [], r = null;
+    for (var i = 0; i < d.length; i++) { if (d[i].id === id) { r = d[i]; break; } }
+    if (!r) return;
+    document.getElementById('rd-id').textContent      = '#' + r.id;
+    document.getElementById('rd-reporter').textContent = r.reporter;
+    document.getElementById('rd-role').textContent     = r.role;
+    document.getElementById('rd-url').textContent      = r.url;
+    document.getElementById('rd-time').textContent     = r.created_at;
+    document.getElementById('rd-message').textContent  = r.message;
+    document.getElementById('report-detail-modal').classList.remove('hidden');
+    document.getElementById('report-detail-modal').classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+function closeReportDetail(){
+    document.getElementById('report-detail-modal').classList.add('hidden');
+    document.getElementById('report-detail-modal').classList.remove('flex');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !document.getElementById('report-detail-modal').classList.contains('hidden')) closeReportDetail();
+});
+</script>
+
+<?php $reports_json = json_encode(array_map(static function ($r) {
+    $name = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
+    return [
+        'id'         => (int) $r['id'],
+        'reporter'   => $name !== '' ? $name : (($r['reporter_name'] ?? '') ?: ($r['username'] ?? '—')),
+        'role'       => (string) ($r['reporter_role'] ?? '—'),
+        'url'        => (string) ($r['url'] ?? ''),
+        'message'    => (string) ($r['message'] ?? ''),
+        'status'     => (string) ($r['status'] ?? 'new'),
+        'created_at' => fa_datetime($r['created_at']),
+    ];
+}, $reports), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
+
+<!-- پاپ‌آپ جزئیات کامل گزارش خطا -->
+<div id="report-detail-modal" role="dialog" aria-modal="true" aria-labelledby="report-detail-title" class="hidden fixed inset-0 z-[2000] items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50" onclick="closeReportDetail()"></div>
+    <div class="relative w-full max-w-lg card !rounded-2xl p-6 shadow-2xl">
+        <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <span class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center"><?= icon('alert','w-5 h-5') ?></span>
+                <div>
+                    <h3 id="report-detail-title" class="text-lg font-bold text-slate-900">جزئیات گزارش خطا</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">گزارش <span id="rd-id" class="font-mono"></span></p>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-ghost" onclick="closeReportDetail()" aria-label="بستن"><?= icon('x') ?></button>
+        </div>
+        <dl class="space-y-3 text-sm">
+            <div class="flex gap-3 border-b border-slate-100 pb-3"><dt class="w-24 shrink-0 text-slate-500">گزارش‌دهنده</dt><dd id="rd-reporter" class="text-slate-800 font-medium"></dd></div>
+            <div class="flex gap-3 border-b border-slate-100 pb-3"><dt class="w-24 shrink-0 text-slate-500">نقش</dt><dd id="rd-role" class="text-slate-800"></dd></div>
+            <div class="flex gap-3 border-b border-slate-100 pb-3"><dt class="w-24 shrink-0 text-slate-500">صفحه</dt><dd id="rd-url" class="text-slate-800 break-all" dir="ltr" style="text-align:left"></dd></div>
+            <div class="flex gap-3 border-b border-slate-100 pb-3"><dt class="w-24 shrink-0 text-slate-500">زمان</dt><dd id="rd-time" class="text-slate-800"></dd></div>
+            <div class="flex gap-3"><dt class="w-24 shrink-0 text-slate-500">شرح خطا</dt><dd id="rd-message" class="text-slate-800 whitespace-pre-wrap"></dd></div>
+        </dl>
+        <div class="flex justify-end mt-5 pt-4 border-t border-slate-100">
+            <button type="button" class="btn btn-secondary" onclick="closeReportDetail()">بستن</button>
+        </div>
+    </div>
+</div>
+<script>
+window.__reportData = <?= $reports_json ?>;
+function openReportDetail(id){
+    var d = window.__reportData || [], r = null;
+    for (var i = 0; i < d.length; i++) { if (d[i].id === id) { r = d[i]; break; } }
+    if (!r) return;
+    document.getElementById('rd-id').textContent      = '#' + r.id;
+    document.getElementById('rd-reporter').textContent = r.reporter;
+    document.getElementById('rd-role').textContent     = r.role;
+    document.getElementById('rd-url').textContent      = r.url;
+    document.getElementById('rd-time').textContent     = r.created_at;
+    document.getElementById('rd-message').textContent  = r.message;
+    document.getElementById('report-detail-modal').classList.remove('hidden');
+    document.getElementById('report-detail-modal').classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+function closeReportDetail(){
+    document.getElementById('report-detail-modal').classList.add('hidden');
+    document.getElementById('report-detail-modal').classList.remove('flex');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !document.getElementById('report-detail-modal').classList.contains('hidden')) closeReportDetail();
+});
+</script>
 
 <?php render_admin_footer(); ?>

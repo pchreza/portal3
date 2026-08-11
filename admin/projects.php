@@ -16,7 +16,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'xlsx') {
         $rows[] = [
             $p['id'], $p['title'], trim($p['first_name'] . ' ' . $p['last_name']), $p['username'],
             $p['description'], project_status_label($p['status'] ?? 'pending'),
-            $p['deadline'] ?: '-', fa_datetime($p['created_at'] ?? null),
+            $p['deadline'] ? portal_date_to_display($p['deadline']) : '-', fa_datetime($p['created_at'] ?? null),
         ];
     }
     excel_output('projects', $rows, 'پروژه‌ها');
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $status = trim($_POST['status'] ?? 'in_progress');
-    $deadline = trim($_POST['deadline'] ?? '');
+    $deadline = portal_date_to_db(trim($_POST['deadline'] ?? '')); // شمسی → میلادی
 
     // پردازش آپلود عکس
     $image = trim($_POST['current_image'] ?? '');
@@ -245,7 +245,7 @@ $projects = $pdo->query("
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">🗓️ تاریخ تکمیل پروژه</label>
                                     <div class="flex gap-2 items-stretch">
-                                        <input type="text" name="deadline" id="deadline" data-jdp data-jdp-min-date="today" readonly value="<?php echo htmlspecialchars($edit_project['deadline'] ?? ''); ?>" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white cursor-pointer" placeholder="انتخاب تاریخ شمسی">
+                                        <input type="text" name="deadline" id="deadline" data-jdp data-jdp-min-date="today" readonly value="<?php echo htmlspecialchars(portal_date_to_display((string) ($edit_project['deadline'] ?? ''))); ?>" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white cursor-pointer" placeholder="انتخاب تاریخ شمسی">
                                         <button type="button" class="jdp-trigger shrink-0 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-2 rounded-xl transition cursor-pointer" aria-label="انتخاب تاریخ" data-target="deadline"><?= icon('calendar') ?></button>
                                     </div>
                                 </div>
@@ -350,7 +350,7 @@ $projects = $pdo->query("
                                                     else echo '<span class="bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full font-medium">در انتظار شروع</span>';
                                                 ?>
                                             </td>
-                                            <td class="p-4 text-xs text-slate-600"><?php echo htmlspecialchars($p['deadline'] ?: '-'); ?></td>
+                                            <td class="p-4 text-xs text-slate-600"><?php echo htmlspecialchars($p['deadline'] ? portal_date_to_display($p['deadline']) : '-'); ?></td>
                                             <td class="p-4 text-center space-x-2 space-x-reverse">
                                                 <a href="projects.php?action=edit&id=<?php echo $p['id']; ?>" class="btn btn-sm btn-ghost !text-indigo-600">ویرایش</a>
                                                 <form method="POST" style="display:inline" data-confirm-msg="آیا از حذف این مورد اطمینان دارید؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$p['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger">حذف</button></form>

@@ -41,8 +41,8 @@ if ($token === '') {
         $data = null;
     } else {
         // آیا قبلاً پاسخ داده شده؟
-        $ck = $pdo->prepare("SELECT id FROM survey_responses WHERE survey_id = ? AND customer_id = ? AND entity_type = ? AND entity_id = ?");
-        $ck->execute([$data['survey_id'], $data['customer_id'], $data['entity_type'], $data['entity_id']]);
+        $ck = $pdo->prepare("SELECT id FROM survey_responses WHERE survey_id = ? AND customer_id = ? AND entity_type = ? AND entity_id = ? AND created_at >= ?");
+        $ck->execute([$data['survey_id'], $data['customer_id'], $data['entity_type'], $data['entity_id'], $data['available_at']]);
         if ($ck->fetch()) {
             $already = true;
             $data = null;

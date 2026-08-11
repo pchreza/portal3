@@ -34,8 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assignment_id'])) {
         $err = 'این فرم برای شما قابل دسترسی نیست، هنوز فعال نشده یا مورد مربوطه حذف شده است.';
     } else {
         // جلوگیری از پاسخ تکراری
-        $ck = $pdo->prepare("SELECT id FROM survey_responses WHERE survey_id = ? AND customer_id = ? AND entity_type = ? AND entity_id = ?");
-        $ck->execute([$as['survey_id'], $uid, $as['entity_type'], $as['entity_id']]);
+        $ck = $pdo->prepare("SELECT id FROM survey_responses WHERE survey_id = ? AND customer_id = ? AND entity_type = ? AND entity_id = ? AND created_at >= ?");
+        $ck->execute([$as['survey_id'], $uid, $as['entity_type'], $as['entity_id'], $as['available_at']]);
 
         if ($ck->fetch()) {
             $err = 'این فرم قبلاً تکمیل شده است.';

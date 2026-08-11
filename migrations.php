@@ -8,11 +8,17 @@
 
 /** آخرین نسخه اسکیمای دیتابیس — هنگام افزودن مهاجرت جدید، این عدد را یک واحد زیاد کنید. */
 if (!defined('PORTAL_SCHEMA_VERSION')) {
-    define('PORTAL_SCHEMA_VERSION', 22);
+    define('PORTAL_SCHEMA_VERSION', 24);
 }
 
 function portal_column_exists(PDO $db, string $table, string $column): bool {
     $q=$db->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND COLUMN_NAME=?");$q->execute([$table,$column]);return (bool)$q->fetchColumn();
+}
+function portal_index_exists(PDO $db, string $table, string $index): bool {
+    $q=$db->prepare("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND INDEX_NAME=?");$q->execute([$table,$index]);return (bool)$q->fetchColumn();
+}
+function portal_fk_exists(PDO $db, string $table, string $fk): bool {
+    $q=$db->prepare("SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME=? AND CONSTRAINT_NAME=? AND CONSTRAINT_TYPE='FOREIGN KEY'");$q->execute([$table,$fk]);return (bool)$q->fetchColumn();
 }
 
 /**
@@ -22,16 +28,18 @@ function portal_column_exists(PDO $db, string $table, string $column): bool {
  * - اگر مهاجرتی در انتظار باشد، portal_migrations() آن را با قفل (GET_LOCK) اجرا می‌کند.
  * - شکست مهاجرت باعث توقف برنامه نمی‌شود؛ در لاگ ثبت شده و در درخواست بعدی دوباره تلاش می‌شود.
  */
-function portal_auto_migrate(PDO $pdo): void {
+function portal_auto_migrate(PDO $pdo): bool {
     if (isset($_SESSION['portal_schema_version']) && (int) $_SESSION['portal_schema_version'] >= PORTAL_SCHEMA_VERSION) {
-        return; // این سشن در حال حاضر به‌روز است
+        return false; // این سشن در حال حاضر به‌روز است
     }
 
     try {
         portal_migrations($pdo);
         $_SESSION['portal_schema_version'] = PORTAL_SCHEMA_VERSION;
+        return true;
     } catch (Throwable $e) {
         error_log('[Portal AutoMigrate] ' . $e->getMessage());
+        return false;
     }
 }
 
@@ -138,7 +146,7 @@ function portal_migrations(PDO $pdo): void {
                     ('admin','dashboard'),('admin','customers'),('admin','projects'),('admin','products'),
                     ('admin','invoices'),('admin','tickets'),('admin','ticket_departments'),('admin','surveys'),
                     ('admin','custom_fields'),('admin','notifications'),('admin','settings'),('admin','logs'),
-                    ('admin','admins'),('admin','profile')");
+                    ('admin','admins'),('admin','profile'),('admin','error_reports')");
                 // ادمین اول موجود → سوپر ادمین
                 $db->exec("UPDATE users SET role = 'super_admin' WHERE role = 'admin' ORDER BY id ASC LIMIT 1");
             },
@@ -207,14 +215,16 @@ function portal_migrations(PDO $pdo): void {
             },
             20=>function($db){
                 // ایندکس‌های گمشده برای کوئری‌های پرتکرار (ورود OTP، دپارتمان تیکت، لاگ‌ها)
-                $db->exec("CREATE INDEX IF NOT EXISTS idx_users_mobile ON users (mobile)");
-                $db->exec("CREATE INDEX IF NOT EXISTS idx_tickets_department ON tickets (department_id)");
-                $db->exec("CREATE INDEX IF NOT EXISTS idx_activity_user ON activity_logs (user_id)");
+                if(!portal_index_exists($db,'users','idx_users_mobile'))$db->exec("CREATE INDEX idx_users_mobile ON users (mobile)");
+                if(!portal_index_exists($db,'tickets','idx_tickets_department'))$db->exec("CREATE INDEX idx_tickets_department ON tickets (department_id)");
+                if(!portal_index_exists($db,'activity_logs','idx_activity_user'))$db->exec("CREATE INDEX idx_activity_user ON activity_logs (user_id)");
                 // یکتاسازی شماره موبایل: ابتدا رکوردهای تکراری (غیر از قدیمی‌ترین) خالی می‌شوند تا ایندکس یکتا ممکن شود
                 $db->exec("UPDATE users u
                            JOIN (SELECT mobile, MIN(id) keep_id FROM users WHERE mobile <> '' GROUP BY mobile HAVING COUNT(*) > 1) d ON u.mobile = d.mobile AND u.id <> d.keep_id
                            SET u.mobile = ''");
-                $db->exec("CREATE UNIQUE INDEX IF NOT EXISTS uniq_users_mobile ON users (mobile)");
+                // موبایل‌های خالی → NULL (ایندکس یکتا چند NULL مجاز است ولی چند '' مجاز نیست — خطای 1062)
+                $db->exec("UPDATE users SET mobile = NULL WHERE mobile = ''");
+                if(!portal_index_exists($db,'users','uniq_users_mobile'))$db->exec("CREATE UNIQUE INDEX uniq_users_mobile ON users (mobile)");
             },
             21=>function($db){
                 // یکتاسازی شماره فاکتور: رکوردهای تکراری (غیر از قدیمی‌ترین) پسوند می‌گیرند
@@ -222,15 +232,15 @@ function portal_migrations(PDO $pdo): void {
                            JOIN (SELECT invoice_number, MIN(id) keep_id FROM invoices GROUP BY invoice_number HAVING COUNT(*) > 1) d
                              ON i.invoice_number = d.invoice_number AND i.id <> d.keep_id
                            SET i.invoice_number = CONCAT(i.invoice_number, '-DUP-', i.id)");
-                $db->exec("CREATE UNIQUE INDEX IF NOT EXISTS uniq_invoice_number ON invoices (invoice_number)");
+                if(!portal_index_exists($db,'invoices','uniq_invoice_number'))$db->exec("CREATE UNIQUE INDEX uniq_invoice_number ON invoices (invoice_number)");
 
                 // کلید خارجی روی پیام‌های تیکت و والد نظرسنجی (حذف داده‌های یتیم از قبل)
                 $db->exec("DELETE FROM ticket_messages WHERE sender_id NOT IN (SELECT id FROM users)");
-                $db->exec("CREATE INDEX IF NOT EXISTS idx_ticket_messages_sender ON ticket_messages (sender_id)");
-                $db->exec("ALTER TABLE ticket_messages ADD CONSTRAINT fk_tm_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE");
+                if(!portal_index_exists($db,'ticket_messages','idx_ticket_messages_sender'))$db->exec("CREATE INDEX idx_ticket_messages_sender ON ticket_messages (sender_id)");
+                if(!portal_fk_exists($db,'ticket_messages','fk_tm_sender'))$db->exec("ALTER TABLE ticket_messages ADD CONSTRAINT fk_tm_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE");
                 $db->exec("DELETE FROM surveys WHERE parent_survey_id IS NOT NULL AND parent_survey_id NOT IN (SELECT id FROM surveys)");
-                $db->exec("CREATE INDEX IF NOT EXISTS idx_surveys_parent ON surveys (parent_survey_id)");
-                $db->exec("ALTER TABLE surveys ADD CONSTRAINT fk_surveys_parent FOREIGN KEY (parent_survey_id) REFERENCES surveys(id) ON DELETE SET NULL");
+                if(!portal_index_exists($db,'surveys','idx_surveys_parent'))$db->exec("CREATE INDEX idx_surveys_parent ON surveys (parent_survey_id)");
+                if(!portal_fk_exists($db,'surveys','fk_surveys_parent'))$db->exec("ALTER TABLE surveys ADD CONSTRAINT fk_surveys_parent FOREIGN KEY (parent_survey_id) REFERENCES surveys(id) ON DELETE SET NULL");
             },
             22=>function($db){
                 // گزارش خطا (دکمه شناور)
@@ -244,6 +254,69 @@ function portal_migrations(PDO $pdo): void {
                     status VARCHAR(20) DEFAULT 'new',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            },
+            23=>function($db){
+                // دسترسی «گزارش خطا» برای مدیران عادی (جدول error_reports در migration 22)
+                $db->exec("INSERT IGNORE INTO admin_permissions (role, permission) VALUES ('admin','error_reports')");
+            },
+            24=>function($db){
+                // 1) «تنظیمات» فقط سوپر ادمین — حذف دسترسی مدیران عادی
+                $db->exec("DELETE FROM admin_permissions WHERE role = 'admin' AND permission = 'settings'");
+
+                // 2) یکپارچه‌سازی تاریخ‌های شمسی ذخیره‌شده در VARCHAR → میلادی (یک‌بار برای همیشه)
+                $conv = static function (string $v): ?string {
+                    if ($v === '' || preg_match('#^\d{4}-\d{2}-\d{2}$#', $v)) {
+                        return $v === '' ? null : $v;
+                    }
+                    if (!preg_match('#^(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})$#', trim($v), $m)) {
+                        return null;
+                    }
+                    $jy = (int) $m[1]; $jm = (int) $m[2]; $jd = (int) $m[3];
+                    if ($jy < 1300 || $jy > 1500 || $jm < 1 || $jm > 12 || $jd < 1 || $jd > 31) {
+                        return null;
+                    }
+                    $g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+                    $base = mktime(0, 0, 0, 3, 21, $jy + 621) - 5 * 86400;
+                    for ($i = -400; $i <= 400; $i++) {
+                        $t = $base + $i * 86400;
+                        $gy = (int) date('Y', $t); $gm = (int) date('n', $t); $gd = (int) date('j', $t);
+                        $jyy = ($gy <= 1600) ? 0 : 979;
+                        $gyb = $gy - (($gy <= 1600) ? 621 : 1600);
+                        $gy2 = ($gm > 2) ? ($gyb + 1) : $gyb;
+                        $days = (365 * $gyb) + intdiv($gy2 + 3, 4) - intdiv($gy2 + 99, 100) + intdiv($gy2 + 399, 400) - 80 + $gd + $g_d_m[$gm - 1];
+                        $jyy += 33 * intdiv($days, 12053); $days %= 12053;
+                        $jyy += 4 * intdiv($days, 1461); $days %= 1461;
+                        $jyy += intdiv($days - 1, 365);
+                        if ($days > 365) { $days = ($days - 1) % 365; }
+                        $pjm = $days < 186 ? 1 + intdiv($days, 31) : 7 + intdiv($days - 186, 30);
+                        $pjd = $days < 186 ? 1 + ($days % 31) : 1 + (($days - 186) % 30);
+                        if ($jyy === $jy && $pjm === $jm && $pjd === $jd) {
+                            return date('Y-m-d', $t);
+                        }
+                    }
+                    return null;
+                };
+
+                if (portal_column_exists($db, 'users', 'birth_date')) {
+                    $rows = $db->query("SELECT id, birth_date FROM users WHERE birth_date IS NOT NULL AND birth_date <> ''")->fetchAll();
+                    $up = $db->prepare("UPDATE users SET birth_date = ? WHERE id = ?");
+                    foreach ($rows as $r) {
+                        $c = $conv((string) $r['birth_date']);
+                        if ($c !== null && $c !== $r['birth_date']) {
+                            $up->execute([$c, $r['id']]);
+                        }
+                    }
+                }
+                if (portal_column_exists($db, 'custom_field_values', 'field_value')) {
+                    $rows = $db->query("SELECT v.id, v.field_value FROM custom_field_values v JOIN custom_fields f ON f.id = v.field_id WHERE f.field_type = 'date' AND v.field_value IS NOT NULL AND v.field_value <> ''")->fetchAll();
+                    $up2 = $db->prepare("UPDATE custom_field_values SET field_value = ? WHERE id = ?");
+                    foreach ($rows as $r) {
+                        $c = $conv((string) $r['field_value']);
+                        if ($c !== null && $c !== $r['field_value']) {
+                            $up2->execute([$c, $r['id']]);
+                        }
+                    }
+                }
             }
         ];
         // گارد: مطمئن شو ثابت نسخه با بالاترین مهاجرت هماهنگ است

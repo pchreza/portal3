@@ -30,7 +30,7 @@
   --fg:            #1e293b;
   --fg-strong:     #0f172a;
   --fg-muted:      #5b6b82; /* WCAG AA (>=4.5) on white and on surface-2 */
-  --fg-faint:      #8b98ab;
+  --fg-faint:      #64748b;
   --ring:          var(--tp-primary, #4f46e5);
 
   /* Semantic (defaults; overridden by palette where applicable) */
@@ -69,7 +69,7 @@ html.dark {
   --fg:            #dbe3ef;
   --fg-strong:     #f4f7fb;
   --fg-muted:      #9fb0c9;
-  --fg-faint:      #64748b;
+  --fg-faint:      #94a3b8;
 
   --danger:        #f87171;
   --danger-soft:   rgba(239,68,68,.14);
@@ -344,7 +344,7 @@ img { background: var(--surface-3); }
 @media (min-width: 768px) { .header-menu-link { display: inline-flex; } }
 
 /* ---------- 15. TOAST ---------- */
-.toast-region { position: fixed; bottom: 1rem; inset-inline-end: 1rem; z-index: 1600; display:flex; flex-direction:column; gap:.5rem; max-width: 22rem; width: calc(100% - 2rem); pointer-events:none; }
+.toast-region { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); inset-inline-end: auto; z-index: 1900; display:flex; flex-direction:column; gap:.5rem; max-width: 22rem; width: calc(100% - 2rem); pointer-events:none; }
 .toast { display:flex; align-items:flex-start; gap:.6rem; padding:.8rem 1rem; border-radius: 12px; background: var(--surface); border:1px solid var(--border); box-shadow: 0 8px 24px -12px rgba(15,23,42,.3); font-size:.875rem; line-height:1.5; pointer-events:auto; animation: toastin .25s var(--ease); }
 .toast-success { border-inline-start: 3px solid var(--success); }
 .toast-success .toast-ic { color: var(--success); }
@@ -354,3 +354,32 @@ img { background: var(--surface-3); }
 .toast-info .toast-ic { color: var(--info); }
 .toast .toast-ic { flex-shrink:0; display:flex; align-items:center; }
 @keyframes toastin { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+
+/* ===== Floating error-report button: bottom-LEFT in RTL =====
+   دور از سایدبار راست (دکمه‌های مدیریت/خروج) و از نوار اکشن پایین موبایل */
+#error-report-fab {
+  bottom: 1rem !important;
+  right: auto !important;
+  left: 1rem !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: 1rem !important;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  padding: 0 !important;
+  border-radius: 9999px !important;
+  z-index: 1800 !important;
+}
+@media (max-width: 767px) {
+  #error-report-fab { bottom: 5rem !important; }
+}
+
+/* ===== JalaliDatePicker در حالت تاریک ===== */
+html.dark .jdp-container {
+  --jdp-color-0: var(--surface);
+  --jdp-color-1: var(--surface-2);
+  --jdp-color-2: var(--border);
+  --jdp-color-3: var(--fg-faint);
+  --jdp-color-4: var(--fg-muted);
+  --jdp-color-5: var(--fg-strong);
+  --jdp-primary: #818cf8;
+}

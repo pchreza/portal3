@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // --- طول کد تایید (۴/۵/۶) ---
         $otp_len = (int) ($_POST['otp_length'] ?? 6);
-        set_setting('otp_length', in_array($otp_len, [4, 5, 6], true) ? (string) $otp_len : '6');
+        set_setting('otp_length', in_array($otp_len, [6, 7, 8], true) ? (string) $otp_len : '6');
 
         log_activity($_SESSION['user_id'], "بروزرسانی تنظیمات ورود و پیامک");
         $success = 'تنظیمات ورود و پیامک با موفقیت ذخیره شد.';
@@ -204,6 +204,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $err = 'ارسال تست ناموفق: ' . $result['message'];
             }
         }
+    } elseif ($save_type === 'cache') {
+        set_setting('cache_enabled', isset($_POST['cache_enabled']) ? '1' : '0');
+        $ttl = max(5, min(86400, (int) ($_POST['cache_ttl'] ?? 300)));
+        set_setting('cache_ttl', (string) $ttl);
+        portal_cache_flush();
+        log_activity($_SESSION['user_id'], "بروزرسانی تنظیمات کش");
+        $success = 'تنظیمات کش با موفقیت ذخیره و کش پاک‌سازی شد.';
+    } elseif ($save_type === 'flush_cache') {
+        $n = portal_cache_flush();
+        log_activity($_SESSION['user_id'], "پاک‌سازی کش سیستم");
+        $success = 'کش سیستم پاک‌سازی شد (' . $n . ' فایل حذف گردید).';
+    } elseif ($save_type === 'cache') {
+        set_setting('cache_enabled', isset($_POST['cache_enabled']) ? '1' : '0');
+        $ttl = max(5, min(86400, (int) ($_POST['cache_ttl'] ?? 300)));
+        set_setting('cache_ttl', (string) $ttl);
+        portal_cache_flush();
+        log_activity($_SESSION['user_id'], "بروزرسانی تنظیمات کش");
+        $success = 'تنظیمات کش با موفقیت ذخیره و کش پاک‌سازی شد.';
+    } elseif ($save_type === 'flush_cache') {
+        $n = portal_cache_flush();
+        log_activity($_SESSION['user_id'], "پاک‌سازی کش سیستم");
+        $success = 'کش سیستم پاک‌سازی شد (' . $n . ' فایل حذف گردید).';
     } elseif ($save_type === 'appearance') {
         // --- پالت رنگی ---
         $palettes = array_keys(theme_palettes());
@@ -294,10 +316,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ---------- تب فعال ----------
 $tab = $_GET['tab'] ?? 'modules';
-$allowed_tabs = ['modules', 'fields', 'dashboard', 'appearance', 'login_sms', 'general'];
-if (!in_array($tab, $allowed_tabs, true)) {
-    $tab = 'modules';
-}
 
 $fields_config = [
     'first_name'  => 'نام',
@@ -339,12 +357,18 @@ $dash_widgets_config = [
 
 $tab_labels = [
     'modules'    => ['ماژول‌ها', 'فعال/غیرفعال کردن بخش‌های سیستم', 'box'],
+    'cache'      => ['کش و سرعت', 'مدیریت کش برای افزایش سرعت سیستم', 'box'],
     'fields'     => ['فیلدهای اجباری', 'تعیین فیلدهای الزامی پروفایل مشتری', 'clipboard'],
     'dashboard'  => ['داشبورد کاربر', 'کنترل ویجت‌های صفحه اصلی مشتری', 'dashboard'],
     'appearance' => ['ظاهر سایت', 'لوگو و رنگ‌بندی سیستم', 'palette'],
     'login_sms'  => ['ورود و پیامک', 'روش ورود و تنظیمات سرویس پیامک', 'phone'],
     'general'    => ['عمومی', 'عنوان و متن‌های عمومی سیستم', 'globe'],
 ];
+
+// اعتبارسنجی تب فعال بر اساس کلیدهای واقعی تب‌ها — هر تب جدید خودکار مجاز است
+if (!array_key_exists($tab, $tab_labels)) {
+    $tab = 'modules';
+}
 
 render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto space-y-6');
 ?>
@@ -400,6 +424,40 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                         <div class="pt-5 border-t border-slate-100 flex justify-end">
                             <button class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره وضعیت ماژول‌ها</span></button>
                         </div>
+                    </form>
+
+                <?php elseif ($tab === 'cache'): ?>
+                    <!-- ===== تب کش و سرعت ===== -->
+                    <form method="POST" class="space-y-5">
+                        <?php echo csrf_input(); ?>
+                        <input type="hidden" name="save_type" value="cache">
+                        <div class="card p-5 space-y-4">
+                            <div class="py-3 flex items-center justify-between gap-4">
+                                <div>
+                                    <span class="font-medium text-slate-800 text-sm">کش تنظیمات و داده‌ها</span>
+                                    <span class="text-xs text-slate-400 block mt-0.5">ذخیره موقت تنظیمات و آمار در فایل — کاهش کوئری‌های دیتابیس و پاسخ‌دهی سریع‌تر</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                                    <input type="checkbox" name="cache_enabled" value="1" <?= portal_cache_enabled() ? 'checked' : '' ?> class="sr-only peer">
+                                    <div class="switch-track"></div>
+                                    <span class="badge <?= portal_cache_enabled() ? 'badge-success' : 'badge-muted' ?> mr-3"><?= portal_cache_enabled() ? 'فعال' : 'غیرفعال' ?></span>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="label" for="cache_ttl">مدت اعتبار کش (ثانیه)</label>
+                                <input type="number" name="cache_ttl" id="cache_ttl" min="5" max="86400" value="<?= (int) get_setting('cache_ttl', '300') ?>" class="input" dir="ltr">
+                                <p class="text-xs text-slate-400 mt-1">پیش‌فرض ۳۰۰ ثانیه (۵ دقیقه). مقدار کمتر = به‌روزرسانی سریع‌تر، مقدار بیشتر = سرعت بالاتر.</p>
+                            </div>
+                            <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+                                <p class="text-xs text-slate-500">وضعیت کش: <b dir="ltr"><?= htmlspecialchars(portal_cache_dir()) ?></b><br><span class="text-slate-400"><?= portal_cache_file_count() ?> فایل کش فعال</span></p>
+                                <button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره تنظیمات کش</span></button>
+                            </div>
+                        </div>
+                    </form>
+                    <form method="POST" class="mt-4" onsubmit="return confirm('کش سیستم پاک شود؟')">
+                        <?php echo csrf_input(); ?>
+                        <input type="hidden" name="save_type" value="flush_cache">
+                        <button class="btn btn-secondary"><?= icon('trash') ?><span>پاک‌سازی کش</span></button>
                     </form>
 
                 <?php elseif ($tab === 'fields'): ?>
@@ -635,7 +693,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5 mt-3">طول کد تایید (OTP)</label>
                                     <div class="flex gap-3">
-                                        <?php foreach ([4, 5, 6] as $len): ?>
+                                        <?php foreach ([6, 7, 8] as $len): ?>
                                             <label class="flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition <?= (int) get_setting('otp_length', '6') === $len ? 'border-indigo-500 bg-indigo-50/60 ring-1 ring-indigo-100' : 'border-slate-200 bg-white hover:border-slate-300' ?>">
                                                 <input type="radio" name="otp_length" value="<?= $len ?>" <?= (int) get_setting('otp_length', '6') === $len ? 'checked' : '' ?> class="w-4 h-4 text-indigo-600">
                                                 <span class="text-sm font-medium text-slate-700"><?= $len ?> رقمی</span>

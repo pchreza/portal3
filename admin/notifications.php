@@ -16,6 +16,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ntype  = $_POST['ntype'] ?? 'info';
         $target = $_POST['target_type'] ?? 'all';
         $expires_at = trim($_POST['expires_at'] ?? '');
+        // دیت پیکر شمسی است؛ تاریخ شمسی به میلادی تبدیل شود تا مقایسه با NOW() درست باشد
+        if ($expires_at !== '') {
+            $expires_conv = jalali_to_gregorian_str($expires_at);
+            if ($expires_conv !== null) {
+                $expires_at = $expires_conv . ' 23:59:59';
+            }
+        }
 
         // انتخاب مشتریان خاص (اگر target=custom)
         $custom_ids = [];

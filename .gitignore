@@ -1,0 +1,13 @@
+# Local configuration (contains credentials) — never commit
+db_config.php
+
+# OS / editor junk
+Thumbs.db
+.DS_Store
+*.log
+
+# runtime cache
+/storage/cache/*.cache
+
+# runtime cache
+/storage/cache/*.cache

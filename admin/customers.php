@@ -14,7 +14,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'xlsx') {
     foreach ($q->fetchAll() as $u) {
         $rows[] = [
             $u['username'], $u['first_name'], $u['last_name'], $u['mobile'],
-            $u['company_name'], $u['job_title'], $u['gender'], $u['birth_date'],
+            $u['company_name'], $u['job_title'], $u['gender'], $u['birth_date'] ? portal_date_to_display($u['birth_date']) : '',
             fa_datetime($u['created_at'] ?? null),
         ];
     }
@@ -64,15 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     $first_name = trim($_POST['first_name'] ?? '');
     $last_name = trim($_POST['last_name'] ?? '');
     $mobile = fa_digits_to_en(trim($_POST['mobile'] ?? ''));
-    $mobile = $mobile !== '' ? normalize_mobile_db($mobile) : '';
+    $mobile = $mobile !== '' ? normalize_mobile_db($mobile) : null; // NULL تا ایندکس یکتا موبایل نشکند
     $company_name = trim($_POST['company_name'] ?? '');
     $job_title = trim($_POST['job_title'] ?? '');
-    $birth_date = trim($_POST['birth_date'] ?? '');
+    $birth_date = portal_date_to_db(trim($_POST['birth_date'] ?? '')); // شمسی → میلادی
     $gender = trim($_POST['gender'] ?? '');
 
     if (empty($username)) {
         $error = 'نام کاربری الزامی است.';
-    } elseif ($mobile !== '' && mobile_exists($mobile, $id > 0 ? $id : null)) {
+    } elseif ($mobile !== null && $mobile !== '' && mobile_exists($mobile, $id > 0 ? $id : null)) {
         // شماره موبایل نباید با هیچ کاربر دیگری (مشتری یا مدیر) یکسان باشد
         $error = 'این شماره موبایل قبلاً برای کاربر دیگری (مشتری یا مدیر) ثبت شده است.';
     } else {
@@ -218,7 +218,7 @@ $customers = $customers_stmt->fetchAll();
                             <div>
                                 <label class="label" for="birth_date">تاریخ تولد</label>
                                 <div class="flex gap-2 items-stretch">
-                                    <input type="text" name="birth_date" id="birth_date" data-jdp data-jdp-max-date="today" readonly value="<?php echo htmlspecialchars($edit_customer['birth_date'] ?? ''); ?>" class="input cursor-pointer" placeholder="انتخاب تاریخ شمسی">
+                                    <input type="text" name="birth_date" id="birth_date" data-jdp data-jdp-max-date="today" readonly value="<?php echo htmlspecialchars(portal_date_to_display((string) ($edit_customer['birth_date'] ?? ''))); ?>" class="input cursor-pointer" placeholder="انتخاب تاریخ شمسی">
                                     <button type="button" class="jdp-trigger btn btn-secondary shrink-0" aria-label="انتخاب تاریخ" data-target="birth_date"><?= icon('calendar') ?><span>انتخاب تاریخ</span></button>
                                 </div>
                             </div>
@@ -283,7 +283,7 @@ $customers = $customers_stmt->fetchAll();
                                                 <div class="text-xs text-slate-400"><?php echo htmlspecialchars($c['job_title'] ?: ''); ?></div>
                                             </td>
                                             <td data-label="تولد / جنسیت" class="text-slate-600 text-xs">
-                                                <div>تولد: <?php echo htmlspecialchars($c['birth_date'] ?: '-'); ?></div>
+                                                <div>تولد: <?php echo htmlspecialchars($c['birth_date'] ? portal_date_to_display($c['birth_date']) : '-'); ?></div>
                                                 <div>جنسیت: <?php 
                                                     $g = $c['gender'];
                                                     echo $g === 'male' ? 'مرد' : ($g === 'female' ? 'زن' : ($g === 'other' ? 'سایر' : '-')); 

@@ -67,10 +67,10 @@ $next_survey_available = null; // زمان فعال‌سازی نزدیک‌تر
 if (is_module_enabled('surveys')) {
     ensure_survey_assignments($user_id);
     // نظرسنجی‌های در دسترس برای تکمیل (اکنون فعال و بدون پاسخ)
-    $q = $pdo->prepare("SELECT COUNT(*) FROM survey_assignments sa JOIN surveys s ON s.id=sa.survey_id WHERE sa.customer_id=? AND s.is_active=1 AND sa.available_at<=NOW() AND NOT EXISTS (SELECT 1 FROM survey_responses r WHERE r.survey_id=sa.survey_id AND r.customer_id=sa.customer_id AND r.entity_type=sa.entity_type AND r.entity_id=sa.entity_id)");
+    $q = $pdo->prepare("SELECT COUNT(*) FROM survey_assignments sa JOIN surveys s ON s.id=sa.survey_id WHERE sa.customer_id=? AND s.is_active=1 AND sa.available_at<=NOW() AND NOT EXISTS (SELECT 1 FROM survey_responses r WHERE r.survey_id=sa.survey_id AND r.customer_id=sa.customer_id AND r.entity_type=sa.entity_type AND r.entity_id=sa.entity_id AND r.created_at>=sa.available_at)");
     $q->execute([$user_id]); $pending_surveys=(int)$q->fetchColumn();
     // نزدیک‌ترین نظرسنجی آینده (دوره‌ای که هنوز فعال نشده و پاسخ داده نشده)
-    $q2 = $pdo->prepare("SELECT MIN(sa.available_at) FROM survey_assignments sa JOIN surveys s ON s.id=sa.survey_id WHERE sa.customer_id=? AND s.is_active=1 AND sa.available_at>NOW() AND NOT EXISTS (SELECT 1 FROM survey_responses r WHERE r.survey_id=sa.survey_id AND r.customer_id=sa.customer_id AND r.entity_type=sa.entity_type AND r.entity_id=sa.entity_id)");
+    $q2 = $pdo->prepare("SELECT MIN(sa.available_at) FROM survey_assignments sa JOIN surveys s ON s.id=sa.survey_id WHERE sa.customer_id=? AND s.is_active=1 AND sa.available_at>NOW() AND NOT EXISTS (SELECT 1 FROM survey_responses r WHERE r.survey_id=sa.survey_id AND r.customer_id=sa.customer_id AND r.entity_type=sa.entity_type AND r.entity_id=sa.entity_id AND r.created_at>=sa.available_at)");
     $q2->execute([$user_id]); $next_survey_available = $q2->fetchColumn();
     $next_survey_days = $next_survey_available ? (int) ceil((strtotime($next_survey_available) - time()) / 86400) : 0;
 }

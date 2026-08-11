@@ -132,11 +132,21 @@ function send_notification(string $title, string $body, string $ntype = 'info', 
 
     $pdo->beginTransaction();
     try {
+        // تاریخ انقضا: اگر شمسی وارد شده باشد به میلادی تبدیل کن (دیت پیکر شمسی است)
+        $expires_clean = $expires_at ?: null;
+        if ($expires_clean !== null) {
+            $conv = jalali_to_gregorian_str($expires_clean);
+            if ($conv !== null) {
+                $expires_clean = $conv . ' 23:59:59';
+            } elseif (!preg_match('#^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$#', $expires_clean)) {
+                $expires_clean = null; // قالب نامعتبر — انقضا اعمال نشود
+            }
+        }
         $q = $pdo->prepare(
             "INSERT INTO notifications (title, body, ntype, target_type, target_filter, created_by, expires_at)
              VALUES (?, ?, ?, ?, ?, ?, ?)"
         );
-        $q->execute([trim($title), trim($body), $ntype, $target_type, $target_filter, $created_by, $expires_at ?: null]);
+        $q->execute([trim($title), trim($body), $ntype, $target_type, $target_filter, $created_by, $expires_clean]);
         $nid = (int) $pdo->lastInsertId();
 
         $recipients = notification_recipient_ids($target_type, $target_filter, $custom_ids);
@@ -171,6 +181,7 @@ function unread_notifications_count(int $user_id): int
         "SELECT COUNT(*) FROM notification_recipients nr
          JOIN notifications n ON n.id = nr.notification_id
          WHERE nr.user_id = ? AND nr.is_read = 0
+           AND n.is_active = 1
            AND (n.expires_at IS NULL OR n.expires_at > NOW())"
     );
     $q->execute([$user_id]);
@@ -189,6 +200,7 @@ function get_user_notifications(int $user_id, int $limit = 20): array
          FROM notification_recipients nr
          JOIN notifications n ON n.id = nr.notification_id
          WHERE nr.user_id = ?
+           AND n.is_active = 1
            AND (n.expires_at IS NULL OR n.expires_at > NOW())
          ORDER BY n.created_at DESC
          LIMIT " . (int) $limit

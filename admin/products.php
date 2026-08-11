@@ -16,7 +16,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'xlsx') {
         $rows[] = [
             $p['id'], $p['title'], trim($p['first_name'] . ' ' . $p['last_name']), $p['username'],
             $p['description'], $p['price'], product_status_label($p['product_status'] ?? 'purchased'),
-            $p['purchase_date'] ?: '-', $p['license_key'] ?: '-', fa_datetime($p['created_at'] ?? null),
+            $p['purchase_date'] ? portal_date_to_display($p['purchase_date']) : '-', $p['license_key'] ?: '-', fa_datetime($p['created_at'] ?? null),
         ];
     }
     excel_output('products', $rows, 'محصولات');
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     $customer_id = intval($_POST['customer_id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
-    $purchase_date = trim($_POST['purchase_date'] ?? '');
+    $purchase_date = portal_date_to_db(trim($_POST['purchase_date'] ?? '')); // شمسی → میلادی
     $product_status = in_array($_POST['product_status'] ?? '', array_keys(product_status_list()), true) ? $_POST['product_status'] : 'purchased';
 
     // پردازش آپلود عکس
@@ -247,7 +247,7 @@ $products = $pdo->query("
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">🗓️ تاریخ خرید</label>
                                     <div class="flex gap-2 items-stretch">
-                                        <input type="text" name="purchase_date" id="purchase_date" data-jdp data-jdp-max-date="today" readonly value="<?php echo htmlspecialchars($edit_product['purchase_date'] ?? ''); ?>" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white cursor-pointer" placeholder="انتخاب تاریخ شمسی">
+                                        <input type="text" name="purchase_date" id="purchase_date" data-jdp data-jdp-max-date="today" readonly value="<?php echo htmlspecialchars(portal_date_to_display((string) ($edit_product['purchase_date'] ?? ''))); ?>" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white cursor-pointer" placeholder="انتخاب تاریخ شمسی">
                                         <button type="button" class="jdp-trigger shrink-0 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-2 rounded-xl transition cursor-pointer" aria-label="انتخاب تاریخ" data-target="purchase_date"><?= icon('calendar') ?></button>
                                     </div>
                                 </div>
@@ -345,7 +345,7 @@ $products = $pdo->query("
                                             </td>
                                             <td class="p-4">
                                                 <div class="mb-1"><?php echo product_status_badge($pr['product_status'] ?? null); ?></div>
-                                                <div class="text-xs text-slate-500">تاریخ خرید: <?php echo htmlspecialchars($pr['purchase_date'] ?: '-'); ?></div>
+                                                <div class="text-xs text-slate-500">تاریخ خرید: <?php echo htmlspecialchars($pr['purchase_date'] ? portal_date_to_display($pr['purchase_date']) : '-'); ?></div>
                                             </td>
                                             <td class="p-4 text-center space-x-2 space-x-reverse">
                                                 <a href="products.php?action=edit&id=<?php echo $pr['id']; ?>" class="btn btn-sm btn-ghost !text-indigo-600">ویرایش</a>

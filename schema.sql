@@ -14,8 +14,8 @@
             INSERT IGNORE INTO `admin_permissions` (`role`, `permission`) VALUES
                 ('admin','dashboard'),('admin','customers'),('admin','projects'),('admin','products'),
                 ('admin','invoices'),('admin','tickets'),('admin','ticket_departments'),('admin','surveys'),
-                ('admin','custom_fields'),('admin','notifications'),('admin','settings'),('admin','logs'),
-                ('admin','admins'),('admin','profile');
+                ('admin','custom_fields'),('admin','notifications'),('admin','logs'),
+                ('admin','admins'),('admin','profile'),('admin','error_reports');
 
             CREATE TABLE IF NOT EXISTS `schema_versions` (
                 `version` INT PRIMARY KEY,
@@ -216,5 +216,61 @@
                 INDEX `idx_user_read` (`user_id`, `is_read`),
                 FOREIGN KEY (`notification_id`) REFERENCES `notifications`(`id`) ON DELETE CASCADE,
                 FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            -- (parity with migrations — fresh installs get these from day one)
+            CREATE TABLE IF NOT EXISTS `survey_assignments` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `survey_id` INT NOT NULL,
+                `customer_id` INT NOT NULL,
+                `entity_type` VARCHAR(20) NOT NULL,
+                `entity_id` INT NOT NULL,
+                `available_at` DATETIME NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY `unique_assignment` (`survey_id`, `customer_id`, `entity_type`, `entity_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `otp_codes` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `mobile` VARCHAR(20) NOT NULL,
+                `code` VARCHAR(10) NOT NULL,
+                `attempts` TINYINT NOT NULL DEFAULT 0,
+                `is_used` TINYINT NOT NULL DEFAULT 0,
+                `expires_at` DATETIME NOT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_otp_mobile` (`mobile`, `is_used`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `sms_events` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `event_key` VARCHAR(50) NOT NULL UNIQUE,
+                `title` VARCHAR(150) NOT NULL,
+                `is_active` TINYINT NOT NULL DEFAULT 0,
+                `pattern_code` VARCHAR(100) DEFAULT '',
+                `pattern_var` VARCHAR(50) DEFAULT '',
+                `description` VARCHAR(255) DEFAULT ''
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `sms_logs` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `event_key` VARCHAR(50) DEFAULT '',
+                `mobile` VARCHAR(20) NOT NULL,
+                `user_id` INT NULL,
+                `message` VARCHAR(500) DEFAULT '',
+                `status` TINYINT NOT NULL DEFAULT 0,
+                `error` VARCHAR(255) DEFAULT '',
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_sms_logs_mobile` (`mobile`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `error_reports` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT NULL,
+                `reporter_name` VARCHAR(120) DEFAULT '',
+                `reporter_role` VARCHAR(20) DEFAULT '',
+                `url` VARCHAR(500) DEFAULT '',
+                `message` TEXT,
+                `status` VARCHAR(20) DEFAULT 'new',
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

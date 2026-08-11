@@ -22,10 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = trim($_POST['first_name'] ?? '');
     $last_name = trim($_POST['last_name'] ?? '');
     $mobile = fa_digits_to_en(trim($_POST['mobile'] ?? ''));
-    $mobile = $mobile !== '' ? normalize_mobile_db($mobile) : '';
+    $mobile = $mobile !== '' ? normalize_mobile_db($mobile) : null; // NULL تا ایندکس یکتا موبایل نشکند
     $company_name = trim($_POST['company_name'] ?? '');
     $job_title = trim($_POST['job_title'] ?? '');
-    $birth_date = trim($_POST['birth_date'] ?? '');
+    $birth_date = portal_date_to_db(trim($_POST['birth_date'] ?? '')); // شمسی → میلادی
     $gender = trim($_POST['gender'] ?? '');
     $password = $_POST['password'];
 
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // شماره موبایل نباید با کاربر دیگری یکسان باشد (مشتری یا مدیر)
-    if (!$has_error && $mobile !== '' && mobile_exists($mobile, $user_id)) {
+    if (!$has_error && $mobile !== null && $mobile !== '' && mobile_exists($mobile, $user_id)) {
         $error = 'این شماره موبایل قبلاً برای کاربر دیگری (مشتری یا مدیر) ثبت شده است.';
         $has_error = true;
     }
@@ -166,7 +166,7 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                         <div>
                             <label class="label" for="pf_birth">تاریخ تولد<?php echo get_setting('req_birth_date') === '1' ? '<span class="required-star" aria-hidden="true">*</span>' : ''; ?></label>
                             <div class="flex gap-2 items-stretch">
-                                <input type="text" name="birth_date" id="pf_birth" data-jdp data-jdp-max-date="today" readonly value="<?php echo htmlspecialchars($user['birth_date'] ?? ''); ?>" <?php echo get_setting('req_birth_date') === '1' ? 'required' : ''; ?> class="input cursor-pointer" placeholder="انتخاب تاریخ شمسی">
+                                <input type="text" name="birth_date" id="pf_birth" data-jdp data-jdp-max-date="today" readonly value="<?php echo htmlspecialchars(portal_date_to_display((string) ($user['birth_date'] ?? ''))); ?>" <?php echo get_setting('req_birth_date') === '1' ? 'required' : ''; ?> class="input cursor-pointer" placeholder="انتخاب تاریخ شمسی">
                                 <button type="button" class="jdp-trigger btn btn-secondary shrink-0" aria-label="انتخاب تاریخ" data-target="pf_birth"><?= icon('calendar') ?><span>انتخاب تاریخ</span></button>
                             </div>
                         </div>

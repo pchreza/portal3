@@ -17,7 +17,7 @@ $survey_map = [];
 $surveys_enabled = is_module_enabled('surveys');
 if ($surveys_enabled) {
     ensure_survey_assignments($user_id);
-    $ss = $pdo->prepare("SELECT sa.entity_id, sa.id assignment_id, s.title, sa.available_at, (SELECT COUNT(*) FROM survey_responses r WHERE r.survey_id=sa.survey_id AND r.customer_id=sa.customer_id AND r.entity_type='product' AND r.entity_id=sa.entity_id) answered FROM survey_assignments sa JOIN surveys s ON s.id=sa.survey_id WHERE sa.customer_id=? AND sa.entity_type='product' AND s.is_active=1");
+    $ss = $pdo->prepare("SELECT sa.entity_id, sa.id assignment_id, s.title, sa.available_at, (SELECT COUNT(*) FROM survey_responses r WHERE r.survey_id=sa.survey_id AND r.customer_id=sa.customer_id AND r.entity_type='product' AND r.entity_id=sa.entity_id AND r.created_at>=sa.available_at) answered FROM survey_assignments sa JOIN surveys s ON s.id=sa.survey_id WHERE sa.customer_id=? AND sa.entity_type='product' AND s.is_active=1");
     $ss->execute([$user_id]); foreach($ss->fetchAll() as $sv) $survey_map[$sv['entity_id']][]=$sv;
 }
 

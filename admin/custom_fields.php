@@ -8,7 +8,7 @@ $error = '';
 $success = '';
 $action = isset($_GET['action']) ? $_GET['action'] : 'list';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') !== 'delete') {
     $target_entity = trim($_POST['target_entity'] ?? '');
     $field_name = trim($_POST['field_name'] ?? '');
     $field_label = trim($_POST['field_label'] ?? '');
@@ -44,6 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     $del_id = intval($_POST['delete_id'] ?? 0);
     $stmt = $pdo->prepare("DELETE FROM custom_fields WHERE id = ?");
     $stmt->execute([$del_id]);
+    // پاک‌سازی مقادیر ثبت‌شده آن فیلد (جلوگیری از داده‌های یتیم)
+    $pdo->prepare("DELETE FROM custom_field_values WHERE field_id = ?")->execute([$del_id]);
     log_activity($_SESSION['user_id'], "حذف فیلد سفارشی ID: {$del_id}");
     $success = 'فیلد سفارشی با موفقیت حذف شد.';
     $action = 'list';

@@ -29,7 +29,18 @@ function login_is_locked(string $username, string $ip): bool
            AND ip_address = ?"
     );
     $q2->execute([$ip]);
-    return (int) $q2->fetchColumn() >= 20;
+    if ((int) $q2->fetchColumn() >= 20) {
+        return true;
+    }
+    // قفل سراسری نام کاربری (بدون توجه به IP) — جلوگیری از brute-force توزیع‌شده
+    $q3 = $pdo->prepare(
+        "SELECT COUNT(*) FROM login_attempts
+         WHERE success = 0
+           AND created_at >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+           AND username = ?"
+    );
+    $q3->execute([$username]);
+    return (int) $q3->fetchColumn() >= 15;
 }
 
 /**

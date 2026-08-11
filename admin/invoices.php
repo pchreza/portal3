@@ -12,6 +12,10 @@ $error = '';
 $success = $_SESSION['flash'] ?? '';
 unset($_SESSION['flash']);
 
+// پیشنهاد شماره فاکتور یکتا برای فرم جدید (به‌جای rand که ممکن است تکراری شود)
+$next_invoice_suggestion = $pdo->query("SELECT CONCAT('INV-', YEAR(CURDATE()), '-', LPAD(COALESCE(MAX(id),0)+1, 4, '0')) FROM invoices")->fetchColumn();
+if (!$next_invoice_suggestion) { $next_invoice_suggestion = 'INV-' . date('Y') . '-0001'; }
+
 // Handle Delete FIRST — تا درخواست حذف وارد بلاک افزودن/ویرایش نشود
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
     $del_id = intval($_POST['delete_id'] ?? 0);
@@ -35,20 +39,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
         $error = 'انتخاب مشتری، شماره فاکتور و عنوان فاکتور الزامی است.';
     } else {
         if ($id === 0) {
-            $stmt = $pdo->prepare("INSERT INTO invoices (customer_id, invoice_number, title, amount, due_date, status) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$customer_id, $invoice_number, $title, $amount, $due_date, $status]);
+            try {
+                $stmt = $pdo->prepare("INSERT INTO invoices (customer_id, invoice_number, title, amount, due_date, status) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$customer_id, $invoice_number, $title, $amount, $due_date, $status]);
+            } catch (PDOException $e) {
+                $error = 'این شماره فاکتور قبلاً استفاده شده است یا خطایی در ثبت رخ داد. شماره دیگری انتخاب کنید.';
+            }
+        }
+        if ($id === 0 && $error === '') {
             log_activity($_SESSION['user_id'], "صدور فاکتور جدید شماره: {$invoice_number}");
             sms_trigger_invoice_created((int) $pdo->lastInsertId());
             $_SESSION['flash'] = 'فاکتور جدید با موفقیت ایجاد و به مشتری منتصب شد.';
             header('Location: invoices.php');
             exit;
-        } else {
-            $stmt = $pdo->prepare("UPDATE invoices SET customer_id = ?, invoice_number = ?, title = ?, amount = ?, due_date = ?, status = ? WHERE id = ?");
-            $stmt->execute([$customer_id, $invoice_number, $title, $amount, $due_date, $status, $id]);
-            log_activity($_SESSION['user_id'], "ویرایش فاکتور ID: {$id}");
-            $_SESSION['flash'] = 'فاکتور با موفقیت ویرایش شد.';
-            header('Location: invoices.php');
-            exit;
+        } elseif ($id > 0) {
+            try {
+                $stmt = $pdo->prepare("UPDATE invoices SET customer_id = ?, invoice_number = ?, title = ?, amount = ?, due_date = ?, status = ? WHERE id = ?");
+                $stmt->execute([$customer_id, $invoice_number, $title, $amount, $due_date, $status, $id]);
+            } catch (PDOException $e) {
+                $error = 'این شماره فاکتور قبلاً استفاده شده است. شماره دیگری انتخاب کنید.';
+            }
+            if ($error === '') {
+                log_activity($_SESSION['user_id'], "ویرایش فاکتور ID: {$id}");
+                $_SESSION['flash'] = 'فاکتور با موفقیت ویرایش شد.';
+                header('Location: invoices.php');
+                exit;
+            }
         }
     }
 }
@@ -125,7 +141,7 @@ $invoices = $pdo->query("
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5">شماره فاکتور *</label>
-                                <input type="text" name="invoice_number" value="<?php echo htmlspecialchars($edit_invoice['invoice_number'] ?? 'INV-' . rand(1000, 9999)); ?>" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                                <input type="text" name="invoice_number" value="<?php echo htmlspecialchars($edit_invoice['invoice_number'] ?? $next_invoice_suggestion); ?>" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5">عنوان فاکتور *</label>

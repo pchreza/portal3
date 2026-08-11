@@ -164,6 +164,7 @@ function excel_build_xlsx_legacy(array $rows, string $sheetName = 'Sheet1'): str
         . '</styleSheet>';
 
     $tmp = tempnam(sys_get_temp_dir(), 'ptx');
+    @unlink($tmp); // فایل خالی ساخته‌شده توسط tempnam — باز کردنش با ZipArchive در PHP 8.4 منسوخ است
     $zip = new ZipArchive();
     if ($zip->open($tmp, ZipArchive::CREATE) !== true) {
         @unlink($tmp);
@@ -181,12 +182,30 @@ function excel_build_xlsx_legacy(array $rows, string $sheetName = 'Sheet1'): str
     return $data;
 }
 
+/** ساخت محتوای CSV (UTF-8 با BOM — سازگار با اکسل فارسی) */
+function excel_build_csv(array $rows): string
+{
+    $fh = fopen('php://temp', 'r+');
+    fwrite($fh, "\xEF\xBB\xBF");
+    foreach ($rows as $row) {
+        fputcsv($fh, array_map(static fn($v) => (string) ($v ?? ''), array_values((array) $row)), ',', '"', '\\');
+    }
+    rewind($fh);
+    $data = stream_get_contents($fh);
+    fclose($fh);
+    return $data !== false ? $data : '';
+}
+
 /** ساخت محتوای فایل XLSX (فالبک خودکار در صورت نبودن PhpSpreadsheet) */
 function excel_build_xlsx(array $rows, string $sheetName = 'Sheet1'): string
 {
     global $portal_has_phpspreadsheet;
     if ($portal_has_phpspreadsheet) {
         return excel_build_xlsx_ps($rows, $sheetName);
+    }
+    if (!class_exists('ZipArchive')) {
+        // بدون ext-zip ساخت XLSX ممکن نیست — محتوای CSV معادل برمی‌گردد
+        return excel_build_csv($rows);
     }
     return excel_build_xlsx_legacy($rows, $sheetName);
 }
@@ -290,6 +309,9 @@ function excel_parse_xlsx(string $content): array
     if ($portal_has_phpspreadsheet) {
         return excel_parse_xlsx_ps($content);
     }
+    if (!class_exists('ZipArchive')) {
+        return []; // بدون ext-zip خواندن XLSX ممکن نیست — خطای آرام
+    }
     return excel_parse_xlsx_legacy($content);
 }
 
@@ -317,7 +339,7 @@ function excel_parse_csv(string $content): array
     $fh = fopen('php://temp', 'r+');
     fwrite($fh, $content);
     rewind($fh);
-    while (($row = fgetcsv($fh, 0, $delim)) !== false) {
+    while (($row = fgetcsv($fh, 0, $delim, '"', '\\')) !== false) {
         $row = array_map('trim', $row);
         if (count(array_filter($row, static fn($v) => $v !== '')) === 0) {
             continue;
@@ -339,7 +361,10 @@ function excel_parse_upload(array $file): array
     if ($ext === 'xlsx') {
         return excel_parse_xlsx($content);
     }
-    if ($ext === 'xls' && class_exists(\PhpOffice\PhpSpreadsheet\Reader\Xls::class)) {
+    if ($ext === 'xls') {
+        if (!class_exists(\PhpOffice\PhpSpreadsheet\Reader\Xls::class)) {
+            return []; // .xls بدون PhpSpreadsheet قابل خواندن نیست — خطای آرام به‌جای داده‌ی خراب
+        }
         // فایل اکسل قدیمی (.xls) — فقط با PhpSpreadsheet خوانده می‌شود
         $tmp = tempnam(sys_get_temp_dir(), 'ptx');
         file_put_contents($tmp, $content);
@@ -382,9 +407,23 @@ function excel_download_headers(string $filename): void
     header('Pragma: no-cache');
 }
 
-/** خروجی مستقیم فایل XLSX و توقف */
+/** خروجی مستقیم فایل اکسل و توقف — اگر XLSX ممکن نباشد، CSV معادل دانلود می‌شود */
 function excel_output(string $baseName, array $rows, string $sheetName = 'ورق1'): void
 {
+    global $portal_has_phpspreadsheet;
+    if (!$portal_has_phpspreadsheet && !class_exists('ZipArchive')) {
+        $data = excel_build_csv($rows);
+        if ($data === '') {
+            http_response_code(500);
+            exit('خطا در ساخت فایل اکسل.');
+        }
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $baseName . '.csv"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Pragma: no-cache');
+        echo $data;
+        exit;
+    }
     $data = excel_build_xlsx($rows, $sheetName);
     if ($data === '') {
         http_response_code(500);
@@ -471,7 +510,7 @@ function excel_import_customers(array $rows, string $defaultPassword = ''): arra
         $company    = trim((string) ($row[5] ?? ''));
         $job        = trim((string) ($row[6] ?? ''));
         $gender     = trim((string) ($row[7] ?? ''));
-        $birth      = trim((string) ($row[8] ?? ''));
+        $birth      = portal_date_to_db(trim((string) ($row[8] ?? ''))); // شمسی → میلادی (هماهنگ با فرم)
 
         // ضدعفونی تزریق فرمول در همه فیلدهای متنی
         foreach (['username', 'password', 'first_name', 'last_name', 'company', 'job', 'gender', 'birth'] as $kv) {
@@ -532,7 +571,7 @@ function excel_import_products(array $rows): array
         $desc       = trim((string) ($row[2] ?? ''));
         $price      = trim((string) ($row[3] ?? ''));
         $status     = excel_product_status_key((string) ($row[4] ?? ''));
-        $purchase   = trim((string) ($row[5] ?? ''));
+        $purchase   = portal_date_to_db(trim((string) ($row[5] ?? ''))); // شمسی → میلادی (هماهنگ با فرم)
         $license    = trim((string) ($row[6] ?? ''));
 
         // ضدعفونی تزریق فرمول
@@ -586,7 +625,7 @@ function excel_import_projects(array $rows): array
         $username   = trim((string) ($row[1] ?? ''));
         $desc       = trim((string) ($row[2] ?? ''));
         $status     = excel_project_status_key((string) ($row[3] ?? ''));
-        $deadline   = trim((string) ($row[4] ?? ''));
+        $deadline   = portal_date_to_db(trim((string) ($row[4] ?? ''))); // شمسی → میلادی (هماهنگ با فرم)
 
         // ضدعفونی تزریق فرمول
         foreach (['title', 'username', 'desc', 'deadline'] as $kv) {

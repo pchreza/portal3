@@ -21,7 +21,14 @@ if (session_status() === PHP_SESSION_NONE) {
         'secure' => $is_https,
         'samesite' => 'Lax',
     ]);
+    ini_set('session.use_strict_mode', '1'); // فقط سشن‌های ساخته‌شده توسط سرور پذیرفته شوند
     session_start();
+}
+
+// --- حالت توسعه: در محیط عملیاتی مقدار را false کنید ---
+// (در حالت تست، کد تایید پیامک در پاسخ/سشن می‌آید؛ در حالت عادی فقط در لاگ سرور)
+if (!defined('PORTAL_DEV_MODE')) {
+    define('PORTAL_DEV_MODE', true);
 }
 
 // --- اتصال به پایگاه داده ---
@@ -53,6 +60,7 @@ if (file_exists($db_config_file)) {
 // --- بارگذاری توابع مشترک ---
 require_once __DIR__ . '/includes/functions/helpers.php';
 require_once __DIR__ . '/includes/functions/auth.php';
+require_once __DIR__ . '/includes/functions/cache.php';
 require_once __DIR__ . '/includes/functions/settings.php';
 require_once __DIR__ . '/includes/functions/custom_fields.php';
 require_once __DIR__ . '/includes/functions/surveys.php';
@@ -65,7 +73,9 @@ require_once __DIR__ . '/includes/functions/excel.php';
 // با آپدیت کد، نصب‌های موجود در اولین درخواست به‌صورت خودکار ارتقا می‌یابند.
 require_once __DIR__ . '/migrations.php';
 if ($pdo) {
-    portal_auto_migrate($pdo);
+    if (portal_auto_migrate($pdo)) {
+        portal_cache_flush(); // مهاجرت اجرا شد — کش‌ها را باطل کن
+    }
 }
 
 // --- پردازش سراسری فرم گزارش خطا (دکمه شناور) ---

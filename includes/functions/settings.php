@@ -1,24 +1,50 @@
 <?php
 // settings.php — توابع تنظیمات سیستمی (جدول settings)
 
-/** خواندن یک تنظیم از جدول settings */
+/** خواندن یک تنظیم از جدول settings — با کش درون‌درخواستی و کش فایل */
 function get_setting(string $key, string $default = ''): string
 {
-    global $pdo;
-    if (!$pdo) {
-        return $default;
-    }
-    try {
-        $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
-        $stmt->execute([$key]);
-        $row = $stmt->fetch();
-        return $row ? (string) $row['setting_value'] : $default;
-    } catch (Exception $e) {
-        return $default;
-    }
+    $all = portal_settings_all();
+    return $all[$key] ?? $default;
 }
 
-/** ذخیره یا به‌روزرسانی یک تنظیم */
+/**
+ * بارگذاری همه‌ی تنظیمات یک‌جا:
+ * ۱) کش استاتیک درون‌درخواستی (حذف کوئری‌های تکراری)
+ * ۲) کش فایل بین درخواست‌ها (کاهش کوئری دیتابیس در هر صفحه‌بار)
+ */
+function portal_settings_all(): array
+{
+    global $pdo;
+    if (isset($GLOBALS['__portal_settings_cache']) && is_array($GLOBALS['__portal_settings_cache'])) {
+        return $GLOBALS['__portal_settings_cache'];
+    }
+    $cached = portal_cache_get('settings_all', null, true);
+    if (is_array($cached)) {
+        $GLOBALS['__portal_settings_cache'] = $cached;
+        return $cached;
+    }
+    $all = [];
+    $ok = false;
+    if ($pdo) {
+        try {
+            foreach ($pdo->query("SELECT setting_key, setting_value FROM settings") as $row) {
+                $all[$row['setting_key']] = (string) $row['setting_value'];
+            }
+            $ok = true;
+        } catch (Throwable $e) {
+            $all = [];
+        }
+    }
+    $GLOBALS['__portal_settings_cache'] = $all;
+    // فقط وقتی کوئری واقعاً موفق شد کش کن — نه در حالت بدون-دیتابیس/نصب‌نشده
+    if ($ok) {
+        portal_cache_set('settings_all', $all, null, true);
+    }
+    return $all;
+}
+
+/** ذخیره یا به‌روزرسانی یک تنظیم — کش‌ها هم باطل می‌شوند */
 function set_setting(string $key, string $value): void
 {
     global $pdo;
@@ -30,6 +56,8 @@ function set_setting(string $key, string $value): void
          ON DUPLICATE KEY UPDATE setting_value = ?"
     );
     $stmt->execute([$key, $value, $value]);
+    unset($GLOBALS['__portal_settings_cache']);
+    portal_cache_delete('settings_all');
 }
 
 /** بررسی فعال بودن یک ماژول (پیش‌فرض: فعال) */
