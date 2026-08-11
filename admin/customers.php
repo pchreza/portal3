@@ -217,8 +217,8 @@ $customers = $customers_stmt->fetchAll();
                             </div>
                             <div>
                                 <label class="label" for="birth_date">تاریخ تولد</label>
-                                <div class="flex gap-2 items-stretch">
-                                    <input type="text" name="birth_date" id="birth_date" data-jdp data-jdp-max-date="today" readonly value="<?php echo htmlspecialchars(portal_date_to_display((string) ($edit_customer['birth_date'] ?? ''))); ?>" class="input cursor-pointer" placeholder="انتخاب تاریخ شمسی">
+                                <div class="flex flex-wrap sm:flex-nowrap gap-2 items-stretch">
+                                    <input type="text" name="birth_date" id="birth_date" data-jdp data-jdp-max-date="today" readonly dir="ltr" value="<?php echo htmlspecialchars(portal_date_to_display((string) ($edit_customer['birth_date'] ?? ''))); ?>" class="value-ltr flex-1 min-w-0 input cursor-pointer" placeholder="انتخاب تاریخ شمسی">
                                     <button type="button" class="jdp-trigger btn btn-secondary shrink-0" aria-label="انتخاب تاریخ" data-target="birth_date"><?= icon('calendar') ?><span>انتخاب تاریخ</span></button>
                                 </div>
                             </div>
@@ -236,7 +236,7 @@ $customers = $customers_stmt->fetchAll();
                             <?php echo render_custom_fields_inputs('customer', $edit_customer['id'] ?? 0); ?>
                         </div>
 
-                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-slate-200">
+                        <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-slate-200">
                             <a href="customers.php" class="btn btn-secondary">انصراف</a>
                             <button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره اطلاعات مشتری</span></button>
                         </div>
@@ -276,8 +276,8 @@ $customers = $customers_stmt->fetchAll();
                                             <td data-label="نام و نام خانوادگی" class="font-medium text-slate-900">
                                                 <?php echo htmlspecialchars(trim($c['first_name'] . ' ' . $c['last_name']) !== '' ? $c['first_name'] . ' ' . $c['last_name'] : 'تکمیل نشده'); ?>
                                             </td>
-                                            <td data-label="نام کاربری" class="text-slate-600"><?php echo htmlspecialchars($c['username']); ?></td>
-                                            <td data-label="موبایل" class="text-slate-600" dir="ltr"><?php echo htmlspecialchars($c['mobile'] ?: '-'); ?></td>
+                                            <td data-label="نام کاربری" class="value-ltr text-slate-600" dir="ltr"><?php echo htmlspecialchars($c['username']); ?></td>
+                                            <td data-label="موبایل" class="value-ltr text-slate-600" dir="ltr"><?php echo htmlspecialchars($c['mobile'] ?: '-'); ?></td>
                                             <td data-label="شرکت / سمت" class="text-slate-600">
                                                 <div><?php echo htmlspecialchars($c['company_name'] ?: '-'); ?></div>
                                                 <div class="text-xs text-slate-400"><?php echo htmlspecialchars($c['job_title'] ?: ''); ?></div>

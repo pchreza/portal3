@@ -230,8 +230,8 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                             </div>
                             <div>
                                 <label class="label" for="expires_at">تاریخ انقضا (اختیاری)</label>
-                                <div class="flex gap-2 items-stretch">
-                                    <input type="text" name="expires_at" id="expires_at" data-jdp readonly class="input cursor-pointer" placeholder="پس از این تاریخ نمایش داده نشود">
+                                <div class="flex flex-wrap sm:flex-nowrap gap-2 items-stretch">
+                                    <input type="text" name="expires_at" id="expires_at" data-jdp readonly dir="ltr" class="value-ltr flex-1 min-w-0 input cursor-pointer" placeholder="پس از این تاریخ نمایش داده نشود">
                                     <button type="button" class="jdp-trigger btn btn-secondary shrink-0" aria-label="انتخاب تاریخ" data-target="expires_at"><?= icon('calendar') ?></button>
                                 </div>
                             </div>
@@ -255,7 +255,7 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                             </div>
                         </div>
 
-                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                        <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
                             <button class="btn btn-primary btn-lg"><?= icon('send') ?><span>ارسال اعلان</span></button>
                         </div>
                         <div class="mobile-action-bar"><button class="btn btn-primary btn-lg"><?= icon('send') ?><span>ارسال اعلان</span></button></div>

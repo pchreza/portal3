@@ -128,7 +128,7 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
 
             <div class="card p-6 md:p-8">
                 <div class="mb-6 pb-4 border-b border-slate-200">
-                    <h3 class="text-lg font-bold text-slate-800 h-3">ویرایش اطلاعات شخصی</h3>
+                    <h3 class="text-lg font-bold text-slate-800">ویرایش اطلاعات شخصی</h3>
                     <p class="text-sm text-slate-500 mt-1">اطلاعات سازمانی و شخصی خود را در این بخش مشاهده و ویرایش کنید.</p>
                 </div>
 
@@ -137,7 +137,7 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="label" for="pf_username">نام کاربری</label>
-                            <input type="text" id="pf_username" value="<?php echo htmlspecialchars($user['username']); ?>" disabled class="input bg-slate-100 text-slate-500 cursor-not-allowed">
+                            <input type="text" id="pf_username" value="<?php echo htmlspecialchars($user['username']); ?>" dir="ltr" disabled class="value-ltr input bg-slate-100 text-slate-500 cursor-not-allowed">
                         </div>
                         <div>
                             <label class="label" for="pf_password">تغییر رمز عبور (در صورت نیاز)</label>
@@ -153,7 +153,7 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                         </div>
                         <div>
                             <label class="label" for="pf_mobile">شماره موبایل<?php echo get_setting('req_mobile') === '1' ? '<span class="required-star" aria-hidden="true">*</span>' : ''; ?></label>
-                            <input type="text" name="mobile" id="pf_mobile" value="<?php echo htmlspecialchars($user['mobile'] ?? ''); ?>" <?php echo get_setting('req_mobile') === '1' ? 'required' : ''; ?> class="input">
+                            <input type="text" name="mobile" id="pf_mobile" dir="ltr" value="<?php echo htmlspecialchars($user['mobile'] ?? ''); ?>" <?php echo get_setting('req_mobile') === '1' ? 'required' : ''; ?> class="value-ltr input">
                         </div>
                         <div>
                             <label class="label" for="pf_company">نام شرکت<?php echo get_setting('req_company_name') === '1' ? '<span class="required-star" aria-hidden="true">*</span>' : ''; ?></label>
@@ -165,8 +165,8 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                         </div>
                         <div>
                             <label class="label" for="pf_birth">تاریخ تولد<?php echo get_setting('req_birth_date') === '1' ? '<span class="required-star" aria-hidden="true">*</span>' : ''; ?></label>
-                            <div class="flex gap-2 items-stretch">
-                                <input type="text" name="birth_date" id="pf_birth" data-jdp data-jdp-max-date="today" readonly value="<?php echo htmlspecialchars(portal_date_to_display((string) ($user['birth_date'] ?? ''))); ?>" <?php echo get_setting('req_birth_date') === '1' ? 'required' : ''; ?> class="input cursor-pointer" placeholder="انتخاب تاریخ شمسی">
+                            <div class="flex flex-wrap sm:flex-nowrap gap-2 items-stretch">
+                                <input type="text" name="birth_date" id="pf_birth" data-jdp data-jdp-max-date="today" readonly dir="ltr" value="<?php echo htmlspecialchars(portal_date_to_display((string) ($user['birth_date'] ?? ''))); ?>" <?php echo get_setting('req_birth_date') === '1' ? 'required' : ''; ?> class="value-ltr input cursor-pointer" placeholder="انتخاب تاریخ شمسی">
                                 <button type="button" class="jdp-trigger btn btn-secondary shrink-0" aria-label="انتخاب تاریخ" data-target="pf_birth"><?= icon('calendar') ?><span>انتخاب تاریخ</span></button>
                             </div>
                         </div>
@@ -191,7 +191,7 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                     </div>
                     <?php endif; ?>
 
-                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
+                    <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
                         <a href="index.php" class="btn btn-secondary">بازگشت</a>
                         <button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره تغییرات پروفایل</span></button>
                     </div>

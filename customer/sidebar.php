@@ -6,8 +6,9 @@ $site_title_short = get_setting('site_title', 'پورتال مشتریان');
 <style>@media (max-width:767px){body{padding-top:3.5rem}}</style>
 <div class="md:hidden fixed top-0 inset-x-0 z-40 h-14 bg-slate-900 text-white flex items-center justify-between px-4 shadow-lg">
     <span class="font-bold truncate"><?= htmlspecialchars($site_title_short) ?></span>
-    <button type="button" aria-label="باز کردن منو" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.getAttribute('aria-expanded')==='true'?'false':'true'); document.getElementById('mobile-customer-menu').classList.toggle('hidden');" class="hamburger-btn"><?= icon('menu') ?></button>
+    <button type="button" aria-label="باز کردن منو" aria-expanded="false" aria-controls="mobile-customer-menu" class="hamburger-btn"><?= icon('menu') ?></button>
 </div>
+<button type="button" class="mobile-nav-backdrop" aria-label="بستن منوی مشتری" tabindex="-1"></button>
 <aside id="mobile-customer-menu" class="hidden md:flex w-64 bg-slate-900 text-slate-300 flex-col fixed inset-y-0 right-0 z-50 border-l border-slate-800 flex-shrink-0 shadow-2xl md:sticky md:top-0 md:h-screen md:overflow-hidden md:inset-y-auto md:right-auto md:left-auto">
     <div class="flex-1 overflow-y-auto min-h-0">
         <div class="px-5 py-5 border-b border-slate-800 flex items-center gap-3">
@@ -43,15 +44,45 @@ $site_title_short = get_setting('site_title', 'پورتال مشتریان');
     </div>
 </aside>
 <script>
-// بستن خودکار منوی موبایل بعد از کلیک روی هر لینک
 document.addEventListener('DOMContentLoaded', function(){
     var menu = document.getElementById('mobile-customer-menu');
-    if (menu) {
-        menu.querySelectorAll('a').forEach(function(a){
-            a.addEventListener('click', function(){
-                if (window.innerWidth < 768) menu.classList.add('hidden');
-            });
-        });
+    var toggle = document.querySelector('[aria-controls="mobile-customer-menu"]');
+    var backdrop = document.querySelector('.mobile-nav-backdrop');
+    if (!menu || !toggle || !backdrop) return;
+    var lastTrigger = toggle;
+    function closeMenu(){
+        menu.classList.add('hidden');
+        backdrop.classList.remove('is-open');
+        document.body.classList.remove('mobile-nav-open');
+        toggle.setAttribute('aria-expanded', 'false');
+        if (window.innerWidth < 768) lastTrigger.focus();
     }
+    function openMenu(){
+        lastTrigger = document.activeElement === toggle ? toggle : toggle;
+        menu.classList.remove('hidden');
+        backdrop.classList.add('is-open');
+        document.body.classList.add('mobile-nav-open');
+        toggle.setAttribute('aria-expanded', 'true');
+        var first = menu.querySelector('a, button');
+        if (first) first.focus();
+    }
+    toggle.addEventListener('click', function(){
+        if (menu.classList.contains('hidden')) openMenu(); else closeMenu();
+    });
+    backdrop.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', function(e){
+        if (window.innerWidth >= 768 || menu.classList.contains('hidden')) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeMenu(); return; }
+        if (e.key === 'Tab') {
+            var focusables = Array.prototype.slice.call(menu.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(function(el){ return el.offsetParent !== null; });
+            if (!focusables.length) return;
+            var first = focusables[0], last = focusables[focusables.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+    });
+    menu.querySelectorAll('a').forEach(function(a){
+        a.addEventListener('click', function(){ if (window.innerWidth < 768) closeMenu(); });
+    });
 });
 </script>

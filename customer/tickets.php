@@ -119,7 +119,7 @@ $tickets = $stmt->fetchAll();
                     <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200">
                         <div class="flex items-center gap-3 flex-wrap">
                             <a href="tickets.php" class="btn btn-ghost btn-sm !px-2" aria-label="بازگشت به لیست تیکت‌ها"><?= icon('back') ?></a>
-                            <h3 class="text-lg font-bold text-slate-900 h-3"><?php echo htmlspecialchars($active_ticket['subject']); ?></h3>
+                            <h3 class="text-lg font-bold text-slate-900"><?php echo htmlspecialchars($active_ticket['subject']); ?></h3>
                             <?php
                                 $st = $active_ticket['status'];
                                 if ($st === 'open') echo '<span class="badge badge-info">باز</span>';
@@ -172,7 +172,7 @@ $tickets = $stmt->fetchAll();
                 <!-- New Ticket Form -->
                 <div class="card p-6 md:p-8 max-w-2xl mx-auto w-full">
                     <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
-                        <h3 class="text-lg font-bold text-slate-800 h-3">ارسال تیکت پشتیبانی جدید</h3>
+                        <h3 class="text-lg font-bold text-slate-800">ارسال تیکت پشتیبانی جدید</h3>
                         <a href="tickets.php" class="btn btn-ghost btn-sm"><?= icon('back') ?><span>بازگشت</span></a>
                     </div>
 
@@ -204,7 +204,7 @@ $tickets = $stmt->fetchAll();
                             <label class="label" for="tk_msg">متن پیام<span class="required-star" aria-hidden="true">*</span></label>
                             <textarea name="message" id="tk_msg" rows="5" required class="input" placeholder="شرح درخواست یا مشکل خود را به تفصیل بنویسید..."></textarea>
                         </div>
-                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
+                        <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
                             <a href="tickets.php" class="btn btn-secondary">انصراف</a>
                             <button type="submit" class="btn btn-primary"><?= icon('send') ?><span>ارسال تیکت</span></button>
                         </div>
@@ -218,7 +218,7 @@ $tickets = $stmt->fetchAll();
             <?php else: ?>
                 <!-- Tickets List -->
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h3 class="text-lg font-bold text-slate-800 h-3">لیست تیکت‌های شما (<?php echo count($tickets); ?>)</h3>
+                    <h3 class="text-lg font-bold text-slate-800">لیست تیکت‌های شما (<?php echo count($tickets); ?>)</h3>
                     <a href="tickets.php?action=new" class="btn btn-primary"><?= icon('plus') ?><span>تیکت جدید</span></a>
                 </div>
 

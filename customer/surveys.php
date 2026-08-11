@@ -150,6 +150,7 @@ $customer_survey_styles = '
 .yesno label{display:flex;align-items:center;justify-content:center;gap:.5rem;height:3rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--fg);font-weight:600;cursor:pointer;transition:all .15s}
 .yesno label:hover{border-color:var(--ring);background:color-mix(in srgb, var(--ring) 6%, transparent)}
 .yesno input:checked + label{border-color:var(--ring);background:var(--ring);color:#fff}
+.yesno input:focus-visible + label{outline:3px solid color-mix(in srgb, var(--ring) 45%, transparent);outline-offset:2px}
 .stars-rating{display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:6px}
 .stars-rating input{position:absolute;opacity:0;pointer-events:none}
 .stars-rating label{font-size:2.4rem;line-height:1;color:var(--fg-faint);cursor:pointer;transition:color .15s,transform .15s;padding:.1rem}
@@ -157,11 +158,13 @@ $customer_survey_styles = '
 .stars-rating label:hover, .stars-rating label:hover ~ label,
 .stars-rating input:checked ~ label, .stars-rating input:checked ~ label ~ label{color:#f59e0b}
 .stars-rating input:checked + label{transform:scale(1.06)}
+.stars-rating input:focus-visible + label{outline:3px solid color-mix(in srgb, var(--ring) 45%, transparent);outline-offset:2px;border-radius:.35rem}
 .rating-scale{display:flex;gap:.5rem;flex-wrap:wrap;direction:ltr;justify-content:flex-start}
 .rating-scale input{position:absolute;opacity:0}
 .rating-scale span{width:2.75rem;height:2.75rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--fg);display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;transition:all .15s}
 .rating-scale label:hover span{transform:translateY(-2px);border-color:var(--ring)}
 .rating-scale label:has(input:checked) span{background:var(--ring);color:#fff;border-color:var(--ring)}
+.rating-scale label:has(input:focus-visible) span{outline:3px solid color-mix(in srgb, var(--ring) 45%, transparent);outline-offset:2px}
 .survey-hint{font-size:.75rem;color:var(--fg-faint);margin-top:.5rem;display:flex;justify-content:space-between}
 .survey-progress-wrap{margin:1.25rem 0 .5rem}
 .survey-progress-text{display:flex;justify-content:space-between;font-size:.8125rem;color:var(--fg-muted);margin-bottom:.4rem}
@@ -200,7 +203,7 @@ render_customer_header(
 
                     <div class="card p-6 md:p-8 mb-4 text-center">
                         <span class="survey-tag"><?= icon('star', 'w-4 h-4') ?> نظرسنجی</span>
-                        <h2 class="h-1 font-bold text-slate-900 mt-3 mb-1"><?= htmlspecialchars($takeData['title']) ?></h2>
+                        <h2 class="font-bold text-slate-900 leading-snug mt-3 mb-1"><?= htmlspecialchars($takeData['title']) ?></h2>
                         <p class="body-sm text-slate-600">مربوط به: <b class="text-slate-800"><?= htmlspecialchars($takeData['entity_title'] ?? '') ?></b></p>
                         <?php if (!empty($takeData['description'])): ?>
                             <p class="body-sm text-slate-600 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-4 mt-4 text-right"><?= htmlspecialchars($takeData['description']) ?></p>
@@ -228,7 +231,7 @@ render_customer_header(
                                 <div dir="ltr">
                                     <div class="stars-rating" role="radiogroup" aria-label="<?= e($q['question_text']) ?>">
                                         <?php for ($star = 5; $star >= 1; $star--): ?>
-                                            <input type="radio" id="q<?= $q['id'] ?>_s<?= $star ?>" name="<?= $fieldName ?>" value="<?= $star ?>" required>
+                                            <input type="radio" id="q<?= $q['id'] ?>_s<?= $star ?>" name="<?= $fieldName ?>" value="<?= $star ?>" aria-label="<?= $star ?> از ۵ ستاره" required>
                                             <label for="q<?= $q['id'] ?>_s<?= $star ?>" title="<?= $star ?> ستاره">★</label>
                                         <?php endfor; ?>
                                     </div>
@@ -238,7 +241,7 @@ render_customer_header(
                             <?php else: ?>
                                 <div class="rating-scale" role="radiogroup" aria-label="<?= e($q['question_text']) ?>">
                                     <?php for ($score = 1; $score <= 10; $score++): ?>
-                                        <label title="<?= $score ?>"><input type="radio" name="<?= $fieldName ?>" value="<?= $score ?>" required><span><?= $score ?></span></label>
+                                        <label title="<?= $score ?>"><input type="radio" name="<?= $fieldName ?>" value="<?= $score ?>" aria-label="<?= $score ?> از ۱۰" required><span><?= $score ?></span></label>
                                     <?php endfor; ?>
                                 </div>
                                 <div class="survey-hint" dir="ltr"><span>۱ — کمترین</span><span>۱۰ — بیشترین</span></div>
@@ -246,7 +249,7 @@ render_customer_header(
                         </div>
                     <?php endforeach; ?>
 
-                    <div class="flex justify-end pt-2 mb-20 md:mb-0">
+                    <div class="desktop-form-actions flex justify-end pt-2 mb-20 md:mb-0">
                         <button type="submit" class="btn btn-primary btn-lg w-full md:w-auto"><?= icon('check') ?><span>ثبت نهایی پاسخ</span></button>
                     </div>
                     <div class="mobile-action-bar">
@@ -289,7 +292,7 @@ render_customer_header(
                         <?php foreach ($items as $i): ?>
                             <article class="card card-hover p-5 flex flex-col gap-3">
                                 <div class="flex items-start justify-between gap-3">
-                                    <h3 class="font-bold text-slate-900 h-4"><?= htmlspecialchars($i['title']) ?></h3>
+                                    <h3 class="font-bold text-slate-900 leading-snug"><?= htmlspecialchars($i['title']) ?></h3>
                                     <?php if ($i['answered']): ?>
                                         <span class="badge badge-success"><?= icon('check', 'w-3.5 h-3.5') ?> تکمیل شده</span>
                                     <?php endif; ?>

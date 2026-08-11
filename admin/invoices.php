@@ -141,7 +141,7 @@ $invoices = $pdo->query("
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5">شماره فاکتور *</label>
-                                <input type="text" name="invoice_number" value="<?php echo htmlspecialchars($edit_invoice['invoice_number'] ?? $next_invoice_suggestion); ?>" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                                <input type="text" name="invoice_number" value="<?php echo htmlspecialchars($edit_invoice['invoice_number'] ?? $next_invoice_suggestion); ?>" required dir="ltr" class="value-ltr w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5">عنوان فاکتور *</label>
@@ -149,12 +149,12 @@ $invoices = $pdo->query("
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5">مبلغ (تومان) *</label>
-                                <input type="text" name="amount" value="<?php echo htmlspecialchars($edit_invoice['amount'] ?? ''); ?>" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="مثلا: ۵,۰۰۰,۰۰۰">
+                                <input type="text" name="amount" value="<?php echo htmlspecialchars($edit_invoice['amount'] ?? ''); ?>" required dir="ltr" class="value-ltr w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="مثلا: ۵,۰۰۰,۰۰۰">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5">سررسید پرداخت</label>
-                                <div class="flex gap-2 items-stretch">
-                                    <input type="text" name="due_date" id="due_date" data-jdp data-jdp-min-date="today" readonly value="<?php echo htmlspecialchars($edit_invoice['due_date'] ?? ''); ?>" class="flex-1 min-w-0 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white cursor-pointer" placeholder="انتخاب تاریخ شمسی">
+                                <div class="flex flex-wrap sm:flex-nowrap gap-2 items-stretch">
+                                    <input type="text" name="due_date" id="due_date" data-jdp data-jdp-min-date="today" readonly dir="ltr" value="<?php echo htmlspecialchars($edit_invoice['due_date'] ?? ''); ?>" class="value-ltr flex-1 min-w-0 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white cursor-pointer" placeholder="انتخاب تاریخ شمسی">
                                     <button type="button" class="jdp-trigger shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-2 rounded-lg transition cursor-pointer" data-target="due_date"><?= icon('calendar') ?><span>انتخاب تاریخ</span></button>
                                 </div>
                             </div>
@@ -205,15 +205,15 @@ $invoices = $pdo->query("
                                     <?php foreach ($invoices as $inv): ?>
                                         <tr class="hover:bg-slate-50 transition">
                                             <td class="p-4">
-                                                <div class="font-bold text-slate-900"><?php echo htmlspecialchars($inv['invoice_number']); ?></div>
+                                                <div class="font-bold text-slate-900 value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['invoice_number']); ?></div>
                                                 <div class="text-xs text-slate-500"><?php echo htmlspecialchars($inv['title']); ?></div>
                                             </td>
                                             <td class="p-4 text-slate-700">
                                                 <div><?php echo htmlspecialchars(trim($inv['first_name'] . ' ' . $inv['last_name']) !== '' ? $inv['first_name'] . ' ' . $inv['last_name'] : $inv['username']); ?></div>
                                                 <div class="text-xs text-slate-400"><?php echo htmlspecialchars($inv['company_name'] ?: ''); ?></div>
                                             </td>
-                                            <td class="p-4 font-semibold text-slate-900"><?php echo htmlspecialchars($inv['amount']); ?> تومان</td>
-                                            <td class="p-4 text-xs text-slate-600"><?php echo htmlspecialchars($inv['due_date'] ?: '-'); ?></td>
+                                            <td class="p-4 font-semibold text-slate-900"><span class="value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['amount']); ?></span> <span dir="rtl">تومان</span></td>
+                                            <td class="p-4 text-xs text-slate-600 value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['due_date'] ?: '-'); ?></td>
                                             <td class="p-4">
                                                 <?php 
                                                     $st = $inv['status'];

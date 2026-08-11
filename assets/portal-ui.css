@@ -12,9 +12,9 @@
     top: 0 !important;
     height: 100vh !important;
     overflow: hidden !important;
-    right: auto !important;
+    inset-inline-start: auto !important;
     bottom: auto !important;
-    left: auto !important;
+    inset-inline-end: auto !important;
   }
 }
 
@@ -267,9 +267,12 @@ html.dark .theme-ic-sun  { display:inline-flex; }
   .table-card-mobile thead { display: none; }
   .table-card-mobile, .table-card-mobile tbody, .table-card-mobile tr, .table-card-mobile td { display: block; width: 100%; }
   .table-card-mobile tbody tr { border: 1px solid var(--border); border-radius: 12px; padding: .25rem .5rem; margin-bottom: .75rem; background: var(--surface); }
-  .table-card-mobile td { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .55rem .5rem; border: 0; text-align: right; }
+  .table-card-mobile td { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: .55rem .5rem; border: 0; text-align: start; }
   .table-card-mobile td::before { content: attr(data-label); font-weight: 600; color: var(--fg-muted); flex-shrink: 0; }
   .table-card-mobile td .cell-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
+  .table-card-mobile td .cell-actions .btn,
+  .table-card-mobile td > .btn,
+  .table-card-mobile td form .btn { min-height: 2.75rem; }
 }
 
 /* ---------- 7. TYPE SCALE (FULLMASTER: تماماً در مقیاس، RTL-aware) ---------- */
@@ -304,6 +307,18 @@ a, button { transition: background-color .15s var(--ease), color .15s var(--ease
 
 /* ---------- 10. STICKY MOBILE ACTION BAR ---------- */
 .mobile-action-bar { display:none; }
+.mobile-nav-open { overflow: hidden; }
+.mobile-nav-backdrop { display: none; position: fixed; inset: 0; z-index: 45; border: 0; background: rgba(15,23,42,.52); cursor: pointer; }
+.mobile-nav-backdrop.is-open { display: block; }
+.text-ltr, [dir="ltr"] { unicode-bidi: isolate; }
+.value-ltr { direction: ltr; text-align: start; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 767px) {
+  .desktop-form-actions { display: none !important; }
+  .responsive-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
+  .responsive-toolbar > * { min-width: 0; }
+}
+
 @media (max-width:767px) {
   .mobile-action-bar {
     display:flex; position:sticky; bottom:0; z-index:30; gap:.75rem;
@@ -355,12 +370,10 @@ img { background: var(--surface-3); }
 .toast .toast-ic { flex-shrink:0; display:flex; align-items:center; }
 @keyframes toastin { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
 
-/* ===== Floating error-report button: bottom-LEFT in RTL =====
-   دور از سایدبار راست (دکمه‌های مدیریت/خروج) و از نوار اکشن پایین موبایل */
+/* ===== Floating error-report button: logical inline-end in RTL =====
+   در RTL در لبهٔ فیزیکی چپ می‌ماند تا از سایدبار راست دور باشد. */
 #error-report-fab {
   bottom: 1rem !important;
-  right: auto !important;
-  left: 1rem !important;
   inset-inline-start: auto !important;
   inset-inline-end: 1rem !important;
   width: 2.5rem !important;

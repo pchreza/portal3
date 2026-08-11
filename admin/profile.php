@@ -104,7 +104,7 @@ render_admin_header('پروفایل مدیر سیستم', 'p-8 max-w-3xl w-full 
                             <p class="helper">اگر روش ورود «شماره موبایل و کد تایید» فعال باشد، با این شماره وارد سیستم می‌شوید.</p>
                         </div>
                     </div>
-                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                    <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
                         <button class="btn btn-primary"><?= icon('check') ?><span>ذخیره اطلاعات</span></button>
                     </div>
                     <div class="mobile-action-bar"><button class="btn btn-primary"><?= icon('check') ?><span>ذخیره</span></button></div>
@@ -133,7 +133,7 @@ render_admin_header('پروفایل مدیر سیستم', 'p-8 max-w-3xl w-full 
                             <input type="password" name="new_password_confirm" id="cp_new2" required minlength="8" class="input">
                         </div>
                     </div>
-                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                    <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
                         <button class="btn btn-primary"><?= icon('lock') ?><span>تغییر رمز عبور</span></button>
                     </div>
                     <div class="mobile-action-bar"><button class="btn btn-primary"><?= icon('lock') ?><span>تغییر رمز</span></button></div>

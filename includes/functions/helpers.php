@@ -218,12 +218,12 @@ function render_pagination(array $pi, string $baseUrl = ''): string
         $baseUrl .= (str_contains($baseUrl, '?') ? '&' : '?') . http_build_query($qs);
     }
     $sep = str_contains($baseUrl, '?') ? '&' : '?';
-    $html = '<div class="flex items-center justify-center gap-1.5 pt-4 flex-wrap">';
+    $html = '<nav class="flex items-center justify-center gap-1.5 pt-4 flex-wrap" aria-label="صفحه‌بندی">';
 
     // قبلی
     $prev = $pi['page'] > 1 ? $pi['page'] - 1 : 0;
     $html .= $prev
-        ? '<a href="' . e($baseUrl . $sep . 'page=' . $prev) . '" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition">قبلی</a>'
+        ? '<a href="' . e($baseUrl . $sep . 'page=' . $prev) . '" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition" aria-label="صفحه قبلی">قبلی</a>'
         : '<span class="px-3 py-1.5 rounded-lg border border-slate-100 text-slate-300 text-sm cursor-not-allowed">قبلی</span>';
 
     // شماره صفحات (حداکثر ۷)
@@ -231,7 +231,7 @@ function render_pagination(array $pi, string $baseUrl = ''): string
     $end   = min($pi['total_pages'], $pi['page'] + 3);
     for ($i = $start; $i <= $end; $i++) {
         if ($i === $pi['page']) {
-            $html .= '<span class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium">' . $i . '</span>';
+            $html .= '<span class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium" aria-current="page" aria-label="صفحه ' . $i . '">' . $i . '</span>';
         } else {
             $html .= '<a href="' . e($baseUrl . $sep . 'page=' . $i) . '" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition">' . $i . '</a>';
         }
@@ -240,10 +240,10 @@ function render_pagination(array $pi, string $baseUrl = ''): string
     // بعدی
     $next = $pi['page'] < $pi['total_pages'] ? $pi['page'] + 1 : 0;
     $html .= $next
-        ? '<a href="' . e($baseUrl . $sep . 'page=' . $next) . '" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition">بعدی</a>'
+        ? '<a href="' . e($baseUrl . $sep . 'page=' . $next) . '" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition" aria-label="صفحه بعدی">بعدی</a>'
         : '<span class="px-3 py-1.5 rounded-lg border border-slate-100 text-slate-300 text-sm cursor-not-allowed">بعدی</span>';
 
-    $html .= '</div>';
+    $html .= '</nav>';
     return $html;
 }
 function invoice_status_label(?string $status): string
@@ -428,7 +428,7 @@ function render_entity_card(string $type, array $row, string $style = 'vertical'
                 . '</div>'
                 . '<div class="flex-1 min-w-0">'
                     . '<div class="flex items-center justify-between gap-2">'
-                        . '<h4 class="font-bold text-slate-900 text-sm truncate">' . $title . '</h4>'
+                        . '<h4 class="font-bold text-slate-900 text-sm truncate" title="' . $title . '">' . $title . '</h4>'
                         . $badge
                     . '</div>'
                     . '<p class="text-xs text-slate-500 truncate mt-0.5">' . $desc . '</p>'
@@ -548,9 +548,10 @@ function theme_styles(): string
 .peer-checked\:bg-indigo-600 { background-color: var(--tp-primary); }
 /* ---- سوییچر (Toggle Switch) — وضعیت روشن/خاموش همیشه واضح و هماهنگ با تم ---- */
 .switch-track{position:relative;width:48px;height:24px;border-radius:9999px;background-color:#cbd5e1;transition:background-color .15s ease;flex-shrink:0;cursor:pointer}
-.switch-track::after{content:"";position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:9999px;background:#fff;border:1px solid #94a3b8;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:translate .15s ease}
+.switch-track::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:20px;height:20px;border-radius:9999px;background:#fff;border:1px solid #94a3b8;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:inset-inline-start .15s ease, border-color .15s ease}
 .peer:checked ~ .switch-track{background-color:var(--tp-primary)}
-.peer:checked ~ .switch-track::after{translate:-24px 0;border-color:#fff}
+.peer:checked ~ .switch-track::after{inset-inline-start:26px;border-color:#fff}
+.peer:focus-visible ~ .switch-track{box-shadow:0 0 0 3px color-mix(in srgb, var(--tp-primary) 35%, transparent)}
 </style>' . "\n";
 }
 
@@ -1454,12 +1455,12 @@ function error_report_widget(): string
     // دکمه شناور فقط-آیکن و کوچک — گوشه پایین-چپ، کم‌جلب‌توجه (باز شدن با اسکریپت پایین)
     $html = '<button type="button" id="error-report-fab" class="fixed bottom-20 md:bottom-4 end-4 z-[1800] flex items-center justify-center h-10 w-10 rounded-full text-white transition hover:scale-105 active:scale-95" style="background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 6px 16px -4px rgba(220,38,38,.45)" aria-label="گزارش خطا" title="گزارش خطا">'
         . icon('alert', 'w-5 h-5') . '</button>'
-        . '<div id="error-report-modal" role="dialog" aria-modal="true" aria-labelledby="error-report-title" class="hidden fixed inset-0 z-[2000] items-center justify-center p-4">'
-        . '<div class="absolute inset-0 bg-black/50" onclick="document.getElementById(\'error-report-modal\').classList.add(\'hidden\');document.getElementById(\'error-report-modal\').classList.remove(\'flex\')"></div>'
-        . '<div class="relative w-full max-w-md card !rounded-2xl p-6 shadow-2xl">'
+        . '<div id="error-report-modal" role="dialog" aria-modal="true" aria-labelledby="error-report-title" aria-describedby="error-report-description" class="hidden fixed inset-0 z-[2000] items-center justify-center p-4">'
+        . '<div class="absolute inset-0 bg-black/50" data-error-modal-close></div>'
+        . '<div class="relative w-full max-w-md card !rounded-2xl p-6 shadow-2xl" tabindex="-1">'
         . '<div class="flex items-start justify-between mb-4">'
-        . '<div class="flex items-center gap-3"><span class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">' . icon('alert', 'w-5 h-5') . '</span><div><h3 id="error-report-title" class="text-lg font-bold text-slate-900">گزارش خطا</h3><p class="text-xs text-slate-500 mt-0.5">برای بهبود سامانه، خطای مشاهده‌شده را گزارش دهید.</p></div></div>'
-        . '<button type="button" class="btn btn-sm btn-ghost" onclick="document.getElementById(\'error-report-modal\').classList.add(\'hidden\');document.getElementById(\'error-report-modal\').classList.remove(\'flex\')" aria-label="بستن">' . icon('x') . '</button>'
+        . '<div class="flex items-center gap-3"><span class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">' . icon('alert', 'w-5 h-5') . '</span><div><h3 id="error-report-title" class="text-lg font-bold text-slate-900">گزارش خطا</h3><p id="error-report-description" class="text-xs text-slate-500 mt-0.5">برای بهبود سامانه، خطای مشاهده‌شده را گزارش دهید.</p></div></div>'
+        . '<button type="button" class="btn btn-sm btn-ghost" data-error-modal-close aria-label="بستن">' . icon('x') . '</button>'
         . '</div>'
         . '<form method="post" action="' . e((isset($_SERVER['PHP_SELF']) ? basename($_SERVER['PHP_SELF']) : '')) . '" novalidate>'
         . csrf_input()
@@ -1470,16 +1471,16 @@ function error_report_widget(): string
         . '<div><label class="label" for="er_msg">شرح خطا<span class="required-star" aria-hidden="true">*</span></label><textarea name="message" id="er_msg" rows="4" required class="input" placeholder="چه مشکلی رخ داد؟"></textarea><p class="field-error" style="display:none"></p></div>'
         . '</div>'
         . '<div class="flex justify-end gap-3 mt-5 pt-4 border-t border-slate-100">'
-        . '<button type="button" class="btn btn-secondary" onclick="document.getElementById(\'error-report-modal\').classList.add(\'hidden\');document.getElementById(\'error-report-modal\').classList.remove(\'flex\')">انصراف</button>'
+        . '<button type="button" class="btn btn-secondary" data-error-modal-close>انصراف</button>'
         . '<button type="submit" class="btn btn-danger">' . icon('send') . '<span>ارسال گزارش</span></button>'
         . '</div>'
         . '</form></div></div>'
         . '<script>'
-        . '(function(){var fab=document.getElementById(\'error-report-fab\'),modal=document.getElementById(\'error-report-modal\');if(!fab||!modal)return;'
-        . 'function openM(){modal.classList.remove(\'hidden\');modal.classList.add(\'flex\');document.body.style.overflow=\'hidden\';var f=modal.querySelector(\'input,textarea\');if(f)setTimeout(function(){f.focus();},60);}'
-        . 'function closeM(){modal.classList.add(\'hidden\');modal.classList.remove(\'flex\');document.body.style.overflow=\'\';}'
-        . 'fab.onclick=openM;'
-        . 'document.addEventListener(\'keydown\',function(e){if(e.key===\'Escape\'&&!modal.classList.contains(\'hidden\'))closeM();});'
+        . '(function(){var fab=document.getElementById(\'error-report-fab\'),modal=document.getElementById(\'error-report-modal\');if(!fab||!modal)return;var lastFocus=null,previousOverflow=\'\';function focusables(){return Array.prototype.slice.call(modal.querySelectorAll(\'a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])\')).filter(function(el){return el.offsetParent!==null;});}'
+        . 'function openM(){lastFocus=document.activeElement;previousOverflow=document.body.style.overflow;modal.classList.remove(\'hidden\');modal.classList.add(\'flex\');document.body.style.overflow=\'hidden\';var f=focusables()[0];if(f)setTimeout(function(){f.focus();},60);}'
+        . 'function closeM(){modal.classList.add(\'hidden\');modal.classList.remove(\'flex\');document.body.style.overflow=previousOverflow;if(lastFocus&&typeof lastFocus.focus===\'function\')lastFocus.focus();}'
+        . 'fab.addEventListener(\'click\',openM);modal.querySelectorAll(\'[data-error-modal-close]\').forEach(function(el){el.addEventListener(\'click\',closeM);});'
+        . 'document.addEventListener(\'keydown\',function(e){if(modal.classList.contains(\'hidden\'))return;if(e.key===\'Escape\'){e.preventDefault();closeM();return;}if(e.key===\'Tab\'){var fs=focusables();if(!fs.length)return;var first=fs[0],last=fs[fs.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});'
         . '})();'
         . '</script>';
     return $html;
@@ -1796,7 +1797,7 @@ function portal_confirm_modal(): string
 {
     return '<div id="portal-confirm" role="dialog" aria-modal="true" aria-labelledby="portal-confirm-title" aria-describedby="portal-confirm-msg" class="hidden fixed inset-0 z-[2000] items-center justify-center p-4">'
         . '<div class="absolute inset-0 bg-black/50" data-confirm-close></div>'
-        . '<div class="relative w-full max-w-md card !rounded-2xl p-6 shadow-2xl">'
+        . '<div class="relative w-full max-w-md card !rounded-2xl p-6 shadow-2xl" tabindex="-1">'
         . '<div class="flex items-start gap-3">'
         . '<span class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">' . icon('alert', 'w-5 h-5') . '</span>'
         . '<div class="min-w-0">'

@@ -382,9 +382,9 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
 
             <!-- تب‌ها -->
             <div class="card overflow-hidden">
-                <nav class="flex border-b border-slate-200 overflow-x-auto" aria-label="بخش‌های تنظیمات">
+                <nav class="flex flex-wrap border-b border-slate-200" aria-label="بخش‌های تنظیمات">
                     <?php foreach ($tab_labels as $tkey => $tinfo): ?>
-                        <a href="settings.php?tab=<?= $tkey ?>" class="inline-flex items-center gap-2 px-5 py-3.5 text-sm font-medium whitespace-nowrap transition border-b-2 <?= $tab === $tkey ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50' ?>">
+                        <a href="settings.php?tab=<?= $tkey ?>" class="inline-flex flex-1 sm:flex-none justify-center items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition border-b-2 <?= $tab === $tkey ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50' ?>">
                             <?= icon($tinfo[2] ?? 'settings', 'w-4 h-4') ?>
                             <span><?= $tinfo[0] ?></span>
                         </a>
@@ -416,7 +416,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                     <label class="relative inline-flex items-center cursor-pointer select-none shrink-0">
                                         <input type="checkbox" name="module_<?= $m_key ?>" value="1" <?= $is_enabled ? 'checked' : '' ?> class="sr-only peer">
                                         <div class="switch-track"></div>
-                                        <span class="badge <?= $is_enabled ? 'badge-success' : 'badge-muted' ?> mr-3"><?= $is_enabled ? 'فعال' : 'غیرفعال' ?></span>
+                                        <span class="badge <?= $is_enabled ? 'badge-success' : 'badge-muted' ?> ms-3"><?= $is_enabled ? 'فعال' : 'غیرفعال' ?></span>
                                     </label>
                                 </div>
                             <?php endforeach; ?>
@@ -440,7 +440,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                 <label class="relative inline-flex items-center cursor-pointer select-none shrink-0">
                                     <input type="checkbox" name="cache_enabled" value="1" <?= portal_cache_enabled() ? 'checked' : '' ?> class="sr-only peer">
                                     <div class="switch-track"></div>
-                                    <span class="badge <?= portal_cache_enabled() ? 'badge-success' : 'badge-muted' ?> mr-3"><?= portal_cache_enabled() ? 'فعال' : 'غیرفعال' ?></span>
+                                    <span class="badge <?= portal_cache_enabled() ? 'badge-success' : 'badge-muted' ?> ms-3"><?= portal_cache_enabled() ? 'فعال' : 'غیرفعال' ?></span>
                                 </label>
                             </div>
                             <div>
@@ -476,7 +476,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                     <label class="relative inline-flex items-center cursor-pointer select-none shrink-0">
                                         <input type="checkbox" name="req_<?= $key ?>" value="1" <?= $is_req ? 'checked' : '' ?> class="sr-only peer">
                                         <div class="switch-track"></div>
-                                        <span class="badge <?= $is_req ? 'badge-brand' : 'badge-muted' ?> mr-3"><?= $is_req ? 'اجباری' : 'اختیاری' ?></span>
+                                        <span class="badge <?= $is_req ? 'badge-brand' : 'badge-muted' ?> ms-3"><?= $is_req ? 'اجباری' : 'اختیاری' ?></span>
                                     </label>
                                 </div>
                             <?php endforeach; ?>
@@ -505,7 +505,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                     <label class="relative inline-flex items-center cursor-pointer select-none shrink-0">
                                         <input type="checkbox" name="<?= $w_key ?>" value="1" <?= $is_on ? 'checked' : '' ?> class="sr-only peer">
                                         <div class="switch-track"></div>
-                                        <span class="badge <?= $is_on ? 'badge-success' : 'badge-muted' ?> mr-3"><?= $is_on ? 'نمایش' : 'مخفی' ?></span>
+                                        <span class="badge <?= $is_on ? 'badge-success' : 'badge-muted' ?> ms-3"><?= $is_on ? 'نمایش' : 'مخفی' ?></span>
                                     </label>
                                 </div>
                             <?php endforeach; ?>
@@ -701,7 +701,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
-                                <p class="text-xs text-slate-400 mt-1 pr-6">اگر روی سیستم لوکال خطای «error setting certificate file» می‌بینید، این گزینه را فعال کنید. در محیط آنلاین بهتر است فعال نباشد.</p>
+                                <p class="text-xs text-slate-400 mt-1 pe-6">اگر روی سیستم لوکال خطای «error setting certificate file» می‌بینید، این گزینه را فعال کنید. در محیط آنلاین بهتر است فعال نباشد.</p>
                                 <div class="bg-slate-50 rounded-xl p-4 text-xs text-slate-500 leading-relaxed">
                                     <b class="text-slate-700">راهنما:</b> ابتدا در پنل <span class="font-mono">ippanel.com</span> یک پترن (Pattern) تاییدشده بسازید که شامل متغیر کد باشد (مثلا: «کد تایید شما: %code%»). سپس کد پترن و نام متغیر (مثلا code) را اینجا وارد کنید. پیامک‌های کد تایید ورود از این طریق ارسال می‌شوند.
                                 </div>
@@ -716,7 +716,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                     <!-- فرم ارسال پیامک تست -->
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-5 border-b border-slate-100">
-                            <h4 class="font-bold text-slate-800 text-sm h-4 flex items-center gap-2"><?= icon('send','w-4 h-4 text-indigo-600') ?> ارسال پیامک تست</h4>
+                            <h4 class="font-bold text-slate-800 text-sm leading-snug flex items-center gap-2"><?= icon('send','w-4 h-4 text-indigo-600') ?> ارسال پیامک تست</h4>
                             <p class="text-xs text-slate-500 mt-0.5">برای اطمینان از صحت تنظیمات، یک پیامک تست به شماره خود بفرستید.</p>
                         </div>
                         <form method="post" class="p-5 flex flex-col sm:flex-row gap-3 items-end">
@@ -734,7 +734,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                     <?php $sms_events = $pdo->query("SELECT * FROM sms_events ORDER BY id ASC")->fetchAll(); ?>
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-5 border-b border-slate-100">
-                            <h4 class="font-bold text-slate-800 text-sm h-4 flex items-center gap-2"><?= icon('settings','w-4 h-4 text-indigo-600') ?> رویدادهای پیامکی خودکار</h4>
+                            <h4 class="font-bold text-slate-800 text-sm leading-snug flex items-center gap-2"><?= icon('settings','w-4 h-4 text-indigo-600') ?> رویدادهای پیامکی خودکار</h4>
                             <p class="text-xs text-slate-500 mt-0.5">برای هر رویداد، کد پترن و نام متغیر اختصاصی تعیین کنید. با فعال‌سازی هر رویداد، پیامک به‌صورت خودکار ارسال می‌شود.</p>
                         </div>
                         <form method="post" class="p-5 space-y-4">
@@ -885,7 +885,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                     <?php $sr = sms_survey_reminder_settings(); ?>
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-5 border-b border-slate-100">
-                            <h4 class="font-bold text-slate-800 text-sm h-4 flex items-center gap-2"><?= icon('bell','w-4 h-4 text-indigo-600') ?> یادآوری خودکار نظرسنجی (کرون‌جاب)</h4>
+                            <h4 class="font-bold text-slate-800 text-sm leading-snug flex items-center gap-2"><?= icon('bell','w-4 h-4 text-indigo-600') ?> یادآوری خودکار نظرسنجی (کرون‌جاب)</h4>
                             <p class="text-xs text-slate-500 mt-0.5">اگر مشتری نظرسنجی فعال را کامل نکرده باشد، طبق این زمان‌بندی پیامک یادآوری با لینک تکمیل دریافت می‌کند.</p>
                         </div>
                         <form method="post" class="p-5 space-y-4">
@@ -927,7 +927,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                     <?php $sms_customers = sms_customer_list(); ?>
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-5 border-b border-slate-100">
-                            <h4 class="font-bold text-slate-800 text-sm h-4 flex items-center gap-2"><?= icon('send','w-4 h-4 text-indigo-600') ?> ارسال دستی پیامک به مشتریان</h4>
+                            <h4 class="font-bold text-slate-800 text-sm leading-snug flex items-center gap-2"><?= icon('send','w-4 h-4 text-indigo-600') ?> ارسال دستی پیامک به مشتریان</h4>
                             <p class="text-xs text-slate-500 mt-0.5">پیامک را به یک شماره خاص یا چند مشتری انتخابی بفرستید.</p>
                         </div>
                         <form method="post" class="p-5 space-y-4">
@@ -976,7 +976,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                     <?php $sms_history = sms_logs(50); ?>
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-5 border-b border-slate-100">
-                            <h4 class="font-bold text-slate-800 text-sm h-4 flex items-center gap-2"><?= icon('file','w-4 h-4 text-indigo-600') ?> تاریخچه ارسال پیامک‌ها</h4>
+                            <h4 class="font-bold text-slate-800 text-sm leading-snug flex items-center gap-2"><?= icon('file','w-4 h-4 text-indigo-600') ?> تاریخچه ارسال پیامک‌ها</h4>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="table table-card-mobile">

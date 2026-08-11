@@ -35,7 +35,7 @@ render_customer_header(
 ?>
 
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h3 class="text-lg font-bold text-slate-800 h-3">اعلانات من (<?= count($notifications) ?>)</h3>
+                <h3 class="text-lg font-bold text-slate-800">اعلانات من (<?= count($notifications) ?>)</h3>
                 <?php if ($unread > 0): ?>
                     <span class="badge badge-warning"><?= $unread ?> اعلان خوانده‌نشده</span>
                 <?php endif; ?>

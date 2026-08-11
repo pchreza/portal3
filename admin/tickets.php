@@ -170,7 +170,7 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                         <div class="min-w-0">
                             <div class="flex items-center gap-3 flex-wrap">
                                 <a href="tickets.php" class="btn btn-ghost btn-sm !px-2" aria-label="بازگشت به لیست تیکت‌ها"><?= icon('back') ?></a>
-                                <h3 class="text-lg font-bold text-slate-900 h-3"><?php echo htmlspecialchars($active_ticket['subject']); ?></h3>
+                                <h3 class="text-lg font-bold text-slate-900"><?php echo htmlspecialchars($active_ticket['subject']); ?></h3>
                                 <?php
                                     $st = $active_ticket['status'];
                                     if ($st === 'open') echo '<span class="badge badge-info">باز</span>';
@@ -237,7 +237,7 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
             <?php else: ?>
                 <!-- ===== فیلترها ===== -->
                 <div class="card p-5">
-                    <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+                    <form method="get" class="responsive-toolbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
                         <div class="lg:col-span-2">
                             <label class="label" for="f_search">جستجو</label>
                             <input type="text" name="search" id="f_search" value="<?= htmlspecialchars($f_search) ?>" placeholder="موضوع یا نام مشتری..." class="input">
@@ -283,7 +283,7 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
 
                 <!-- ===== لیست تیکت‌ها ===== -->
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-slate-800 h-3">لیست تیکت‌های پشتیبانی (<?php echo count($tickets); ?>)</h3>
+                    <h3 class="text-lg font-bold text-slate-800">لیست تیکت‌های پشتیبانی (<?php echo count($tickets); ?>)</h3>
                 </div>
 
                 <div class="card overflow-hidden">
@@ -302,7 +302,7 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                             </thead>
                             <tbody>
                                 <?php if (empty($tickets)): ?>
-                                    <tr><td colspan="7"><?php echo empty_state('هیچ تیکتی مطابق فیلترها یافت نشد.', 'فیلترها را تغییر دهید یا از دکمهٔ پاک‌کردن استفاده کنید.', 'ticket'); ?></td></tr>
+                                    <tr><td colspan="7"><?php echo $where ? empty_state('نتیجه‌ای با این فیلترها پیدا نشد.', 'فیلترها را تغییر دهید یا پاک کنید.', 'ticket') : empty_state('هنوز تیکتی ثبت نشده است.', 'با ایجاد اولین درخواست پشتیبانی، تیکت‌ها در اینجا نمایش داده می‌شوند.', 'ticket'); ?></td></tr>
                                 <?php else: ?>
                                     <?php foreach ($tickets as $t): ?>
                                         <tr>

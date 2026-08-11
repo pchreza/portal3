@@ -245,9 +245,9 @@ $widget_colors = [
                                 <a href="notifications.php" class="p-3 rounded-xl border <?= $nn['is_read'] ? 'border-slate-100 bg-slate-50/50' : 'border-indigo-100 bg-indigo-50/50' ?> flex items-start gap-3 hover:shadow-sm transition">
                                     <span class="text-lg flex-shrink-0"><?= notification_type_icon($nn['ntype']) ?></span>
                                     <span class="min-w-0 flex-1">
-                                        <span class="block font-medium text-slate-800 text-sm truncate"><?= htmlspecialchars($nn['title']) ?></span>
+                                        <span class="block font-medium text-slate-800 text-sm truncate" title="<?= htmlspecialchars($nn['title']) ?>"><?= htmlspecialchars($nn['title']) ?></span>
                                         <?php if ($nn['body']): ?>
-                                            <span class="block text-xs text-slate-500 truncate mt-0.5"><?= htmlspecialchars($nn['body']) ?></span>
+                                            <span class="block text-xs text-slate-500 truncate mt-0.5" title="<?= htmlspecialchars($nn['body']) ?>"><?= htmlspecialchars($nn['body']) ?></span>
                                         <?php endif; ?>
                                     </span>
                                     <?php if (!$nn['is_read']): ?>
