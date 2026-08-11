@@ -168,7 +168,7 @@ $customers = $customers_stmt->fetchAll();
                     'withSample' => true,
                     'withImport' => true,
                     'importHint' => 'ستون‌ها: نام کاربری*، رمز عبور، نام، نام خانوادگی، شماره موبایل، نام شرکت، سمت، جنسیت، تاریخ تولد.',
-                    'importExtra' => '<div><label class="block text-xs text-slate-500 mb-1">رمز عبور پیش‌فرض (برای مشتریان بدون رمز)</label><input type="text" name="default_password" value="" placeholder="(خالی = رمز تصادفی)" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"></div>',
+                    'importExtra' => '<div><label class="block text-xs text-slate-500 mb-1" for="default_password">رمز عبور پیش‌فرض (برای مشتریان بدون رمز)</label><input type="text" id="default_password" name="default_password" value="" dir="ltr" placeholder="(خالی = رمز تصادفی)" class="value-ltr w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"></div>',
                 ]); ?>
             <?php endif; ?>
 
@@ -189,31 +189,31 @@ $customers = $customers_stmt->fetchAll();
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="label" for="username">نام کاربری (برای ورود)<span class="required-star" aria-hidden="true">*</span></label>
-                                <input type="text" name="username" id="username" value="<?php echo htmlspecialchars($edit_customer['username'] ?? ''); ?>" required class="input"><p class="field-error" style="display:none"></p>
+                                <input type="text" name="username" id="username" value="<?php echo htmlspecialchars($edit_customer['username'] ?? ''); ?>" required dir="ltr" class="input value-ltr"><p class="field-error" style="display:none"></p>
                             </div>
                             <div>
                                 <label class="label" for="password">رمز عبور <?php echo $edit_customer ? '<span class="font-normal text-slate-400">(در صورت نیاز به تغییر)</span>' : '<span class="required-star" aria-hidden="true">*</span>'; ?></label>
-                                <input type="password" name="password" id="password" <?php echo $edit_customer ? '' : 'required'; ?> class="input" placeholder="••••••••"><p class="field-error" style="display:none"></p>
+                                <input type="password" name="password" id="password" <?php echo $edit_customer ? '' : 'required'; ?> dir="ltr" class="input value-ltr" placeholder="••••••••"><p class="field-error" style="display:none"></p>
                             </div>
                             <div>
                                 <label class="label" for="first_name">نام</label>
-                                <input type="text" name="first_name" id="first_name" value="<?php echo htmlspecialchars($edit_customer['first_name'] ?? ''); ?>" class="input">
+                                <input type="text" name="first_name" id="first_name" value="<?php echo htmlspecialchars($edit_customer['first_name'] ?? ''); ?>" dir="auto" class="input">
                             </div>
                             <div>
                                 <label class="label" for="last_name">نام خانوادگی</label>
-                                <input type="text" name="last_name" id="last_name" value="<?php echo htmlspecialchars($edit_customer['last_name'] ?? ''); ?>" class="input">
+                                <input type="text" name="last_name" id="last_name" value="<?php echo htmlspecialchars($edit_customer['last_name'] ?? ''); ?>" dir="auto" class="input">
                             </div>
                             <div>
                                 <label class="label" for="mobile">شماره موبایل</label>
-                                <input type="text" name="mobile" id="mobile" inputmode="tel" value="<?php echo htmlspecialchars($edit_customer['mobile'] ?? ''); ?>" class="input" placeholder="09123456789">
+                                <input type="text" name="mobile" id="mobile" inputmode="tel" value="<?php echo htmlspecialchars($edit_customer['mobile'] ?? ''); ?>" dir="ltr" class="input value-ltr" placeholder="09123456789">
                             </div>
                             <div>
                                 <label class="label" for="company_name">نام شرکت</label>
-                                <input type="text" name="company_name" id="company_name" value="<?php echo htmlspecialchars($edit_customer['company_name'] ?? ''); ?>" class="input">
+                                <input type="text" name="company_name" id="company_name" value="<?php echo htmlspecialchars($edit_customer['company_name'] ?? ''); ?>" dir="auto" class="input">
                             </div>
                             <div>
                                 <label class="label" for="job_title">سمت سازمانی</label>
-                                <input type="text" name="job_title" id="job_title" value="<?php echo htmlspecialchars($edit_customer['job_title'] ?? ''); ?>" class="input">
+                                <input type="text" name="job_title" id="job_title" value="<?php echo htmlspecialchars($edit_customer['job_title'] ?? ''); ?>" dir="auto" class="input">
                             </div>
                             <div>
                                 <label class="label" for="birth_date">تاریخ تولد</label>
@@ -259,12 +259,12 @@ $customers = $customers_stmt->fetchAll();
                         <table class="table table-card-mobile">
                             <thead>
                                 <tr>
-                                    <th>نام و نام خانوادگی</th>
+                                    <th class="min-w-[10rem]">نام و نام خانوادگی</th>
                                     <th>نام کاربری</th>
                                     <th>موبایل</th>
                                     <th>شرکت / سمت</th>
                                     <th>تاریخ تولد / جنسیت</th>
-                                    <th class="text-center">عملیات</th>
+                                    <th class="text-center min-w-[11rem]">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -274,23 +274,23 @@ $customers = $customers_stmt->fetchAll();
                                     <?php foreach ($customers as $c): ?>
                                         <tr>
                                             <td data-label="نام و نام خانوادگی" class="font-medium text-slate-900">
-                                                <?php echo htmlspecialchars(trim($c['first_name'] . ' ' . $c['last_name']) !== '' ? $c['first_name'] . ' ' . $c['last_name'] : 'تکمیل نشده'); ?>
+                                                <bdi dir="auto"><?php echo htmlspecialchars(trim($c['first_name'] . ' ' . $c['last_name']) !== '' ? $c['first_name'] . ' ' . $c['last_name'] : 'تکمیل نشده'); ?></bdi>
                                             </td>
                                             <td data-label="نام کاربری" class="value-ltr text-slate-600" dir="ltr"><?php echo htmlspecialchars($c['username']); ?></td>
                                             <td data-label="موبایل" class="value-ltr text-slate-600" dir="ltr"><?php echo htmlspecialchars($c['mobile'] ?: '-'); ?></td>
                                             <td data-label="شرکت / سمت" class="text-slate-600">
-                                                <div><?php echo htmlspecialchars($c['company_name'] ?: '-'); ?></div>
-                                                <div class="text-xs text-slate-400"><?php echo htmlspecialchars($c['job_title'] ?: ''); ?></div>
+                                                <div><bdi dir="auto"><?php echo htmlspecialchars($c['company_name'] ?: '-'); ?></bdi></div>
+                                                <div class="text-xs text-slate-400"><bdi dir="auto"><?php echo htmlspecialchars($c['job_title'] ?: ''); ?></bdi></div>
                                             </td>
                                             <td data-label="تولد / جنسیت" class="text-slate-600 text-xs">
-                                                <div>تولد: <?php echo htmlspecialchars($c['birth_date'] ? portal_date_to_display($c['birth_date']) : '-'); ?></div>
+                                                <div>تولد: <span class="value-ltr" dir="ltr"><?php echo htmlspecialchars($c['birth_date'] ? portal_date_to_display($c['birth_date']) : '-'); ?></span></div>
                                                 <div>جنسیت: <?php 
                                                     $g = $c['gender'];
                                                     echo $g === 'male' ? 'مرد' : ($g === 'female' ? 'زن' : ($g === 'other' ? 'سایر' : '-')); 
                                                 ?></div>
                                             </td>
-                                            <td data-label="عملیات" class="text-center">
-                                                <div class="inline-flex items-center gap-1.5 cell-actions">
+                                            <td data-label="عملیات" class="text-center min-w-[11rem]">
+                                                <div class="cell-actions flex flex-wrap items-center justify-center gap-1.5">
                                                     <a href="customers.php?action=edit&id=<?php echo $c['id']; ?>" class="btn btn-sm btn-ghost !text-indigo-600"><?= icon('edit') ?><span>ویرایش</span></a>
                                                     <form method="POST" data-confirm-msg="آیا از حذف این مشتری اطمینان دارید؟ این عمل قابل بازگشت نیست."><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$c['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger"><?= icon('trash') ?><span>حذف</span></button></form>
                                                 </div>

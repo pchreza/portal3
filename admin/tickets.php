@@ -170,16 +170,16 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                         <div class="min-w-0">
                             <div class="flex items-center gap-3 flex-wrap">
                                 <a href="tickets.php" class="btn btn-ghost btn-sm !px-2" aria-label="بازگشت به لیست تیکت‌ها"><?= icon('back') ?></a>
-                                <h3 class="text-lg font-bold text-slate-900"><?php echo htmlspecialchars($active_ticket['subject']); ?></h3>
+                                <h3 class="text-lg font-bold text-slate-900"><bdi dir="auto"><?php echo htmlspecialchars($active_ticket['subject']); ?></bdi></h3>
                                 <?php
                                     $st = $active_ticket['status'];
                                     if ($st === 'open') echo '<span class="badge badge-info">باز</span>';
                                     elseif ($st === 'answered') echo '<span class="badge badge-success">پاسخ داده شده</span>';
                                     else echo '<span class="badge badge-muted">بسته شده</span>';
                                 ?>
-                                <span class="badge badge-muted"><?= htmlspecialchars(ticket_department_name((int) ($active_ticket['department_id'] ?? 0))) ?></span>
+                                <span class="badge badge-muted"><bdi dir="auto"><?= htmlspecialchars(ticket_department_name((int) ($active_ticket['department_id'] ?? 0))) ?></bdi></span>
                             </div>
-                            <p class="body-sm text-slate-500 mt-1.5">مشتری: <strong class="text-slate-800"><?php echo htmlspecialchars(trim($active_ticket['first_name'] . ' ' . $active_ticket['last_name']) !== '' ? $active_ticket['first_name'] . ' ' . $active_ticket['last_name'] : $active_ticket['username']); ?></strong> <?php echo $active_ticket['company_name'] ? ' (' . htmlspecialchars($active_ticket['company_name']) . ')' : ''; ?> — ایجاد: <?= htmlspecialchars(fa_datetime($active_ticket['created_at'])) ?></p>
+                            <p class="body-sm text-slate-500 mt-1.5">مشتری: <strong class="text-slate-800"><bdi dir="auto"><?php echo htmlspecialchars(trim($active_ticket['first_name'] . ' ' . $active_ticket['last_name']) !== '' ? $active_ticket['first_name'] . ' ' . $active_ticket['last_name'] : $active_ticket['username']); ?></bdi></strong> <?php echo $active_ticket['company_name'] ? ' (<bdi dir="auto">' . htmlspecialchars($active_ticket['company_name']) . '</bdi>)' : ''; ?> — ایجاد: <span class="value-ltr whitespace-nowrap" dir="ltr"><?= htmlspecialchars(fa_datetime($active_ticket['created_at'])) ?></span></p>
                         </div>
                         <form method="POST" class="flex items-center gap-2" data-confirm-msg="وضعیت این تیکت تغییر کند؟"><?php echo csrf_input(); ?>
                             <input type="hidden" name="action" value="status">
@@ -205,9 +205,9 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                                 <div>
                                     <div class="chat-meta">
                                         <span class="font-medium"><?= e($senderLabel) ?></span>
-                                        <span><?= e(fa_datetime($msg['created_at'])) ?></span>
+                                        <span class="value-ltr whitespace-nowrap" dir="ltr"><?= e(fa_datetime($msg['created_at'])) ?></span>
                                     </div>
-                                    <div class="chat-bubble"><p class="whitespace-pre-line"><?= e($msg['message']) ?></p></div>
+                                    <div class="chat-bubble"><p class="whitespace-pre-line"><bdi dir="auto"><?= e($msg['message']) ?></bdi></p></div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -221,7 +221,7 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                             <div class="flex items-end gap-2">
                                 <div class="flex-1 min-w-0">
                                     <label class="sr-only" for="admin_reply">پاسخ به مشتری</label>
-                                    <textarea name="message" id="admin_reply" rows="2" required placeholder="پاسخ خود را بنویسید..." class="input"></textarea>
+                                    <textarea name="message" id="admin_reply" rows="2" required dir="auto" placeholder="پاسخ خود را بنویسید..." class="input"></textarea>
                                     <p class="field-error" style="display:none"></p>
                                 </div>
                                 <button type="submit" class="btn btn-primary shrink-0 !h-11"><?= icon('send') ?><span class="hidden sm:inline">ارسال پاسخ</span></button>
@@ -240,7 +240,7 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                     <form method="get" class="responsive-toolbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
                         <div class="lg:col-span-2">
                             <label class="label" for="f_search">جستجو</label>
-                            <input type="text" name="search" id="f_search" value="<?= htmlspecialchars($f_search) ?>" placeholder="موضوع یا نام مشتری..." class="input">
+                            <input type="text" name="search" id="f_search" value="<?= htmlspecialchars($f_search) ?>" dir="auto" placeholder="موضوع یا نام مشتری..." class="input">
                         </div>
                         <div>
                             <label class="label" for="f_status">وضعیت</label>
@@ -291,13 +291,13 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                         <table class="table table-card-mobile">
                             <thead>
                                 <tr>
-                                    <th>موضوع تیکت</th>
+                                    <th class="min-w-[15rem]">موضوع تیکت</th>
                                     <th>مشتری</th>
                                     <th>دپارتمان</th>
                                     <th>اولویت</th>
                                     <th>وضعیت</th>
-                                    <th>تاریخ ایجاد</th>
-                                    <th class="text-center">عملیات</th>
+                                    <th class="min-w-[9rem]">تاریخ ایجاد</th>
+                                    <th class="text-center min-w-[13rem]">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -307,13 +307,13 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                                     <?php foreach ($tickets as $t): ?>
                                         <tr>
                                             <td data-label="موضوع" class="font-medium text-slate-900 max-w-[220px]">
-                                                <a href="tickets.php?view=<?php echo $t['id']; ?>" class="hover:text-indigo-600 block truncate" title="<?= htmlspecialchars($t['subject']) ?>"><?php echo htmlspecialchars($t['subject']); ?></a>
+                                                <a href="tickets.php?view=<?php echo $t['id']; ?>" class="hover:text-indigo-600 block truncate" title="<?= htmlspecialchars($t['subject']) ?>"><bdi dir="auto"><?php echo htmlspecialchars($t['subject']); ?></bdi></a>
                                             </td>
                                             <td data-label="مشتری" class="text-slate-700">
-                                                <div class="truncate max-w-[140px]"><?php echo htmlspecialchars(trim($t['first_name'] . ' ' . $t['last_name']) !== '' ? $t['first_name'] . ' ' . $t['last_name'] : $t['username']); ?></div>
-                                                <div class="text-xs text-slate-400 truncate max-w-[140px]"><?php echo htmlspecialchars($t['company_name'] ?: ''); ?></div>
+                                                <div class="truncate max-w-[140px]"><bdi dir="auto"><?php echo htmlspecialchars(trim($t['first_name'] . ' ' . $t['last_name']) !== '' ? $t['first_name'] . ' ' . $t['last_name'] : $t['username']); ?></bdi></div>
+                                                <div class="text-xs text-slate-400 truncate max-w-[140px]"><bdi dir="auto"><?php echo htmlspecialchars($t['company_name'] ?: ''); ?></bdi></div>
                                             </td>
-                                            <td data-label="دپارتمان"><span class="badge badge-muted"><?= htmlspecialchars(ticket_department_name((int) ($t['department_id'] ?? 0))) ?></span></td>
+                                            <td data-label="دپارتمان"><span class="badge badge-muted"><bdi dir="auto"><?= htmlspecialchars(ticket_department_name((int) ($t['department_id'] ?? 0))) ?></bdi></span></td>
                                             <td data-label="اولویت">
                                                 <?php
                                                     $pr = $t['priority'];
@@ -330,9 +330,9 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                                                     else echo '<span class="badge badge-muted">بسته شده</span>';
                                                 ?>
                                             </td>
-                                            <td data-label="تاریخ" class="text-xs text-slate-500 whitespace-nowrap"><?php echo htmlspecialchars(fa_datetime($t['created_at'])); ?></td>
-                                            <td data-label="عملیات" class="text-center whitespace-nowrap">
-                                                <div class="inline-flex items-center gap-1.5 cell-actions">
+                                            <td data-label="تاریخ ایجاد" class="text-xs text-slate-500 value-ltr whitespace-nowrap" dir="ltr"><?php echo htmlspecialchars(fa_datetime($t['created_at'])); ?></td>
+                                            <td data-label="عملیات" class="text-center min-w-[13rem]">
+                                                <div class="cell-actions flex flex-wrap items-center justify-center gap-1.5">
                                                     <a href="tickets.php?view=<?php echo $t['id']; ?>" class="btn btn-sm btn-ghost !text-indigo-600"><?= icon('message') ?><span>مشاهده و پاسخ</span></a>
                                                     <form method="POST" data-confirm-msg="آیا از حذف این تیکت اطمینان دارید؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$t['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger"><?= icon('trash') ?><span>حذف</span></button></form>
                                                 </div>

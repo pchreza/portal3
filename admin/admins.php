@@ -103,7 +103,7 @@ render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-ful
                     <input type="hidden" name="action" value="add">
                     <div>
                         <label class="label" for="am_username">نام کاربری<span class="required-star" aria-hidden="true">*</span></label>
-                        <input type="text" name="username" id="am_username" required class="input">
+                        <input type="text" name="username" id="am_username" required dir="ltr" autocomplete="username" spellcheck="false" class="value-ltr input">
                     </div>
                     <div>
                         <label class="label" for="am_password">رمز عبور<span class="required-star" aria-hidden="true">*</span> (حداقل ۸)</label>
@@ -119,7 +119,7 @@ render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-ful
                     </div>
                     <div>
                         <label class="label" for="am_mobile">شماره موبایل</label>
-                        <input type="text" name="mobile" id="am_mobile" dir="ltr" class="input">
+                        <input type="text" name="mobile" id="am_mobile" dir="ltr" inputmode="tel" autocomplete="tel" class="value-ltr input">
                     </div>
                     <div>
                         <button class="btn btn-primary w-full">ایجاد مدیر</button>
@@ -149,10 +149,10 @@ render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-ful
                                     <tr class="hover:bg-slate-50 transition">
                                         <td class="p-4 font-medium text-slate-900">
                                             <?= htmlspecialchars(trim($ad['first_name'] . ' ' . $ad['last_name']) ?: '-') ?>
-                                            <?php if ((int) $ad['id'] === (int) $_SESSION['user_id']): ?><span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full mr-1">شما</span><?php endif; ?>
+                                            <?php if ((int) $ad['id'] === (int) $_SESSION['user_id']): ?><span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full ms-1">شما</span><?php endif; ?>
                                         </td>
-                                        <td class="p-4 text-slate-600"><?= htmlspecialchars($ad['username']) ?></td>
-                                        <td class="p-4 text-xs text-slate-500" dir="ltr"><?= htmlspecialchars($ad['mobile'] ?: '-') ?></td>
+                                        <td data-label="نام کاربری" class="p-4 text-slate-600 value-ltr" dir="ltr"><?= htmlspecialchars($ad['username']) ?></td>
+                                        <td data-label="موبایل" class="p-4 text-xs text-slate-500 value-ltr" dir="ltr"><?= htmlspecialchars($ad['mobile'] ?: '-') ?></td>
                                         <td class="p-4">
                                             <?php if ($ad['role'] === 'super_admin'): ?>
                                                 <span class="bg-purple-50 text-purple-700 text-xs px-2.5 py-1 rounded-full font-medium">مدیر ارشد</span>
@@ -162,9 +162,9 @@ render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-ful
                                         </td>
                                         <td class="p-4 text-xs text-slate-500"><?= htmlspecialchars(fa_datetime($ad['created_at'])) ?></td>
                                         <td class="p-4">
-                                            <div class="flex items-center justify-center gap-2">
+                                            <div class="cell-actions flex items-center justify-center gap-2">
                                                 <?php if ($ad['role'] !== 'super_admin'): ?>
-                                                    <a href="#perms-<?= $ad['id'] ?>" onclick="document.getElementById('perm-box').classList.remove('hidden'); document.getElementById('perm-admin-name').textContent='<?= htmlspecialchars(addslashes($ad['username'])) ?>';" class="btn btn-sm btn-ghost !text-indigo-600">دسترسی‌ها</a>
+                                                    <button type="button" data-perm-open data-admin-name="<?= e($ad['username']) ?>" class="btn btn-sm btn-ghost !text-indigo-600">دسترسی‌ها</button>
                                                     <form method="post" data-confirm-msg="حذف این مدیر؟">
                                                         <?php echo csrf_input(); ?>
                                                         <input type="hidden" name="action" value="delete">
@@ -185,10 +185,10 @@ render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-ful
             </div>
 
             <!-- تنظیم دسترسی‌های مدیران (مشترک برای همه مدیران عادی) -->
-            <div id="perm-box" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <section id="perm-box" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6" role="region" aria-labelledby="perm-heading" tabindex="-1">
                 <div class="mb-4 pb-3 border-b border-slate-100 flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-slate-800">🔐 دسترسی‌های مدیران</h3>
-                    <span class="text-xs text-slate-500">برای: <b id="perm-admin-name" class="text-slate-700">—</b></span>
+                    <h3 id="perm-heading" class="text-lg font-bold text-slate-800 flex items-center gap-2"><?= icon('lock','w-5 h-5 text-indigo-600') ?> دسترسی‌های مدیران</h3>
+                    <div class="flex items-center gap-2"><span class="text-xs text-slate-500">برای: <b id="perm-admin-name" class="text-slate-700">—</b></span><button type="button" data-perm-close class="btn btn-icon btn-ghost !w-8 !h-8" aria-label="بستن تنظیمات دسترسی"><?= icon('x','w-4 h-4') ?></button></div>
                 </div>
                 <p class="text-xs text-slate-400 mb-3">این دسترسی‌ها برای <b>همه مدیران عادی</b> اعمال می‌شود (مدیر ارشد همیشه دسترسی کامل دارد).</p>
                 <form method="post">
@@ -207,6 +207,16 @@ render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-ful
                         <button class="btn btn-primary">ذخیره دسترسی‌ها</button>
                     </div>
                 </form>
-            </div>
+            </section>
+            <script>
+            (function(){
+                var box=document.getElementById('perm-box'),name=document.getElementById('perm-admin-name'),lastTrigger=null;
+                if(!box||!name)return;
+                function close(){box.classList.add('hidden');if(lastTrigger)lastTrigger.focus();}
+                document.querySelectorAll('[data-perm-open]').forEach(function(trigger){trigger.addEventListener('click',function(){lastTrigger=trigger;name.textContent=trigger.dataset.adminName||'—';box.classList.remove('hidden');box.focus();});});
+                box.querySelectorAll('[data-perm-close]').forEach(function(trigger){trigger.addEventListener('click',close);});
+                document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!box.classList.contains('hidden')){event.preventDefault();close();}});
+            })();
+            </script>
 
-        <?php render_admin_footer();
+        <?php render_admin_footer(); ?>

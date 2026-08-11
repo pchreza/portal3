@@ -37,7 +37,7 @@ render_customer_header(
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h3 class="text-lg font-bold text-slate-800">اعلانات من (<?= count($notifications) ?>)</h3>
                 <?php if ($unread > 0): ?>
-                    <span class="badge badge-warning"><?= $unread ?> اعلان خوانده‌نشده</span>
+                    <span class="badge badge-warning"><span class="value-ltr" dir="ltr"><?= $unread ?></span> اعلان خوانده‌نشده</span>
                 <?php endif; ?>
             </div>
 
@@ -52,17 +52,17 @@ render_customer_header(
                                 <div class="flex items-start justify-between gap-3">
                                     <h4 class="font-bold text-slate-900 break-words flex items-start gap-2 <?= $n['is_read'] ? '' : 'text-indigo-900' ?>">
                                         <?php if (!$n['is_read']): ?><span class="w-2 h-2 rounded-full bg-red-500 mt-2 flex-shrink-0" aria-hidden="true"></span><?php endif; ?>
-                                        <span><?= htmlspecialchars($n['title']) ?></span>
+                                        <span><bdi dir="auto"><?= htmlspecialchars($n['title']) ?></bdi></span>
                                     </h4>
-                                    <span class="text-xs text-slate-400 whitespace-nowrap flex-shrink-0"><?= htmlspecialchars(fa_datetime($n['created_at'])) ?></span>
+                                    <span class="text-xs text-slate-400 value-ltr whitespace-nowrap flex-shrink-0" dir="ltr"><?= htmlspecialchars(fa_datetime($n['created_at'])) ?></span>
                                 </div>
                                 <?php if ($n['body']): ?>
-                                    <p class="body-sm text-slate-600 leading-relaxed mt-1.5 whitespace-pre-line break-words"><?= nl2br(htmlspecialchars($n['body'])) ?></p>
+                                    <p class="body-sm text-slate-600 leading-relaxed mt-1.5 whitespace-pre-line break-words"><bdi dir="auto"><?= nl2br(htmlspecialchars($n['body'])) ?></bdi></p>
                                 <?php endif; ?>
                                 <div class="flex items-center gap-2 mt-3 flex-wrap">
                                     <?= notification_type_badge($n['ntype']) ?>
                                     <?php if ($n['is_read']): ?>
-                                        <span class="text-xs text-slate-400">خوانده شده <?= $n['read_at'] ? 'در ' . htmlspecialchars(fa_datetime($n['read_at'])) : '' ?></span>
+                                        <span class="text-xs text-slate-400">خوانده شده<?= $n['read_at'] ? ' در <span class="value-ltr whitespace-nowrap" dir="ltr">' . htmlspecialchars(fa_datetime($n['read_at'])) . '</span>' : '' ?></span>
                                     <?php else: ?>
                                         <form method="post">
                                             <?php echo csrf_input(); ?>

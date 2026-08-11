@@ -188,12 +188,12 @@ $invoices = $pdo->query("
                         <table class="table table-card-mobile">
                             <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">
                                 <tr>
-                                    <th class="p-4">شماره / عنوان فاکتور</th>
+                                    <th class="p-4 min-w-[13rem]">شماره / عنوان فاکتور</th>
                                     <th class="p-4">مشتری</th>
                                     <th class="p-4">مبلغ</th>
                                     <th class="p-4">سررسید</th>
                                     <th class="p-4">وضعیت</th>
-                                    <th class="p-4 text-center">عملیات</th>
+                                    <th class="p-4 text-center min-w-[11rem]">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -204,17 +204,19 @@ $invoices = $pdo->query("
                                 <?php else: ?>
                                     <?php foreach ($invoices as $inv): ?>
                                         <tr class="hover:bg-slate-50 transition">
-                                            <td class="p-4">
-                                                <div class="font-bold text-slate-900 value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['invoice_number']); ?></div>
-                                                <div class="text-xs text-slate-500"><?php echo htmlspecialchars($inv['title']); ?></div>
+                                            <td data-label="شماره و عنوان" class="p-4 min-w-[13rem]">
+                                                <div class="flex-1 min-w-0 text-end">
+                                                    <div class="font-bold text-slate-900 value-ltr whitespace-nowrap" dir="ltr" title="<?= htmlspecialchars($inv['invoice_number']) ?>"><?php echo htmlspecialchars($inv['invoice_number']); ?></div>
+                                                    <div class="text-xs text-slate-500"><bdi dir="auto"><?php echo htmlspecialchars($inv['title']); ?></bdi></div>
+                                                </div>
                                             </td>
                                             <td class="p-4 text-slate-700">
                                                 <div><?php echo htmlspecialchars(trim($inv['first_name'] . ' ' . $inv['last_name']) !== '' ? $inv['first_name'] . ' ' . $inv['last_name'] : $inv['username']); ?></div>
                                                 <div class="text-xs text-slate-400"><?php echo htmlspecialchars($inv['company_name'] ?: ''); ?></div>
                                             </td>
-                                            <td class="p-4 font-semibold text-slate-900"><span class="value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['amount']); ?></span> <span dir="rtl">تومان</span></td>
+                                            <td data-label="مبلغ" class="p-4 font-semibold text-slate-900"><span class="value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['amount']); ?></span> <span dir="rtl">تومان</span></td>
                                             <td class="p-4 text-xs text-slate-600 value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['due_date'] ?: '-'); ?></td>
-                                            <td class="p-4">
+                                            <td data-label="وضعیت" class="p-4">
                                                 <?php 
                                                     $st = $inv['status'];
                                                     if ($st === 'paid') echo '<span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium">پرداخت شده</span>';
@@ -222,10 +224,10 @@ $invoices = $pdo->query("
                                                     else echo '<span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full font-medium">لغو شده</span>';
                                                 ?>
                                             </td>
-                                            <td class="p-4 text-center space-x-2 space-x-reverse">
+                                            <td data-label="عملیات" class="p-4 min-w-[11rem]"><div class="cell-actions flex flex-wrap items-center justify-center gap-2">
                                                 <a href="invoices.php?action=edit&id=<?php echo $inv['id']; ?>" class="btn btn-sm btn-ghost !text-indigo-600">ویرایش</a>
-                                                <form method="POST" style="display:inline" data-confirm-msg="آیا از حذف این مورد اطمینان دارید؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$inv['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger">حذف</button></form>
-                                            </td>
+                                                <form method="POST" data-confirm-msg="آیا از حذف این مورد اطمینان دارید؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$inv['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger">حذف</button></form>
+                                            </div></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

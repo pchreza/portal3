@@ -108,7 +108,7 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
             <?php if ($view_id && $view_notification): ?>
                 <!-- ===== جزئیات یک اعلان ===== -->
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-slate-800">جزئیات اعلان: <?= htmlspecialchars($view_notification['title']) ?></h3>
+                    <h3 class="text-lg font-bold text-slate-800">جزئیات اعلان: <bdi dir="auto"><?= htmlspecialchars($view_notification['title']) ?></bdi></h3>
                     <a href="notifications.php" class="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg font-medium">بازگشت به لیست</a>
                 </div>
 
@@ -122,32 +122,32 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                                 <span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full">غیرفعال</span>
                             <?php endif; ?>
                         </div>
-                        <span class="text-xs text-slate-500 whitespace-nowrap"><?= htmlspecialchars(fa_datetime($view_notification['created_at'])) ?></span>
+                        <span class="text-xs text-slate-500 value-ltr whitespace-nowrap" dir="ltr"><?= htmlspecialchars(fa_datetime($view_notification['created_at'])) ?></span>
                     </div>
                     <div class="text-slate-600 text-sm leading-relaxed whitespace-pre-line break-words overflow-hidden">
-                        <?= nl2br(htmlspecialchars($view_notification['body'] ?: '-')) ?>
+                        <bdi dir="auto"><?= nl2br(htmlspecialchars($view_notification['body'] ?: '-')) ?></bdi>
                     </div>
                     <div class="text-xs text-slate-500 space-y-1 border-t border-slate-100 pt-3">
-                        <div>هدف ارسال: <b><?= htmlspecialchars(notification_targets()[$view_notification['target_type']] ?? $view_notification['target_type']) ?></b></div>
+                        <div>هدف ارسال: <b><bdi dir="auto"><?= htmlspecialchars(notification_target_label($view_notification['target_type'])) ?></bdi></b></div>
                         <?php if ($view_notification['expires_at']): ?>
-                            <div>تاریخ انقضا: <b><?= htmlspecialchars(fa_datetime($view_notification['expires_at'])) ?></b></div>
+                            <div>تاریخ انقضا: <b class="value-ltr whitespace-nowrap" dir="ltr"><?= htmlspecialchars(fa_datetime($view_notification['expires_at'])) ?></b></div>
                         <?php endif; ?>
-                        <div>فرستنده: <b><?= htmlspecialchars(trim($view_notification['first_name'] . ' ' . $view_notification['last_name']) ?: $view_notification['username'] ?: 'سیستم') ?></b></div>
+                        <div>فرستنده: <b><bdi dir="auto"><?= htmlspecialchars(trim($view_notification['first_name'] . ' ' . $view_notification['last_name']) ?: $view_notification['username'] ?: 'سیستم') ?></bdi></b></div>
                     </div>
                 </div>
 
                 <!-- آمار خواندن -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="card p-5 flex items-center justify-between">
-                        <div><p class="body-sm text-slate-500">کل دریافت‌کنندگان</p><h4 class="text-2xl font-bold text-slate-900 mt-1"><?= $view_stats['total'] ?></h4></div>
+                        <div><p class="body-sm text-slate-500">کل دریافت‌کنندگان</p><h4 class="text-2xl font-bold text-slate-900 mt-1 value-ltr" dir="ltr"><?= $view_stats['total'] ?></h4></div>
                         <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><?= icon('users', 'w-5 h-5') ?></div>
                     </div>
                     <div class="card p-5 flex items-center justify-between">
-                        <div><p class="body-sm text-slate-500">خوانده‌شده</p><h4 class="text-2xl font-bold text-emerald-600 mt-1"><?= $view_stats['read'] ?></h4></div>
+                        <div><p class="body-sm text-slate-500">خوانده‌شده</p><h4 class="text-2xl font-bold text-emerald-600 mt-1 value-ltr" dir="ltr"><?= $view_stats['read'] ?></h4></div>
                         <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><?= icon('check', 'w-5 h-5') ?></div>
                     </div>
                     <div class="card p-5 flex items-center justify-between">
-                        <div><p class="body-sm text-slate-500">نخوانده</p><h4 class="text-2xl font-bold text-amber-600 mt-1"><?= $view_stats['unread'] ?></h4></div>
+                        <div><p class="body-sm text-slate-500">نخوانده</p><h4 class="text-2xl font-bold text-amber-600 mt-1 value-ltr" dir="ltr"><?= $view_stats['unread'] ?></h4></div>
                         <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><?= icon('alert', 'w-5 h-5') ?></div>
                     </div>
                 </div>
@@ -173,8 +173,8 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                                 <?php else: ?>
                                     <?php foreach ($view_recipients as $r): ?>
                                         <tr>
-                                            <td data-label="مشتری" class="font-medium text-slate-800"><?= htmlspecialchars(trim($r['first_name'] . ' ' . $r['last_name']) ?: $r['username']) ?></td>
-                                            <td data-label="نام کاربری" class="text-slate-500 text-xs"><?= htmlspecialchars($r['username']) ?></td>
+                                            <td data-label="مشتری" class="font-medium text-slate-800"><bdi dir="auto"><?= htmlspecialchars(trim($r['first_name'] . ' ' . $r['last_name']) ?: $r['username']) ?></bdi></td>
+                                            <td data-label="نام کاربری" class="text-slate-500 text-xs value-ltr" dir="ltr"><?= htmlspecialchars($r['username']) ?></td>
                                             <td data-label="وضعیت">
                                                 <?php if ($r['is_read']): ?>
                                                     <span class="badge badge-success"><?= icon('check','w-3.5 h-3.5') ?> خوانده شده</span>
@@ -182,7 +182,7 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                                                     <span class="badge badge-warning">نخوانده</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td data-label="زمان خواندن" class="text-xs text-slate-500"><?= htmlspecialchars(fa_datetime($r['read_at'])) ?></td>
+                                            <td data-label="زمان خواندن" class="text-xs text-slate-500 value-ltr whitespace-nowrap" dir="ltr"><?= htmlspecialchars(fa_datetime($r['read_at'])) ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -206,7 +206,7 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="label" for="nt_title">عنوان اعلان<span class="required-star" aria-hidden="true">*</span></label>
-                                <input type="text" name="title" id="nt_title" required maxlength="255" placeholder="مثلا: اطلاعیه مهم درباره تعمیرات سیستم" class="input">
+                                <input type="text" name="title" id="nt_title" required dir="auto" maxlength="255" placeholder="مثلا: اطلاعیه مهم درباره تعمیرات سیستم" class="input">
                             </div>
                             <div>
                                 <label class="label" for="n_type">نوع اعلان</label>
@@ -218,7 +218,7 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                             </div>
                             <div class="md:col-span-2">
                                 <label class="label" for="nt_body">متن اعلان</label>
-                                <textarea name="body" id="nt_body" rows="4" placeholder="متن کامل اطلاعیه را بنویسید..." class="input"></textarea>
+                                <textarea name="body" id="nt_body" rows="4" dir="auto" placeholder="متن کامل اطلاعیه را بنویسید..." class="input"></textarea>
                             </div>
                             <div>
                                 <label class="label" for="target_type">هدف ارسال (فیلتر)</label>
@@ -244,7 +244,7 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                                 <?php foreach ($customers_all as $c): ?>
                                     <label class="flex items-center gap-2 text-sm text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:border-indigo-400 transition">
                                         <input type="checkbox" name="custom_user_ids[]" value="<?= $c['id'] ?>" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
-                                        <span class="truncate"><?= htmlspecialchars(trim($c['first_name'] . ' ' . $c['last_name']) ?: $c['username']) ?></span>
+                                        <span class="truncate"><bdi dir="auto"><?= htmlspecialchars(trim($c['first_name'] . ' ' . $c['last_name']) ?: $c['username']) ?></bdi></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
@@ -287,14 +287,14 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                         <table class="table table-card-mobile">
                             <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">
                                 <tr>
-                                    <th class="p-4">عنوان</th>
+                                    <th class="p-4 min-w-[15rem]">عنوان</th>
                                     <th class="p-4">نوع</th>
                                     <th class="p-4">هدف</th>
                                     <th class="p-4">دریافت</th>
                                     <th class="p-4">خوانده</th>
                                     <th class="p-4">وضعیت</th>
-                                    <th class="p-4">تاریخ</th>
-                                    <th class="p-4 text-center">عملیات</th>
+                                    <th class="p-4 min-w-[9rem]">تاریخ</th>
+                                    <th class="p-4 text-center min-w-[18rem]">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -309,17 +309,17 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                                         ?>
                                         <tr>
                                             <td data-label="عنوان" class="font-medium text-slate-900 max-w-[220px]">
-                                                <a href="notifications.php?view=<?= $n['id'] ?>" class="hover:text-indigo-600 block truncate" title="<?= htmlspecialchars($n['title']) ?>"><?= htmlspecialchars($n['title']) ?></a>
+                                                <a href="notifications.php?view=<?= $n['id'] ?>" class="hover:text-indigo-600 block truncate" title="<?= htmlspecialchars($n['title']) ?>"><bdi dir="auto"><?= htmlspecialchars($n['title']) ?></bdi></a>
                                             </td>
                                             <td data-label="نوع"><?= notification_type_badge($n['ntype']) ?></td>
-                                            <td data-label="هدف" class="text-xs text-slate-500"><?= htmlspecialchars(notification_targets()[$n['target_type']] ?? $n['target_type']) ?></td>
-                                            <td data-label="دریافت" class="text-slate-700"><?= $total ?></td>
+                                            <td data-label="هدف" class="text-xs text-slate-500"><bdi dir="auto"><?= htmlspecialchars(notification_target_label($n['target_type'])) ?></bdi></td>
+                                            <td data-label="دریافت" class="text-slate-700 value-ltr" dir="ltr"><?= $total ?></td>
                                             <td data-label="خوانده">
                                                 <div class="flex items-center gap-2 whitespace-nowrap">
                                                     <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                         <div class="h-full bg-emerald-500 rounded-full" style="width:<?= $pct ?>%"></div>
                                                     </div>
-                                                    <span class="text-xs text-slate-500"><?= $read ?>/<?= $total ?> (<?= $pct ?>%)</span>
+                                                    <span class="text-xs text-slate-500 value-ltr" dir="ltr"><?= $read ?>/<?= $total ?> (<?= $pct ?>%)</span>
                                                 </div>
                                             </td>
                                             <td data-label="وضعیت">
@@ -329,9 +329,9 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                                                     <span class="badge badge-muted">غیرفعال</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td data-label="تاریخ" class="text-xs text-slate-500 whitespace-nowrap"><?= htmlspecialchars(fa_datetime($n['created_at'])) ?></td>
-                                            <td data-label="عملیات">
-                                                <div class="inline-flex items-center gap-1.5 cell-actions flex-wrap">
+                                            <td data-label="تاریخ" class="text-xs text-slate-500 value-ltr whitespace-nowrap" dir="ltr"><?= htmlspecialchars(fa_datetime($n['created_at'])) ?></td>
+                                            <td data-label="عملیات" class="min-w-[18rem]">
+                                                <div class="cell-actions flex flex-wrap items-center justify-center gap-1.5">
                                                     <a href="notifications.php?view=<?= $n['id'] ?>" class="btn btn-sm btn-ghost !text-indigo-600"><?= icon('eye') ?><span>جزئیات</span></a>
                                                     <form method="post" data-confirm-msg="با حذف این اعلان، برای همه مشتریان حذف می‌شود. ادامه؟">
                                                         <?php echo csrf_input(); ?>

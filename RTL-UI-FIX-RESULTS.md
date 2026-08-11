@@ -64,3 +64,32 @@
 [2] [Material Design 3 — Bidirectionality & RTL](https://m3.material.io/foundations/layout/bidirectionality-rtl)
 
 [3] [W3C — Internationalization Best Practices for Spec Developers](https://www.w3.org/TR/international-specs/)
+
+## گذر دوم اصلاحات و ممیزی داده‌دار — 2026-08-12
+
+در گذر دوم، صفحات داده‌دار هر دو نقش مدیر و مشتری با fixture واقعی بررسی شدند؛ از جمله پروژه، محصول، فاکتور، سه تیکت، سه اعلان و یک assignment فعال نظرسنجی. اصلاحات زیر در کد اعمال و بعد از هر بخش با PHP lint و `git diff --check` اعتبارسنجی شدند.
+
+| حوزه | اصلاح اجرایی | نتیجهٔ ممیزی داده‌دار |
+|---|---|---|
+| کارت‌های پروژه و محصول مشتری | renderer مشترک `render_entity_card()` برای عنوان و شرح از `<bdi dir="auto">` استفاده می‌کند؛ تاریخ تکمیل/خرید با `dir="ltr"` و `value-ltr` نمایش داده می‌شود. | عنوان‌های فارسی/لاتین، URL و تاریخ fixture در کارت پروژه و محصول بدون بازآرایی مخرب یا شکست جهت مشاهده شدند. |
+| فاکتورهای مدیریت و مشتری | شماره، مبلغ، تاریخ سررسید/صدور، عنوان mixed و ستون‌های موبایل با isolation، `data-label`، حداقل عرض و action layout اصلاح شدند. | `INV-RTL-2026-001`، مبلغ `125,450,000` و تاریخ‌های شمسی/میلادی در desktop و mobile خوانا ماندند؛ wrapping عمودی عنوان فاکتور مشتری نیز با wrapper واحد رفع شد. |
+| تیکت‌های مدیریت و مشتری | subject، نام مشتری، شرکت، دپارتمان، پیام thread و URL/شناسه‌های فنی با `bdi`; زمان‌ها با `value-ltr`; textareaهای آزاد با `dir="auto"`; action groupها wrap شدند. | سه تیکت fixture شامل `admin@example.test`، `invoice INV-RTL-2026-001` و thread باز در هر دو نقش بررسی شدند. فیلتر مدیریت در 390px تک‌ستونه و جدول‌ها کارت‌محور شدند. |
+| اعلانات | نگاشت امن `notification_target_label()` برای مقدار legacy `user` اضافه شد؛ عنوان/متن/نام کاربر isolate و آمار/زمان‌ها LTR شدند. | اعلان‌های واقعی با URL، release ID، مبلغ و target «یک مشتری» در لیست و جزئیات مدیر و کارت مشتری درست نمایش داده شدند. فرم ارسال اعلان در موبایل بدون clipping reflow شد. |
+| نظرسنجی | عنوان، entity title، شرح، سؤال‌ها و پاسخ‌ها isolate شدند؛ progress عددی به `0 / 3` با جهت LTR تبدیل شد؛ date/ID filterها و label association فرم مدیریت تکمیل شدند. | assignment فعال با سه سؤال rating، yes/no و star در customer flow باز شد؛ فرم مدیریت، سؤال‌ها و گزارش خالی با fixture بررسی شدند. |
+| مدیریت مشتریان | username/password/mobile و مقدار پیش‌فرض import LTR؛ نام/شرکت/سمت `dir="auto"`; تاریخ تولد LTR؛ data label و action group تکمیل شد. | customer fixture با username `audit_customer` و موبایل `09121111111` در جدول desktop و card mobile پایدار بود. |
+| navigation موبایل RTL | دکمهٔ hamburger در sidebarهای مدیر و مشتری به inline-start منطقی منتقل شد؛ focus trap/Escape/overlay/return focus حفظ شد. | در 390×844، کنترل منوی مدیریت و مشتری در سمت leading راست قرار گرفت و title بدون overlap truncate شد. |
+| نوار Excel | emojiهای CTA حذف و spacing file input از `file:mr-2` به `file:ms-2` تبدیل شد. | toolbar مشتریان/تیکت‌ها در موبایل wrap خوانا دارد و copy بدون وابستگی به emoji ارائه می‌شود. |
+
+### شواهد آزمون گذر دوم
+
+| آزمون | نتیجه |
+|---|---|
+| lint کامل PHP خارج از `vendor` | PASS؛ خروجی در `rtl-qa-round2/php-lint.log` ذخیره شد. |
+| `git diff --check` | PASS. |
+| صفحات داده‌دار admin/customer | PASS؛ تیکت، اعلان، نظرسنجی، مشتری، پروژه، محصول و فاکتور با fixture مرور شدند. |
+| screenshots موبایل 390×844 | PASS پس از اصلاح navigation و wrapping؛ فایل‌ها در `rtl-qa-round2/mobile/` ذخیره شدند. |
+| فاکتور مشتری در mobile | PASS پس از wrapper واحد شماره/عنوان؛ عنوان دیگر به کلمات عمودی نمی‌شکند. |
+| dark mode runtime | PASS؛ body `rgb(30,43,71)`، card `rgb(22,33,58)` و متن `rgb(219,227,239)` محاسبه شد؛ نسبت contrast متن body برابر 10.89، متن card برابر 12.38 و CTA اصلی برابر 20.94 ثبت شد. |
+| keyboard smoke | PASS؛ اولین Tab به «پرش به محتوای اصلی» رسید و focus ring قابل مشاهده بود؛ رفتار Escape/Tab trap drawer و modal در گذر اول نیز تأیید شده است. |
+
+فایل `db_config.php` عمداً به دلیل credentials محلی خارج از commit باقی می‌ماند. پوشهٔ `rtl-qa-round2/` فقط شامل گزارش و شواهد QA است و فایل‌های حساس نشست/credential در commit نهایی وارد نخواهد شد.

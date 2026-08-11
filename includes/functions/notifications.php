@@ -56,6 +56,17 @@ function notification_targets(): array
     ];
 }
 
+/** برچسب قابل‌نمایش هدف اعلان، شامل مقدار legacy تک‌کاربره */
+function notification_target_label(string $target_type): string
+{
+    $targets = notification_targets();
+    if (isset($targets[$target_type])) {
+        return $targets[$target_type];
+    }
+
+    return $target_type === 'user' ? 'یک مشتری' : 'هدف نامشخص';
+}
+
 /**
  * محاسبه شناسه گیرندگان بر اساس هدف/فیلتر
  * @return int[] آرایه شناسه کاربران

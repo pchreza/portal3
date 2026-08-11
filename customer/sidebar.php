@@ -4,9 +4,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $site_title_short = get_setting('site_title', 'پورتال مشتریان');
 ?>
 <style>@media (max-width:767px){body{padding-top:3.5rem}}</style>
-<div class="md:hidden fixed top-0 inset-x-0 z-40 h-14 bg-slate-900 text-white flex items-center justify-between px-4 shadow-lg">
-    <span class="font-bold truncate"><?= htmlspecialchars($site_title_short) ?></span>
-    <button type="button" aria-label="باز کردن منو" aria-expanded="false" aria-controls="mobile-customer-menu" class="hamburger-btn"><?= icon('menu') ?></button>
+<div class="md:hidden fixed top-0 inset-x-0 z-40 h-14 bg-slate-900 text-white flex items-center gap-3 px-4 shadow-lg">
+    <button type="button" aria-label="باز کردن منو" aria-expanded="false" aria-controls="mobile-customer-menu" class="hamburger-btn shrink-0"><?= icon('menu') ?></button>
+    <span class="font-bold truncate min-w-0"><?= htmlspecialchars($site_title_short) ?></span>
 </div>
 <button type="button" class="mobile-nav-backdrop" aria-label="بستن منوی مشتری" tabindex="-1"></button>
 <aside id="mobile-customer-menu" class="hidden md:flex w-64 bg-slate-900 text-slate-300 flex-col fixed inset-y-0 right-0 z-50 border-l border-slate-800 flex-shrink-0 shadow-2xl md:sticky md:top-0 md:h-screen md:overflow-hidden md:inset-y-auto md:right-auto md:left-auto">

@@ -83,24 +83,24 @@ $fields = $pdo->query("SELECT * FROM custom_fields ORDER BY id DESC")->fetchAll(
 
                     <form method="POST" class="space-y-6"><?php echo csrf_input(); ?>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">موجودیت هدف *</label>
-                            <select name="target_entity" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                            <label for="cf-target-entity" class="block text-sm font-medium text-slate-700 mb-1.5">موجودیت هدف *</label>
+                            <select id="cf-target-entity" name="target_entity" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
                                 <option value="customer">مشتری (کاربر)</option>
                                 <option value="project">پروژه</option>
                                 <option value="product">محصول</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">برچسب نمایشی فیلد (Label) *</label>
-                            <input type="text" name="field_label" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="مثلا: کد ملی یا آدرس دقیق">
+                            <label for="cf-field-label" class="block text-sm font-medium text-slate-700 mb-1.5">برچسب نمایشی فیلد (Label) *</label>
+                            <input id="cf-field-label" type="text" name="field_label" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="مثلا: کد ملی یا آدرس دقیق">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">نام سیستمی (انگلیسی، بدون فاصله) *</label>
-                            <input type="text" name="field_name" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm font-mono" placeholder="national_code">
+                            <label for="cf-field-name" class="block text-sm font-medium text-slate-700 mb-1.5">نام سیستمی (انگلیسی، بدون فاصله) *</label>
+                            <input id="cf-field-name" type="text" name="field_name" required dir="ltr" autocomplete="off" spellcheck="false" class="value-ltr w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm font-mono" placeholder="national_code">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1.5">نوع فیلد</label>
-                            <select name="field_type" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                            <label for="cf-field-type" class="block text-sm font-medium text-slate-700 mb-1.5">نوع فیلد</label>
+                            <select id="cf-field-type" name="field_type" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
                                 <option value="text">متن کوتاه (Text)</option>
                                 <option value="textarea">متن طولانی (Textarea)</option>
                                 <option value="number">عدد (Number)</option>
@@ -118,7 +118,7 @@ $fields = $pdo->query("SELECT * FROM custom_fields ORDER BY id DESC")->fetchAll(
                             </label>
                         </div>
 
-                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
                             <a href="custom_fields.php" class="btn btn-secondary">انصراف</a>
                             <button type="submit" class="btn btn-primary">ذخیره فیلد سفارشی</button>
                         </div>
@@ -164,7 +164,7 @@ $fields = $pdo->query("SELECT * FROM custom_fields ORDER BY id DESC")->fetchAll(
                                                     else echo '<span class="bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full font-medium">محصول</span>';
                                                 ?>
                                             </td>
-                                            <td class="p-4 text-xs text-slate-600"><?php echo htmlspecialchars($f['field_type']); ?></td>
+                                            <td data-label="نوع فیلد" class="p-4 text-xs text-slate-600 value-ltr" dir="ltr"><?php echo htmlspecialchars($f['field_type']); ?></td>
                                             <td class="p-4 text-xs space-y-1">
                                                 <div><?php echo $f['is_required'] ? '<span class="text-red-600 font-bold">اجباری</span>' : 'اختیاری'; ?></div>
                                                 <div><?php echo $f['show_in_customer_panel'] ? '<span class="text-emerald-600">نمایش در پنل مشتری</span>' : 'مخفی در پنل مشتری'; ?></div>

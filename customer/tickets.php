@@ -119,7 +119,7 @@ $tickets = $stmt->fetchAll();
                     <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200">
                         <div class="flex items-center gap-3 flex-wrap">
                             <a href="tickets.php" class="btn btn-ghost btn-sm !px-2" aria-label="بازگشت به لیست تیکت‌ها"><?= icon('back') ?></a>
-                            <h3 class="text-lg font-bold text-slate-900"><?php echo htmlspecialchars($active_ticket['subject']); ?></h3>
+                            <h3 class="text-lg font-bold text-slate-900"><bdi dir="auto"><?php echo htmlspecialchars($active_ticket['subject']); ?></bdi></h3>
                             <?php
                                 $st = $active_ticket['status'];
                                 if ($st === 'open') echo '<span class="badge badge-info">باز</span>';
@@ -127,7 +127,7 @@ $tickets = $stmt->fetchAll();
                                 else echo '<span class="badge badge-muted">بسته شده</span>';
                             ?>
                         </div>
-                        <span class="body-sm text-slate-500"><?= htmlspecialchars(ticket_department_name((int) ($active_ticket['department_id'] ?? 0))) ?> · <?= htmlspecialchars(fa_datetime($active_ticket['created_at'])) ?></span>
+                        <span class="body-sm text-slate-500"><bdi dir="auto"><?= htmlspecialchars(ticket_department_name((int) ($active_ticket['department_id'] ?? 0))) ?></bdi> · <span class="value-ltr whitespace-nowrap" dir="ltr"><?= htmlspecialchars(fa_datetime($active_ticket['created_at'])) ?></span></span>
                     </div>
 
                     <div class="chat-thread" id="chat-thread">
@@ -140,9 +140,9 @@ $tickets = $stmt->fetchAll();
                                 <div>
                                     <div class="chat-meta">
                                         <span class="font-medium"><?= e($senderName) ?></span>
-                                        <span><?= e(fa_datetime($msg['created_at'])) ?></span>
+                                        <span class="value-ltr whitespace-nowrap" dir="ltr"><?= e(fa_datetime($msg['created_at'])) ?></span>
                                     </div>
-                                    <div class="chat-bubble"><p class="whitespace-pre-line"><?= e($msg['message']) ?></p></div>
+                                    <div class="chat-bubble"><p class="whitespace-pre-line"><bdi dir="auto"><?= e($msg['message']) ?></bdi></p></div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -155,7 +155,7 @@ $tickets = $stmt->fetchAll();
                             <div class="flex items-end gap-2">
                                 <div class="flex-1 min-w-0">
                                     <label class="sr-only" for="reply_msg">پیام پاسخ</label>
-                                    <textarea name="message" id="reply_msg" rows="2" required placeholder="پیام خود را بنویسید..." class="input"></textarea>
+                                    <textarea name="message" id="reply_msg" rows="2" required dir="auto" placeholder="پیام خود را بنویسید..." class="input"></textarea>
                                     <p class="field-error" style="display:none"></p>
                                 </div>
                                 <button type="submit" class="btn btn-primary shrink-0 !h-11"><?= icon('send') ?><span class="hidden sm:inline">ارسال</span></button>
@@ -181,7 +181,7 @@ $tickets = $stmt->fetchAll();
                         <div class="form-error-summary" style="display:none" role="alert"></div>
                         <div>
                             <label class="label" for="tk_subject">موضوع تیکت<span class="required-star" aria-hidden="true">*</span></label>
-                            <input type="text" name="subject" id="tk_subject" required class="input" placeholder="مثلا: مشکل در اتصال به پنل">
+                            <input type="text" name="subject" id="tk_subject" required dir="auto" class="input" placeholder="مثلا: مشکل در اتصال به پنل">
                         </div>
                         <div>
                             <label class="label" for="tk_priority">اولویت</label>
@@ -202,7 +202,7 @@ $tickets = $stmt->fetchAll();
                         </div>
                         <div>
                             <label class="label" for="tk_msg">متن پیام<span class="required-star" aria-hidden="true">*</span></label>
-                            <textarea name="message" id="tk_msg" rows="5" required class="input" placeholder="شرح درخواست یا مشکل خود را به تفصیل بنویسید..."></textarea>
+                            <textarea name="message" id="tk_msg" rows="5" required dir="auto" class="input" placeholder="شرح درخواست یا مشکل خود را به تفصیل بنویسید..."></textarea>
                         </div>
                         <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
                             <a href="tickets.php" class="btn btn-secondary">انصراف</a>
@@ -227,11 +227,11 @@ $tickets = $stmt->fetchAll();
                         <table class="table table-card-mobile">
                             <thead>
                                 <tr>
-                                    <th>موضوع تیکت</th>
+                                    <th class="min-w-[15rem]">موضوع تیکت</th>
                                     <th>دپارتمان</th>
                                     <th>اولویت</th>
                                     <th>وضعیت</th>
-                                    <th>تاریخ ایجاد</th>
+                                    <th class="min-w-[9rem]">تاریخ ایجاد</th>
                                     <th class="text-center">مشاهده</th>
                                 </tr>
                             </thead>
@@ -242,9 +242,9 @@ $tickets = $stmt->fetchAll();
                                     <?php foreach ($tickets as $t): ?>
                                         <tr>
                                             <td data-label="موضوع" class="font-medium text-slate-900">
-                                                <a href="tickets.php?view=<?php echo $t['id']; ?>" class="hover:text-indigo-600 transition"><?php echo htmlspecialchars($t['subject']); ?></a>
+                                                <a href="tickets.php?view=<?php echo $t['id']; ?>" class="hover:text-indigo-600 transition"><bdi dir="auto"><?php echo htmlspecialchars($t['subject']); ?></bdi></a>
                                             </td>
-                                            <td data-label="دپارتمان"><span class="badge badge-muted"><?= htmlspecialchars(ticket_department_name((int) ($t['department_id'] ?? 0))) ?></span></td>
+                                            <td data-label="دپارتمان"><span class="badge badge-muted"><bdi dir="auto"><?= htmlspecialchars(ticket_department_name((int) ($t['department_id'] ?? 0))) ?></bdi></span></td>
                                             <td data-label="اولویت">
                                                 <?php
                                                     $pr = $t['priority'];
@@ -261,7 +261,7 @@ $tickets = $stmt->fetchAll();
                                                     else echo '<span class="badge badge-muted">بسته شده</span>';
                                                 ?>
                                             </td>
-                                            <td data-label="تاریخ" class="text-xs text-slate-500"><?php echo htmlspecialchars(fa_datetime($t['created_at'])); ?></td>
+                                            <td data-label="تاریخ ایجاد" class="text-xs text-slate-500 value-ltr whitespace-nowrap" dir="ltr"><?php echo htmlspecialchars(fa_datetime($t['created_at'])); ?></td>
                                             <td data-label="عملیات" class="text-center">
                                                 <a href="tickets.php?view=<?php echo $t['id']; ?>" class="btn btn-sm btn-ghost !text-indigo-600"><?= icon('message') ?><span>مکاتبات</span></a>
                                             </td>

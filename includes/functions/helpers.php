@@ -342,6 +342,9 @@ function render_entity_card(string $type, array $row, string $style = 'vertical'
     $is_product = $type === 'product';
     $title = e($row['title'] ?? '');
     $desc  = e($row['description'] ?: 'بدون توضیحات');
+    // عناوین و توضیحات از داده‌های کاربر/مدیر می‌آیند و ممکن است فارسی، لاتین یا مختلط باشند.
+    $title_html = '<bdi dir="auto">' . $title . '</bdi>';
+    $desc_html  = '<bdi dir="auto">' . $desc . '</bdi>';
     $icon  = $is_product ? icon('box', 'w-6 h-6') : icon('folder', 'w-6 h-6');
 
     // ---- بج وضعیت ----
@@ -362,13 +365,13 @@ function render_entity_card(string $type, array $row, string $style = 'vertical'
     if ($is_product) {
         $details = '';
         if (!empty($row['purchase_date'])) {
-            $details .= '<div class="flex items-center justify-between text-xs"><span class="text-slate-500">تاریخ خرید</span><strong class="text-slate-800">' . e($row['purchase_date']) . '</strong></div>';
+            $details .= '<div class="flex items-center justify-between gap-3 text-xs"><span class="text-slate-500">تاریخ خرید</span><strong class="text-slate-800 value-ltr whitespace-nowrap" dir="ltr">' . e($row['purchase_date']) . '</strong></div>';
         }
         $details_inline = !empty($row['purchase_date'])
-            ? '<span>تاریخ خرید: <b class="text-slate-700">' . e($row['purchase_date']) . '</b></span>' : '';
+            ? '<span>تاریخ خرید: <b class="text-slate-700 value-ltr whitespace-nowrap" dir="ltr">' . e($row['purchase_date']) . '</b></span>' : '';
     } else {
-        $details = '<div class="flex items-center justify-between text-xs"><span class="text-slate-500">تاریخ تکمیل پروژه</span><strong class="text-slate-800">' . e($row['deadline'] ?: '-') . '</strong></div>';
-        $details_inline = '<span>تاریخ تکمیل: <b class="text-slate-700">' . e($row['deadline'] ?: '-') . '</b></span>';
+        $details = '<div class="flex items-center justify-between gap-3 text-xs"><span class="text-slate-500">تاریخ تکمیل پروژه</span><strong class="text-slate-800 value-ltr whitespace-nowrap" dir="ltr">' . e($row['deadline'] ?: '-') . '</strong></div>';
+        $details_inline = '<span>تاریخ تکمیل: <b class="text-slate-700 value-ltr whitespace-nowrap" dir="ltr">' . e($row['deadline'] ?: '-') . '</b></span>';
     }
 
     // ---- بخش نظرسنجی ----
@@ -398,8 +401,8 @@ function render_entity_card(string $type, array $row, string $style = 'vertical'
                     . '<div class="absolute top-3 right-3">' . $badge . '</div>'
                 . '</div>'
                 . '<div class="p-5 flex flex-col flex-1 gap-3">'
-                    . '<h4 class="font-bold text-slate-900 text-base leading-snug">' . $title . '</h4>'
-                    . '<p class="text-slate-600 text-sm leading-relaxed line-clamp-2">' . $desc . '</p>'
+                    . '<h4 class="font-bold text-slate-900 text-base leading-snug">' . $title_html . '</h4>'
+                    . '<p class="text-slate-600 text-sm leading-relaxed line-clamp-2">' . $desc_html . '</p>'
                     . '<div class="mt-auto pt-2 space-y-2">' . $details . '</div>'
                     . ($survey_html ? '<div class="pt-1">' . $survey_html . '</div>' : '')
                 . '</div>'
@@ -411,11 +414,11 @@ function render_entity_card(string $type, array $row, string $style = 'vertical'
                 . '<div class="flex items-start justify-between gap-3">'
                     . '<div class="flex items-center gap-3 min-w-0">'
                         . '<span class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl flex-shrink-0">' . $icon . '</span>'
-                        . '<h4 class="font-bold text-slate-900 text-base leading-snug">' . $title . '</h4>'
+                        . '<h4 class="font-bold text-slate-900 text-base leading-snug">' . $title_html . '</h4>'
                     . '</div>'
                     . '<span class="flex-shrink-0">' . $badge . '</span>'
                 . '</div>'
-                . '<p class="text-slate-600 text-sm leading-relaxed line-clamp-2">' . $desc . '</p>'
+                . '<p class="text-slate-600 text-sm leading-relaxed line-clamp-2">' . $desc_html . '</p>'
                 . '<div class="pt-3 border-t border-slate-100 space-y-2">' . $details . '</div>'
                 . ($survey_html ? '<div>' . $survey_html . '</div>' : '')
             . '</div>';
@@ -428,10 +431,10 @@ function render_entity_card(string $type, array $row, string $style = 'vertical'
                 . '</div>'
                 . '<div class="flex-1 min-w-0">'
                     . '<div class="flex items-center justify-between gap-2">'
-                        . '<h4 class="font-bold text-slate-900 text-sm truncate" title="' . $title . '">' . $title . '</h4>'
+                        . '<h4 class="font-bold text-slate-900 text-sm truncate" title="' . $title . '">' . $title_html . '</h4>'
                         . $badge
                     . '</div>'
-                    . '<p class="text-xs text-slate-500 truncate mt-0.5">' . $desc . '</p>'
+                    . '<p class="text-xs text-slate-500 truncate mt-0.5">' . $desc_html . '</p>'
                     . '<div class="mt-1.5 flex items-center gap-3 text-xs text-slate-500 flex-wrap">' . $details_inline . '</div>'
                 . '</div>'
                 . ($survey_html ? '<div class="flex-shrink-0">' . $survey_html . '</div>' : '')

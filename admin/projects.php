@@ -299,9 +299,9 @@ $projects = $pdo->query("
                         <?php endif; ?>
 
                         <!-- دکمه‌ها -->
-                        <div class="flex justify-end gap-3 pt-5 border-t border-slate-100">
-                            <a href="projects.php" class="px-6 py-3 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition text-sm font-medium">انصراف</a>
-                            <button type="submit" class="btn btn-primary btn-lg">💾 ذخیره پروژه</button>
+                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-slate-100">
+                            <a href="projects.php" class="btn btn-secondary">انصراف</a>
+                            <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره پروژه</span></button>
                         </div>
                     </form>
                 </div>
@@ -335,8 +335,8 @@ $projects = $pdo->query("
                                     <?php foreach ($projects as $p): ?>
                                         <tr class="hover:bg-slate-50 transition">
                                             <td class="p-4">
-                                                <div class="font-medium text-slate-900"><?php echo htmlspecialchars($p['title']); ?></div>
-                                                <div class="text-xs text-slate-500 mt-0.5 truncate max-w-xs"><?php echo htmlspecialchars($p['description']); ?></div>
+                                                <div class="font-medium text-slate-900"><bdi dir="auto"><?php echo htmlspecialchars($p['title']); ?></bdi></div>
+                                                <div class="text-xs text-slate-500 mt-0.5 truncate max-w-xs" title="<?= htmlspecialchars($p['description']) ?>"><bdi dir="auto"><?php echo htmlspecialchars($p['description']); ?></bdi></div>
                                             </td>
                                             <td class="p-4">
                                                 <div class="font-medium text-slate-800"><?php echo htmlspecialchars(trim($p['first_name'] . ' ' . $p['last_name']) !== '' ? $p['first_name'] . ' ' . $p['last_name'] : $p['username']); ?></div>
@@ -350,11 +350,11 @@ $projects = $pdo->query("
                                                     else echo '<span class="bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full font-medium">در انتظار شروع</span>';
                                                 ?>
                                             </td>
-                                            <td class="p-4 text-xs text-slate-600"><?php echo htmlspecialchars($p['deadline'] ? portal_date_to_display($p['deadline']) : '-'); ?></td>
-                                            <td class="p-4 text-center space-x-2 space-x-reverse">
+                                            <td data-label="تاریخ تکمیل" class="p-4 text-xs text-slate-600 value-ltr" dir="ltr"><?php echo htmlspecialchars($p['deadline'] ? portal_date_to_display($p['deadline']) : '-'); ?></td>
+                                            <td data-label="عملیات" class="p-4 min-w-[11rem]"><div class="cell-actions flex flex-wrap items-center justify-center gap-2">
                                                 <a href="projects.php?action=edit&id=<?php echo $p['id']; ?>" class="btn btn-sm btn-ghost !text-indigo-600">ویرایش</a>
-                                                <form method="POST" style="display:inline" data-confirm-msg="آیا از حذف این مورد اطمینان دارید؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$p['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger">حذف</button></form>
-                                            </td>
+                                                <form method="POST" data-confirm-msg="آیا از حذف این مورد اطمینان دارید؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$p['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger">حذف</button></form>
+                                            </div></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

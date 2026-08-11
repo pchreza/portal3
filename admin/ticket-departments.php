@@ -74,7 +74,7 @@ render_admin_header('مدیریت دپارتمان‌های تیکت', 'p-8 max-
                     </div>
                     <div>
                         <label class="label" for="td_sort">ترتیب</label>
-                        <input type="number" name="sort_order" id="td_sort" value="0" class="input">
+                        <input type="number" name="sort_order" id="td_sort" value="0" dir="ltr" inputmode="numeric" class="value-ltr input">
                     </div>
                     <div class="md:col-span-4 flex justify-end">
                         <button class="btn btn-primary"><?= icon('plus') ?><span>افزودن</span></button>
@@ -93,7 +93,7 @@ render_admin_header('مدیریت دپارتمان‌های تیکت', 'p-8 max-
                                 <th class="p-4">ترتیب</th>
                                 <th class="p-4">تیکت‌ها</th>
                                 <th class="p-4">وضعیت</th>
-                                <th class="p-4 text-center">عملیات</th>
+                                <th class="p-4 text-center min-w-[11rem]">عملیات</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -104,8 +104,8 @@ render_admin_header('مدیریت دپارتمان‌های تیکت', 'p-8 max-
                                     <tr class="hover:bg-slate-50 transition">
                                         <td class="p-4 font-medium text-slate-900"><?= htmlspecialchars($dep['name']) ?></td>
                                         <td class="p-4 text-xs text-slate-500"><?= htmlspecialchars($dep['description'] ?: '-') ?></td>
-                                        <td class="p-4 text-slate-600"><?= (int) $dep['sort_order'] ?></td>
-                                        <td class="p-4 text-slate-600"><?= (int) $dep['ticket_count'] ?></td>
+                                        <td data-label="ترتیب" class="p-4 text-slate-600 value-ltr" dir="ltr"><?= (int) $dep['sort_order'] ?></td>
+                                        <td data-label="تیکت‌ها" class="p-4 text-slate-600 value-ltr" dir="ltr"><?= (int) $dep['ticket_count'] ?></td>
                                         <td class="p-4">
                                             <?php if ($dep['is_active']): ?>
                                                 <span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium">فعال</span>
@@ -113,13 +113,13 @@ render_admin_header('مدیریت دپارتمان‌های تیکت', 'p-8 max-
                                                 <span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full">غیرفعال</span>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="p-4">
-                                            <div class="flex items-center justify-center gap-2">
+                                        <td data-label="عملیات" class="p-4 min-w-[11rem]">
+                                            <div class="cell-actions flex flex-wrap items-center justify-center gap-2">
                                                 <form method="post">
                                                     <?php echo csrf_input(); ?>
                                                     <input type="hidden" name="action" value="toggle">
                                                     <input type="hidden" name="id" value="<?= $dep['id'] ?>">
-                                                    <button class="text-slate-600 hover:text-slate-900 font-medium text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg cursor-pointer"><?= $dep['is_active'] ? 'غیرفعال' : 'فعال' ?></button>
+                                                    <button class="btn btn-sm btn-ghost !text-slate-700 whitespace-nowrap"><?= $dep['is_active'] ? 'غیرفعال' : 'فعال' ?></button>
                                                 </form>
                                                 <form method="post" data-confirm-msg="حذف شود؟ تیکت‌های این دپارتمان به «عمومی» منتقل می‌شوند.">
                                                     <?php echo csrf_input(); ?>

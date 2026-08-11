@@ -135,6 +135,10 @@ html.dark {
   outline: none;
   box-shadow: var(--focus-ring);
 }
+.sms-event-head:focus-visible, .login-layout-card:has(input:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--ring) 60%, transparent);
+  outline-offset: 2px;
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration:.001ms !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
 }

@@ -676,16 +676,16 @@ function render_excel_toolbar(array $opts): void
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap items-center gap-2">
                 <a href="<?= e($page) ?>?export=xlsx" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition shadow-sm cursor-pointer">
-                    📥 خروجی اکسل
+                    <span>خروجی اکسل</span>
                 </a>
                 <?php if (!empty($opts['withSample'])): ?>
                 <a href="<?= e($page) ?>?sample=xlsx" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition cursor-pointer">
-                    📄 دانلود نمونه فایل اکسل
+                    <span>دانلود نمونه فایل اکسل</span>
                 </a>
                 <?php endif; ?>
                 <?php if (!empty($opts['withImport'])): ?>
                 <button type="button" onclick="document.getElementById('<?= $importId ?>').classList.toggle('hidden'); this.classList.toggle('bg-emerald-600'); this.classList.toggle('text-white'); this.classList.toggle('bg-emerald-50'); this.classList.toggle('text-emerald-700');" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition cursor-pointer">
-                    📤 وارد کردن از اکسل
+                    <span>وارد کردن از اکسل</span>
                 </button>
                 <?php endif; ?>
             </div>
@@ -699,7 +699,7 @@ function render_excel_toolbar(array $opts): void
                 <input type="hidden" name="action" value="excel_import">
                 <div class="flex-1 min-w-[220px] w-full sm:w-auto">
                     <label class="block text-[11px] text-slate-500 mb-1">فایل اکسل (.xlsx یا .csv)</label>
-                    <input type="file" name="excel_file" accept=".xlsx,.csv" required class="block w-full text-xs text-slate-600 file:mr-2 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium file:cursor-pointer">
+                    <input type="file" name="excel_file" accept=".xlsx,.csv" required class="block w-full text-xs text-slate-600 file:ms-2 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium file:cursor-pointer">
                 </div>
                 <?= $opts['importExtra'] ?? '' ?>
                 <button class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition cursor-pointer">شروع ورود داده‌ها</button>

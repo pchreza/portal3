@@ -203,21 +203,21 @@ render_customer_header(
 
                     <div class="card p-6 md:p-8 mb-4 text-center">
                         <span class="survey-tag"><?= icon('star', 'w-4 h-4') ?> نظرسنجی</span>
-                        <h2 class="font-bold text-slate-900 leading-snug mt-3 mb-1"><?= htmlspecialchars($takeData['title']) ?></h2>
-                        <p class="body-sm text-slate-600">مربوط به: <b class="text-slate-800"><?= htmlspecialchars($takeData['entity_title'] ?? '') ?></b></p>
+                        <h2 class="font-bold text-slate-900 leading-snug mt-3 mb-1"><bdi dir="auto"><?= htmlspecialchars($takeData['title']) ?></bdi></h2>
+                        <p class="body-sm text-slate-600">مربوط به: <b class="text-slate-800"><bdi dir="auto"><?= htmlspecialchars($takeData['entity_title'] ?? '') ?></bdi></b></p>
                         <?php if (!empty($takeData['description'])): ?>
-                            <p class="body-sm text-slate-600 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-4 mt-4 text-right"><?= htmlspecialchars($takeData['description']) ?></p>
+                            <p class="body-sm text-slate-600 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-4 mt-4 text-right"><bdi dir="auto"><?= htmlspecialchars($takeData['description']) ?></bdi></p>
                         <?php endif; ?>
                     </div>
 
                     <div class="survey-progress-wrap" id="survey-progress-wrap">
-                        <div class="survey-progress-text"><span id="survey-progress-label">۰ از <?= count($questions) ?> پاسخ داده شده</span><span><?= count($questions) ?> سؤال</span></div>
+                        <div class="survey-progress-text"><span><span id="survey-progress-label" class="value-ltr" dir="ltr">0 / <?= count($questions) ?></span> پاسخ داده شده</span><span><span class="value-ltr" dir="ltr"><?= count($questions) ?></span> سؤال</span></div>
                         <div class="survey-progress"><span id="survey-progress-bar"></span></div>
                     </div>
 
                     <?php foreach ($questions as $i => $q): $fieldName = 'q_' . $q['id']; ?>
                         <div class="survey-q-card" data-q-card>
-                            <b><span class="qnum"><?= $i + 1 ?></span><span><?= htmlspecialchars($q['question_text']) ?></span></b>
+                            <b><span class="qnum value-ltr" dir="ltr"><?= $i + 1 ?></span><span><bdi dir="auto"><?= htmlspecialchars($q['question_text']) ?></bdi></span></b>
 
                             <?php if ($q['question_type'] === 'yes_no'): ?>
                                 <div class="yesno" role="radiogroup" aria-label="<?= e($q['question_text']) ?>">
@@ -273,7 +273,7 @@ render_customer_header(
                         });
                         var pct = cards.length ? Math.round(answered / cards.length * 100) : 0;
                         if (bar) bar.style.width = pct + '%';
-                        if (lbl) lbl.textContent = answered + ' از ' + cards.length + ' پاسخ داده شده';
+                        if (lbl) lbl.textContent = answered + ' / ' + cards.length;
                     }
                     form.addEventListener('change', function(e){
                         if (e.target.name && e.target.name.indexOf('q_') === 0) update();
@@ -292,18 +292,18 @@ render_customer_header(
                         <?php foreach ($items as $i): ?>
                             <article class="card card-hover p-5 flex flex-col gap-3">
                                 <div class="flex items-start justify-between gap-3">
-                                    <h3 class="font-bold text-slate-900 leading-snug"><?= htmlspecialchars($i['title']) ?></h3>
+                                    <h3 class="font-bold text-slate-900 leading-snug"><bdi dir="auto"><?= htmlspecialchars($i['title']) ?></bdi></h3>
                                     <?php if ($i['answered']): ?>
                                         <span class="badge badge-success"><?= icon('check', 'w-3.5 h-3.5') ?> تکمیل شده</span>
                                     <?php endif; ?>
                                 </div>
 
                                 <div class="body-sm text-slate-600">
-                                    مربوط به: <b class="text-slate-800"><?= htmlspecialchars($i['entity_title'] ?? '') ?></b>
+                                    مربوط به: <b class="text-slate-800"><bdi dir="auto"><?= htmlspecialchars($i['entity_title'] ?? '') ?></bdi></b>
                                 </div>
 
                                 <?php if (!empty($i['description'])): ?>
-                                    <p class="body-sm text-slate-600 leading-relaxed"><?= htmlspecialchars($i['description']) ?></p>
+                                    <p class="body-sm text-slate-600 leading-relaxed"><bdi dir="auto"><?= htmlspecialchars($i['description']) ?></bdi></p>
                                 <?php endif; ?>
 
                                 <div class="pt-3 border-t border-slate-100 mt-auto">

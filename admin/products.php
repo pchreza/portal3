@@ -301,9 +301,9 @@ $products = $pdo->query("
                         <?php endif; ?>
 
                         <!-- دکمه‌ها -->
-                        <div class="flex justify-end gap-3 pt-5 border-t border-slate-100">
-                            <a href="products.php" class="px-6 py-3 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition text-sm font-medium">انصراف</a>
-                            <button type="submit" class="px-8 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-medium transition text-sm shadow-lg shadow-amber-500/20 cursor-pointer">💾 ذخیره محصول</button>
+                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-slate-100">
+                            <a href="products.php" class="btn btn-secondary">انصراف</a>
+                            <button type="submit" class="btn btn-primary btn-lg bg-amber-500 hover:bg-amber-600"><?= icon('check') ?><span>ذخیره محصول</span></button>
                         </div>
                     </form>
                 </div>
@@ -336,8 +336,8 @@ $products = $pdo->query("
                                     <?php foreach ($products as $pr): ?>
                                         <tr class="hover:bg-slate-50 transition">
                                             <td class="p-4">
-                                                <div class="font-medium text-slate-900"><?php echo htmlspecialchars($pr['title']); ?></div>
-                                                <div class="text-xs text-slate-500 mt-0.5 truncate max-w-xs"><?php echo htmlspecialchars($pr['description']); ?></div>
+                                                <div class="font-medium text-slate-900"><bdi dir="auto"><?php echo htmlspecialchars($pr['title']); ?></bdi></div>
+                                                <div class="text-xs text-slate-500 mt-0.5 truncate max-w-xs" title="<?= htmlspecialchars($pr['description']) ?>"><bdi dir="auto"><?php echo htmlspecialchars($pr['description']); ?></bdi></div>
                                             </td>
                                             <td class="p-4">
                                                 <div class="font-medium text-slate-800"><?php echo htmlspecialchars(trim($pr['first_name'] . ' ' . $pr['last_name']) !== '' ? $pr['first_name'] . ' ' . $pr['last_name'] : $pr['username']); ?></div>
@@ -345,12 +345,12 @@ $products = $pdo->query("
                                             </td>
                                             <td class="p-4">
                                                 <div class="mb-1"><?php echo product_status_badge($pr['product_status'] ?? null); ?></div>
-                                                <div class="text-xs text-slate-500">تاریخ خرید: <?php echo htmlspecialchars($pr['purchase_date'] ? portal_date_to_display($pr['purchase_date']) : '-'); ?></div>
+                                                <div class="text-xs text-slate-500">تاریخ خرید: <span class="value-ltr" dir="ltr"><?php echo htmlspecialchars($pr['purchase_date'] ? portal_date_to_display($pr['purchase_date']) : '-'); ?></span></div>
                                             </td>
-                                            <td class="p-4 text-center space-x-2 space-x-reverse">
+                                            <td data-label="عملیات" class="p-4 min-w-[11rem]"><div class="cell-actions flex flex-wrap items-center justify-center gap-2">
                                                 <a href="products.php?action=edit&id=<?php echo $pr['id']; ?>" class="btn btn-sm btn-ghost !text-indigo-600">ویرایش</a>
-                                                <form method="POST" style="display:inline" data-confirm-msg="آیا از حذف این مورد اطمینان دارید؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$pr['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger">حذف</button></form>
-                                            </td>
+                                                <form method="POST" data-confirm-msg="آیا از حذف این مورد اطمینان دارید؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="delete_id" value="<?php echo (int)$pr['id']; ?>"><?php echo csrf_input(); ?><button type="submit" class="btn btn-sm btn-outline-danger">حذف</button></form>
+                                            </div></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

@@ -568,7 +568,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="radio" name="logo_choice" value="upload" id="logo_upload_choice" <?= $saved_logo_choice === 'upload' ? 'checked' : '' ?> class="w-4 h-4 text-indigo-600">
                                     <span class="text-sm text-slate-700">آپلود فایل لوگو</span>
-                                    <input type="file" name="site_logo_file" accept=".png,.jpg,.jpeg,.svg,.webp,.gif" class="text-xs text-slate-500 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
+                                    <input type="file" name="site_logo_file" accept=".png,.jpg,.jpeg,.svg,.webp,.gif" class="text-xs text-slate-500 file:ms-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
                                 </label>
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="radio" name="logo_choice" value="url" id="logo_url_choice" <?= $saved_logo_choice === 'url' ? 'checked' : '' ?> class="w-4 h-4 text-indigo-600">
@@ -611,7 +611,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                         <div class="flex items-center gap-3 mb-3">
                                             <div class="w-16 h-16 rounded-lg border border-slate-200 bg-white overflow-hidden flex-shrink-0">
                                                 <?php if ($cur): ?>
-                                                    <img src="<?= htmlspecialchars(asset_url($cur)) ?>" class="w-full h-full object-cover" alt="">
+                                                    <img src="<?= htmlspecialchars(asset_url($cur)) ?>" class="w-full h-full object-cover" alt="پیش‌نمایش تصویر تنظیمات">
                                                 <?php else: ?>
                                                     <div class="w-full h-full flex items-center justify-center text-2xl text-slate-300"><?= $info[1] ?></div>
                                                 <?php endif; ?>
@@ -621,7 +621,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                                 <?php if ($cur): ?><div class="text-xs text-slate-400 font-mono truncate max-w-[150px]" dir="ltr"><?= htmlspecialchars($cur) ?></div><?php endif; ?>
                                             </div>
                                         </div>
-                                        <input type="file" name="default_<?= $etyp ?>_image" accept=".png,.jpg,.jpeg,.webp,.gif,.svg" class="text-xs text-slate-500 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
+                                        <input type="file" name="default_<?= $etyp ?>_image" accept=".png,.jpg,.jpeg,.webp,.gif,.svg" class="text-xs text-slate-500 file:ms-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
                                         <?php if ($cur): ?>
                                             <label class="flex items-center gap-1.5 text-xs text-red-600 mt-2 cursor-pointer">
                                                 <input type="checkbox" name="remove_<?= $etyp ?>_default" value="1" class="w-3.5 h-3.5 text-red-600 rounded border-slate-300"> حذف تصویر پیش‌فرض
@@ -759,7 +759,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                     ?>
                                     <div class="sms-event-card border rounded-xl overflow-hidden <?= $ev_active ? 'border-indigo-200 ring-1 ring-indigo-100' : 'border-slate-200' ?>">
                                         <!-- سربرگ کارت (کلیک = باز/بسته کردن آکاردئون) -->
-                                        <div class="flex items-center justify-between gap-3 p-4 cursor-pointer select-none sms-event-head transition <?= $ev_active ? 'bg-indigo-50/40' : 'bg-slate-50/60 hover:bg-slate-50' ?>" onclick="toggleSmsEventBody(this)">
+                                        <div class="flex items-center justify-between gap-3 p-4 cursor-pointer select-none sms-event-head transition <?= $ev_active ? 'bg-indigo-50/40' : 'bg-slate-50/60 hover:bg-slate-50' ?>" role="button" tabindex="0" aria-expanded="<?= $ev_active ? 'true' : 'false' ?>" aria-controls="sms-body-<?= e($ev['event_key']) ?>" onclick="toggleSmsEventBody(this)">
                                             <div class="flex items-center gap-3">
                                                 <label class="relative inline-flex items-center cursor-pointer select-none" onclick="event.stopPropagation()" title="فعال/غیرفعال کردن رویداد">
                                                     <input type="checkbox" name="event_<?= $ev['event_key'] ?>" value="1" <?= $ev_active ? 'checked' : '' ?> class="sr-only peer sms-event-toggle">
@@ -776,7 +776,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                             </div>
                                         </div>
                                         <!-- بدنه تنظیمات (فقط برای رویداد فعال باز است) -->
-                                        <div class="event-settings-body px-4 pb-4 <?= $ev_active ? '' : 'hidden' ?>" style="overflow:hidden;transition:max-height .3s ease">
+                                        <div id="sms-body-<?= e($ev['event_key']) ?>" class="event-settings-body px-4 pb-4 <?= $ev_active ? '' : 'hidden' ?>" style="overflow:hidden;transition:max-height .3s ease">
                                             <div class="mt-3">
                                                 <label class="block text-xs text-slate-500 mb-1">کد پترن</label>
                                                 <input type="text" name="pattern_<?= $ev['event_key'] ?>" dir="ltr" value="<?= htmlspecialchars($ev['pattern_code']) ?>" placeholder="مثلا f12345" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono max-w-md">
@@ -811,6 +811,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                             var chev = card.querySelector('.event-chevron');
                             var open = !body.classList.contains('hidden');
                             animateSmsBody(body, !open);
+                            headEl.setAttribute('aria-expanded', !open ? 'true' : 'false');
                             chev.classList.toggle('rotate-180', !open);
                         }
                         function animateSmsBody(body, open){
@@ -828,12 +829,20 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                         }
                         // همگام‌سازی باز/بسته با سوییچر فعال‌سازی
                         document.addEventListener('DOMContentLoaded', function(){
-                            document.querySelectorAll('.sms-event-card').forEach(function(card){
+                                document.querySelectorAll('.sms-event-card').forEach(function(card){
+                                var head = card.querySelector('.sms-event-head');
                                 var cb = card.querySelector('.sms-event-toggle');
                                 var body = card.querySelector('.event-settings-body');
                                 var chev = card.querySelector('.event-chevron');
+                                head.addEventListener('keydown', function(e){
+                                    if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('input,button,a,select,textarea')) {
+                                        e.preventDefault();
+                                        toggleSmsEventBody(head);
+                                    }
+                                });
                                 function sync(){
                                     var open = cb.checked;
+                                    head.setAttribute('aria-expanded', open ? 'true' : 'false');
                                     if (open){
                                         body.classList.remove('hidden');
                                         body.style.maxHeight = 'none';
@@ -1135,20 +1144,20 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                 <?php endfor; ?>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">تصویر سمت تصویر (دسکتاپ)</label>
-                                    <input type="file" name="split_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
+                                    <input type="file" name="split_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:ms-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
                                     <?php if ($lc['split_image']): ?>
                                         <div class="flex items-center gap-2 mt-1.5">
-                                            <img src="<?= e(asset_url($lc['split_image'])) ?>" class="w-16 h-10 object-cover rounded border" alt="">
+                                            <img src="<?= e(asset_url($lc['split_image'])) ?>" class="w-16 h-10 object-cover rounded border" alt="پیش‌نمایش تصویر تنظیمات">
                                             <label class="flex items-center gap-1 text-xs text-red-600 cursor-pointer"><input type="checkbox" name="remove_split_image" value="1" class="w-3.5 h-3.5"> حذف</label>
                                         </div>
                                     <?php endif; ?>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">تصویر سمت تصویر (موبایل — جداگانه)</label>
-                                    <input type="file" name="split_mobile_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
+                                    <input type="file" name="split_mobile_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:ms-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
                                     <?php if ($lc['split_mobile_image']): ?>
                                         <div class="flex items-center gap-2 mt-1.5">
-                                            <img src="<?= e(asset_url($lc['split_mobile_image'])) ?>" class="w-16 h-10 object-cover rounded border" alt="">
+                                            <img src="<?= e(asset_url($lc['split_mobile_image'])) ?>" class="w-16 h-10 object-cover rounded border" alt="پیش‌نمایش تصویر تنظیمات">
                                             <label class="flex items-center gap-1 text-xs text-red-600 cursor-pointer"><input type="checkbox" name="remove_split_mobile_image" value="1" class="w-3.5 h-3.5"> حذف</label>
                                         </div>
                                     <?php endif; ?>
@@ -1177,9 +1186,9 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">تصویر پس‌زمینه موبایل (اختیاری)</label>
-                                    <input type="file" name="branded_mobile_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
+                                    <input type="file" name="branded_mobile_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:ms-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
                                     <?php if ($lc['branded_mobile_image']): ?>
-                                        <div class="flex items-center gap-2 mt-1.5"><img src="<?= e(asset_url($lc['branded_mobile_image'])) ?>" class="w-16 h-10 object-cover rounded border" alt=""><label class="flex items-center gap-1 text-xs text-red-600 cursor-pointer"><input type="checkbox" name="remove_branded_mobile_image" value="1" class="w-3.5 h-3.5"> حذف</label></div>
+                                        <div class="flex items-center gap-2 mt-1.5"><img src="<?= e(asset_url($lc['branded_mobile_image'])) ?>" class="w-16 h-10 object-cover rounded border" alt="پیش‌نمایش تصویر تنظیمات"><label class="flex items-center gap-1 text-xs text-red-600 cursor-pointer"><input type="checkbox" name="remove_branded_mobile_image" value="1" class="w-3.5 h-3.5"> حذف</label></div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -1192,13 +1201,13 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">تصویر پس‌زمینه (دسکتاپ)</label>
-                                    <input type="file" name="login_bg_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
-                                    <?php if ($lc['bg_image']): ?><div class="flex items-center gap-2 mt-1.5"><img src="<?= e(asset_url($lc['bg_image'])) ?>" class="w-24 h-12 object-cover rounded border" alt=""><label class="flex items-center gap-1 text-xs text-red-600 cursor-pointer"><input type="checkbox" name="remove_login_bg_image" value="1" class="w-3.5 h-3.5"> حذف</label></div><?php endif; ?>
+                                    <input type="file" name="login_bg_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:ms-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
+                                    <?php if ($lc['bg_image']): ?><div class="flex items-center gap-2 mt-1.5"><img src="<?= e(asset_url($lc['bg_image'])) ?>" class="w-24 h-12 object-cover rounded border" alt="پیش‌نمایش تصویر تنظیمات"><label class="flex items-center gap-1 text-xs text-red-600 cursor-pointer"><input type="checkbox" name="remove_login_bg_image" value="1" class="w-3.5 h-3.5"> حذف</label></div><?php endif; ?>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">تصویر پس‌زمینه (موبایل)</label>
-                                    <input type="file" name="login_bg_mobile_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
-                                    <?php if ($lc['bg_mobile_image']): ?><div class="flex items-center gap-2 mt-1.5"><img src="<?= e(asset_url($lc['bg_mobile_image'])) ?>" class="w-24 h-12 object-cover rounded border" alt=""><label class="flex items-center gap-1 text-xs text-red-600 cursor-pointer"><input type="checkbox" name="remove_login_bg_mobile_image" value="1" class="w-3.5 h-3.5"> حذف</label></div><?php endif; ?>
+                                    <input type="file" name="login_bg_mobile_image" accept=".png,.jpg,.jpeg,.webp,.gif" class="text-xs text-slate-500 file:ms-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
+                                    <?php if ($lc['bg_mobile_image']): ?><div class="flex items-center gap-2 mt-1.5"><img src="<?= e(asset_url($lc['bg_mobile_image'])) ?>" class="w-24 h-12 object-cover rounded border" alt="پیش‌نمایش تصویر تنظیمات"><label class="flex items-center gap-1 text-xs text-red-600 cursor-pointer"><input type="checkbox" name="remove_login_bg_mobile_image" value="1" class="w-3.5 h-3.5"> حذف</label></div><?php endif; ?>
                                 </div>
                             </div>
                         </div>
