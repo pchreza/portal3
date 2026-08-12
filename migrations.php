@@ -391,6 +391,25 @@ function portal_migrations(PDO $pdo): void {
                 if (!portal_index_exists($db, 'custom_field_values', 'uniq_custom_field_value')) {
                     $db->exec("CREATE UNIQUE INDEX uniq_custom_field_value ON custom_field_values (field_id, entity_id)");
                 }
+                // داده‌های قدیمی ممکن است پیش از فعال‌شدن FKها orphan داشته باشند.
+                // برای FKهای CASCADE رکورد orphan قابل نگه‌داری نیست و حذف می‌شود؛
+                // برای FKهای SET NULL مقدار نامعتبر به NULL تبدیل می‌شود.
+                // تعداد تغییرات در error log ثبت می‌شود تا cleanup قابل ممیزی باشد.
+                $orphan_cleanup = [
+                    ['survey_assignments.survey_id', "DELETE child FROM survey_assignments child LEFT JOIN surveys parent ON parent.id = child.survey_id WHERE parent.id IS NULL", 'حذف assignmentهای survey orphan'],
+                    ['survey_assignments.customer_id', "DELETE child FROM survey_assignments child LEFT JOIN users parent ON parent.id = child.customer_id WHERE parent.id IS NULL", 'حذف assignmentهای customer orphan'],
+                    ['tickets.department_id', "UPDATE tickets child LEFT JOIN ticket_departments parent ON parent.id = child.department_id SET child.department_id = NULL WHERE child.department_id IS NOT NULL AND parent.id IS NULL", 'NULL کردن department نامعتبر ticket'],
+                    ['activity_logs.user_id', "UPDATE activity_logs child LEFT JOIN users parent ON parent.id = child.user_id SET child.user_id = NULL WHERE child.user_id IS NOT NULL AND parent.id IS NULL", 'NULL کردن user نامعتبر activity log'],
+                    ['sms_logs.user_id', "UPDATE sms_logs child LEFT JOIN users parent ON parent.id = child.user_id SET child.user_id = NULL WHERE child.user_id IS NOT NULL AND parent.id IS NULL", 'NULL کردن user نامعتبر SMS log'],
+                    ['notifications.created_by', "UPDATE notifications child LEFT JOIN users parent ON parent.id = child.created_by SET child.created_by = NULL WHERE child.created_by IS NOT NULL AND parent.id IS NULL", 'NULL کردن creator نامعتبر notification'],
+                ];
+                foreach ($orphan_cleanup as [$column, $sql, $description]) {
+                    $affected = (int) $db->exec($sql);
+                    if ($affected > 0) {
+                        error_log("[Portal Migration] {$description}: {$affected} رکورد در {$column}");
+                    }
+                }
+
                 $foreign_keys = [
                     ['survey_assignments', 'fk_sa_survey', 'ALTER TABLE survey_assignments ADD CONSTRAINT fk_sa_survey FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE'],
                     ['survey_assignments', 'fk_sa_customer', 'ALTER TABLE survey_assignments ADD CONSTRAINT fk_sa_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE'],

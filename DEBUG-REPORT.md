@@ -186,3 +186,16 @@ Smoke report کامل در `http-smoke-report.txt` ذخیره شد.
 | اصلاح | query به `DELETE child FROM surveys child LEFT JOIN surveys parent ...` تبدیل شد؛ رفتار حذف orphan حفظ شده و با foreign key self-reference سازگار است. |
 | آزمون | PASS: fresh schema + orphan fixture + schema version 20؛ خروجی `MIGRATION_1093_E2E_PASS version=28 orphan=0`. |
 | وضعیت | رفع شد؛ باید در release patch بعدی منتشر شود. |
+
+
+## BUG-007 — orphan reference هنگام ایجاد FKهای migration 27
+
+| فیلد | شرح |
+|---|---|
+| شدت | زیاد برای upgrade؛ migration روی دیتابیس‌های قدیمی متوقف می‌شد و schema version به 28 نمی‌رسید. |
+| بازتولید | روی MariaDB با `schema_versions` تا نسخهٔ 26 و یک رکورد `survey_assignments` که `survey_id` آن در `surveys` وجود نداشت، اجرای migration 27 هنگام افزودن `fk_sa_survey` با `SQLSTATE[23000]: Integrity constraint violation: 1452` متوقف شد. |
+| علت ریشه‌ای | migration پیش از افزودن constraintهای foreign key، داده‌های orphan موجود در نصب‌های قدیمی را بررسی یا repair نمی‌کرد. در نتیجه MariaDB ساخت FK را به‌درستی رد می‌کرد. |
+| اصلاح | پیش از ساخت FKها، assignmentهای orphan برای روابط `CASCADE` حذف می‌شوند و مقادیر orphan برای روابط `SET NULL` در ticket department، activity log، SMS log و notification creator به `NULL` تبدیل می‌شوند. تعداد رکوردهای اصلاح‌شده فقط در error log ثبت می‌شود و به کاربر نمایش داده نمی‌شود. |
+| ملاحظهٔ داده | حذف assignment orphan از نظر business state قابل نگه‌داری نیست، چون parent survey وجود ندارد؛ برای روابط `SET NULL` رکورد اصلی نگه داشته می‌شود و فقط اشارهٔ نامعتبر پاک می‌شود. قبل از migration همچنان backup دیتابیس توصیه می‌شود. |
+| آزمون | PASS: fixture ایزوله با orphan survey assignment؛ cleanup یک رکورد را حذف کرد، migration تا version 28 رسید، orphanها صفر شدند و `fk_sa_survey` و `fk_sa_customer` ساخته شدند. PHPUnit، PHPStan و lint نیز PASS شدند. |
+| وضعیت | اصلاح شد؛ در patch بعدی منتشر می‌شود. |
