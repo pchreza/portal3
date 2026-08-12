@@ -398,7 +398,7 @@ function render_entity_card(string $type, array $row, string $style = 'vertical'
             '<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col sm:flex-row hover:shadow-lg hover:border-slate-300 transition group">'
                 . '<div class="relative sm:w-52 sm:min-h-full h-40 overflow-hidden bg-slate-100 flex-shrink-0">'
                     . entity_image_html($type, $img, 'w-full h-full object-cover group-hover:scale-105 transition duration-300', $icon)
-                    . '<div class="absolute top-3 right-3">' . $badge . '</div>'
+                    . '<div class="absolute top-3 end-3">' . $badge . '</div>'
                 . '</div>'
                 . '<div class="p-5 flex flex-col flex-1 gap-3">'
                     . '<h4 class="font-bold text-slate-900 text-base leading-snug">' . $title_html . '</h4>'
@@ -445,7 +445,7 @@ function render_entity_card(string $type, array $row, string $style = 'vertical'
             '<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-lg hover:border-slate-300 transition group">'
                 . '<div class="relative h-44 overflow-hidden bg-slate-100">'
                     . entity_image_html($type, $img, 'w-full h-full object-cover group-hover:scale-105 transition duration-300', $icon)
-                    . '<div class="absolute top-3 right-3">' . $badge . '</div>'
+                    . '<div class="absolute top-3 end-3">' . $badge . '</div>'
                 . '</div>'
                 . '<div class="p-5 flex flex-col flex-1 gap-3">'
                     . '<h4 class="font-bold text-slate-900 text-base leading-snug">' . $title . '</h4>'
@@ -658,17 +658,24 @@ function admin_can(string $permission): bool
         return false;
     }
 
-    // مدیریت مدیران و تنظیمات سیستم (شامل کلیدهای پیامک) فقط برای سوپر ادمین
+    // مدیریت مدیران و تنظیمات سیستم (شامل credentialهای پیامک) فقط برای سوپر ادمین
     if ($permission === 'admins' || $permission === 'settings') {
         return false;
     }
 
-    // admin عادی: بررسی دسترسی‌های ذخیره‌شده
+    // ابتدا override اختصاصی کاربر بررسی می‌شود؛ نبود override یعنی fallback به role.
     global $pdo;
     if (!$pdo) {
         return false;
     }
     try {
+        $user_permission = $pdo->prepare("SELECT allowed FROM admin_user_permissions WHERE user_id = ? AND permission = ? LIMIT 1");
+        $user_permission->execute([(int) ($_SESSION['user_id'] ?? 0), $permission]);
+        $override = $user_permission->fetchColumn();
+        if ($override !== false) {
+            return (bool) $override;
+        }
+
         $q = $pdo->prepare("SELECT permission FROM admin_permissions WHERE role = 'admin' AND permission = ?");
         $q->execute([$permission]);
         return (bool) $q->fetchColumn();
@@ -730,6 +737,31 @@ function ticket_department_name(?int $dept_id): string
 // ---------------------------------------------------------------------------
 // ورود با شماره موبایل و کد OTP (پیامک ippanel)
 // ---------------------------------------------------------------------------
+
+/**
+ * نرمال‌سازی مبلغ برای ذخیره و محاسبه.
+ * خروجی همیشه رشتهٔ اعشاری با دو رقم است؛ null یعنی ورودی نامعتبر.
+ */
+function normalize_money_input(string $value): ?string
+{
+    $value = fa_digits_to_en(trim($value));
+    $value = str_replace('٬', ',', $value);
+    if ($value === '') {
+        return '';
+    }
+    if (str_contains($value, ',')) {
+        if (!preg_match('/^\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?$/', $value)) {
+            return null;
+        }
+        $value = str_replace(',', '', $value);
+    }
+    if (!preg_match('/^\d+(?:\.\d{1,2})?$/', $value)) {
+        return null;
+    }
+    [$whole, $fraction] = array_pad(explode('.', $value, 2), 2, '');
+    $whole = ltrim($whole, '0') ?: '0';
+    return $whole . '.' . str_pad($fraction, 2, '0');
+}
 
 /** نرمال‌سازی شماره موبایل به فرمت E.164 برای ippanel (+98...) */
 function normalize_mobile(string $mobile): string
@@ -821,9 +853,15 @@ function fa_digits_to_en(string $input): string
  * @param string $pattern_var نام متغیر (فقط وقتی $params رشته است)
  * @return array ['ok'=>bool, 'message'=>string]
  */
+function portal_sms_api_key(): string
+{
+    // credential فقط از environment خوانده می‌شود؛ مقدار legacy دیتابیس عمداً نادیده گرفته می‌شود.
+    return trim((string) (getenv('PORTAL_SMS_API_KEY') ?: ''));
+}
+
 function send_sms_via_ippanel(string $mobile, $params, string $pattern_code = '', string $pattern_var = ''): array
 {
-    $api_key     = get_setting('sms_api_key', '');
+    $api_key     = portal_sms_api_key();
     $from_number = get_setting('sms_from_number', '');
     $pattern     = $pattern_code !== '' ? $pattern_code : get_setting('sms_pattern', '');
     $var         = $pattern_var !== '' ? $pattern_var : get_setting('sms_pattern_var', 'code');
@@ -1369,6 +1407,25 @@ function upload_login_image(array $file, string $prefix): string
     return '';
 }
 
+/** URL قابل نمایش در navigation سفارشی؛ schemeهای اجرایی و protocol-relative رد می‌شوند. */
+function safe_navigation_url(string $url): string
+{
+    $url = trim($url);
+    if ($url === '' || $url === '#') {
+        return '#';
+    }
+    if (preg_match('/^(?:javascript|data|vbscript):/i', $url) || str_starts_with($url, '//')) {
+        return '#';
+    }
+    if (str_starts_with($url, '/') || str_starts_with($url, '#') || str_starts_with($url, '?')) {
+        return mb_substr($url, 0, 255);
+    }
+    if (preg_match('#^https?://#i', $url) && filter_var($url, FILTER_VALIDATE_URL)) {
+        return mb_substr($url, 0, 255);
+    }
+    return '#';
+}
+
 /**
  * منوی سفارشی هدر (آیتم‌های مدیریتی) — ذخیره‌شده به‌صورت JSON در settings
  */
@@ -1376,7 +1433,17 @@ function header_menu_items(): array
 {
     $raw = get_setting('header_menu', '[]');
     $items = json_decode($raw, true);
-    return is_array($items) ? array_values(array_filter($items, static fn($i) => !empty($i['label']))) : [];
+    if (!is_array($items)) {
+        return [];
+    }
+    return array_values(array_filter(array_map(static function ($item): array {
+        if (!is_array($item) || empty($item['label'])) {
+            return [];
+        }
+        $item['url'] = safe_navigation_url((string) ($item['url'] ?? '#'));
+        $item['target'] = (($item['target'] ?? '') === '_blank') ? '_blank' : '_self';
+        return $item;
+    }, $items), static fn(array $item): bool => !empty($item)));
 }
 
 // ---------------------------------------------------------------------------
@@ -1488,7 +1555,7 @@ function error_report_widget(): string
         . '<button type="submit" class="btn btn-danger">' . icon('send') . '<span>ارسال گزارش</span></button>'
         . '</div>'
         . '</form></div></div>'
-        . '<script>'
+        . '<script nonce="' . e(portal_csp_nonce()) . '">'
         . '(function(){var fab=document.getElementById(\'error-report-fab\'),modal=document.getElementById(\'error-report-modal\');if(!fab||!modal)return;var lastFocus=null,previousOverflow=\'\';function focusables(){return Array.prototype.slice.call(modal.querySelectorAll(\'a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])\')).filter(function(el){return el.offsetParent!==null;});}'
         . 'function openM(){lastFocus=document.activeElement;previousOverflow=document.body.style.overflow;modal.classList.remove(\'hidden\');modal.classList.add(\'flex\');document.body.style.overflow=\'hidden\';var f=focusables()[0];if(f)setTimeout(function(){f.focus();},60);}'
         . 'function closeM(){modal.classList.add(\'hidden\');modal.classList.remove(\'flex\');document.body.style.overflow=previousOverflow;if(lastFocus&&typeof lastFocus.focus===\'function\')lastFocus.focus();}'
@@ -1508,7 +1575,7 @@ function save_header_menu_items(array $items): void
         if ($label === '') continue;
         $clean[] = [
             'label' => mb_substr($label, 0, 60),
-            'url'   => mb_substr(trim((string) ($i['url'] ?? '#')), 0, 255) ?: '#',
+            'url'   => safe_navigation_url((string) ($i['url'] ?? '#')),
             'target'=> ((string) ($i['target'] ?? '')) === 'blank' ? '_blank' : '_self',
         ];
     }
@@ -1660,27 +1727,23 @@ function datepicker_assets_base(): string
     return '';
 }
 
-/** لینک CSS دیت پیکر — در <head> هر قالب شامل می‌شود (لوکال + fallback به CDN) */
+/** لینک CSS دیت‌پیکر local — asset ناقص باید در deploy به‌صورت صریح گزارش شود. */
 function datepicker_assets_css(): string
 {
     $local = datepicker_assets_base() . 'assets/jalalidatepicker/jalalidatepicker.min.css';
-    $cdn   = 'https://cdn.jsdelivr.net/npm/@majidh1/jalalidatepicker@0.9.12/dist/jalalidatepicker.min.css';
-    return
-        '<link rel="stylesheet" href="' . e($local) . '" onerror="this.onerror=null;this.href=\'' . $cdn . '\';">' . "\n";
+    return '<link rel="stylesheet" href="' . e($local) . '">' . "\n";
 }
 
 /**
- * اسکریپت فعال‌سازی دیت پیکر — قبل از بستن </body> شامل می‌شود.
- * هر input با ویژگی data-jdp خودکار به دیت پیکر شمسی تبدیل می‌شود.
- * اگر فایل لوکال پیدا نشود، خودکار از CDN لود و دوباره راه‌اندازی می‌شود.
+ * اسکریپت فعال‌سازی دیت‌پیکر local — asset ناقص باید در deploy به‌صورت صریح گزارش شود.
+ * هر input با ویژگی data-jdp خودکار به دیت‌پیکر شمسی تبدیل می‌شود.
  */
 function datepicker_assets_js(): string
 {
     $local = datepicker_assets_base() . 'assets/jalalidatepicker/jalalidatepicker.min.js';
-    $cdn   = 'https://cdn.jsdelivr.net/npm/@majidh1/jalalidatepicker@0.9.12/dist/jalalidatepicker.min.js';
     return
-        '<script src="' . e($local) . '" onerror="this.onerror=null;var s=document.createElement(\'script\');s.src=\'' . $cdn . '\';s.onload=function(){window.__initJdp&&window.__initJdp();};document.body.appendChild(s);"></script>' . "\n" .
-        '<script>' . "\n" .
+        '<script src="' . e($local) . '"></script>' . "\n" .
+        '<script nonce="' . e(portal_csp_nonce()) . '">' . "\n" .
         'window.__initJdp = function(){' . "\n" .
         '  if (typeof jalaliDatepicker === "undefined") { console.warn("[Portal] jalaliDatepicker بارگذاری نشد — پوشه assets/jalalidatepicker را آپلود کنید."); return; }' . "\n" .
         '  jalaliDatepicker.startWatch({' . "\n" .
@@ -1775,6 +1838,16 @@ function portal_asset_href(string $relative_path): string
     return $url;
 }
 
+/** nonce یکتا برای هر پاسخ؛ برای مجازکردن scriptهای inline trusted در CSP استفاده می‌شود. */
+function portal_csp_nonce(): string
+{
+    static $nonce = null;
+    if ($nonce === null) {
+        $nonce = base64_encode(random_bytes(18));
+    }
+    return $nonce;
+}
+
 /** preload و stylesheet فونت محلی Vazirmatn؛ نام فایل نسخه‌دار از cache پایدار پشتیبانی می‌کند. */
 function portal_font_css_link(): string
 {
@@ -1795,7 +1868,7 @@ function portal_ui_css_link(): string
 /** اسکریپت اولیه‌سازی دارک‌مود (قبل از رندر — جلوگیری از FOUC) */
 function portal_darkmode_init(): string
 {
-    return '<script>' . "\n"
+    return '<script nonce="' . e(portal_csp_nonce()) . '">' . "\n"
         . '(function(){var d=localStorage.getItem("portal-theme");if(d==="dark"||(d==="auto"&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark");}})();'
         . "\n" . '</script>' . "\n";
 }
@@ -1818,7 +1891,7 @@ function portal_theme_toggle(): string
 /** اسکریپت رفتار toggle دارک‌مود */
 function portal_darkmode_script(): string
 {
-    return '<script>' . "\n"
+    return '<script nonce="' . e(portal_csp_nonce()) . '">' . "\n"
         . 'document.addEventListener("DOMContentLoaded",function(){var t=document.getElementById("theme-toggle");if(!t)return;'
         . 'var cur=localStorage.getItem("portal-theme")||"auto";'
         . 't.addEventListener("click",function(){var next=document.documentElement.classList.contains("dark")?"light":"dark";'
@@ -1851,7 +1924,7 @@ function portal_confirm_modal(): string
 /** اسکریپت رفتار مودال تأیید — فرم‌هایی با data-confirm-msg را امن می‌کند */
 function portal_confirm_script(): string
 {
-    return '<script>' . "\n"
+    return '<script nonce="' . e(portal_csp_nonce()) . '">' . "\n"
         . 'document.addEventListener("DOMContentLoaded",function(){'
         . 'var m=document.getElementById("portal-confirm");if(!m)return;'
         . 'var ok=m.querySelector("[data-confirm-ok]"),pending=null;'
@@ -1882,7 +1955,7 @@ function portal_toast_script(): string
         'danger'  => icon('alert', 'w-4 h-4'),
         'info'    => icon('info', 'w-4 h-4'),
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    return '<script>' . "\n"
+    return '<script nonce="' . e(portal_csp_nonce()) . '">' . "\n"
         . 'window.portalToast=function(msg,type){'
         . 'var r=document.getElementById("portal-toasts");if(!r)return;'
         . 'var ics=' . $icons . ';'
@@ -1900,7 +1973,7 @@ function portal_toast_script(): string
  */
 function portal_validation_script(): string
 {
-    return '<script>' . "\n"
+    return '<script nonce="' . e(portal_csp_nonce()) . '">' . "\n"
         . 'document.addEventListener("DOMContentLoaded",function(){'
         . 'document.querySelectorAll("form[novalidate]").forEach(function(form){'
         . 'form.addEventListener("submit",function(e){'

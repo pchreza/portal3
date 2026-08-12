@@ -27,7 +27,7 @@ $recent_logs      = $admin_dash['recent_logs'];
     'داشبورد مدیریت پیشرفته',
     'p-8 max-w-7xl w-full mx-auto space-y-8',
     '',
-    '<a href="../logout.php?t=<?= csrf_token() ?>" class="md:hidden text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">خروج</a>'
+    '<form method="post" action="../logout.php" class="md:hidden"><input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"><button type="submit" class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">خروج</button></form>'
 ); ?>
 
             

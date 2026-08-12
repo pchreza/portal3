@@ -1,0 +1,16 @@
+parameters:
+    level: 0
+    paths:
+        - config.php
+        - index.php
+        - install.php
+        - migrations.php
+        - logout.php
+        - survey-public.php
+        - admin
+        - customer
+        - includes/functions
+    excludePaths:
+        - vendor
+        - tests
+    reportUnmatchedIgnoredErrors: false

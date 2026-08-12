@@ -31,11 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     $customer_id = intval($_POST['customer_id'] ?? 0);
     $invoice_number = trim($_POST['invoice_number'] ?? '');
     $title = trim($_POST['title'] ?? '');
-    $amount = trim($_POST['amount'] ?? '');
-    $due_date = trim($_POST['due_date'] ?? '');
-    $status = trim($_POST['status'] ?? 'unpaid');
+    $amount = normalize_money_input((string) ($_POST['amount'] ?? ''));
+    $due_date = portal_date_to_db(trim((string) ($_POST['due_date'] ?? '')));
+    $status = in_array($_POST['status'] ?? 'unpaid', ['unpaid', 'paid', 'cancelled'], true) ? $_POST['status'] : 'unpaid';
 
-    if (empty($title) || empty($invoice_number) || $customer_id <= 0) {
+    if ($amount === null) {
+        $error = 'مبلغ فاکتور باید فقط شامل عدد و حداکثر دو رقم اعشار باشد.';
+    } elseif (empty($title) || empty($invoice_number) || $customer_id <= 0) {
         $error = 'انتخاب مشتری، شماره فاکتور و عنوان فاکتور الزامی است.';
     } else {
         if ($id === 0) {

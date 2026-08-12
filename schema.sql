@@ -47,6 +47,15 @@
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+            CREATE TABLE IF NOT EXISTS `admin_user_permissions` (
+                `user_id` INT NOT NULL,
+                `permission` VARCHAR(60) NOT NULL,
+                `allowed` TINYINT(1) NOT NULL DEFAULT 0,
+                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`user_id`, `permission`),
+                FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
             CREATE TABLE IF NOT EXISTS `projects` (
                 `id` INT AUTO_INCREMENT PRIMARY KEY,
                 `customer_id` INT NOT NULL,
@@ -55,7 +64,7 @@
                 `status` VARCHAR(50) DEFAULT 'in_progress',
                 `image` VARCHAR(255) DEFAULT '',
                 `budget` VARCHAR(100) DEFAULT '',
-                `deadline` VARCHAR(50) DEFAULT '',
+                `deadline` DATE DEFAULT NULL,
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -65,11 +74,11 @@
                 `customer_id` INT NOT NULL,
                 `title` VARCHAR(200) NOT NULL,
                 `description` TEXT,
-                `price` VARCHAR(100) DEFAULT '',
+                `price` DECIMAL(18,2) DEFAULT NULL,
                 `product_status` VARCHAR(50) NOT NULL DEFAULT 'purchased',
                 `image` VARCHAR(255) DEFAULT '',
                 `license_key` VARCHAR(255) DEFAULT '',
-                `purchase_date` VARCHAR(50) DEFAULT '',
+                `purchase_date` DATE DEFAULT NULL,
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -115,8 +124,8 @@
                 `customer_id` INT NOT NULL,
                 `invoice_number` VARCHAR(50) NOT NULL,
                 `title` VARCHAR(255) NOT NULL,
-                `amount` VARCHAR(100) NOT NULL,
-                `due_date` VARCHAR(50) DEFAULT '',
+                `amount` DECIMAL(18,2) DEFAULT NULL,
+                `due_date` DATE DEFAULT NULL,
                 `status` ENUM('unpaid', 'paid', 'cancelled') DEFAULT 'unpaid',
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
@@ -138,7 +147,8 @@
                 `field_type` ENUM('text', 'textarea', 'number', 'date') DEFAULT 'text',
                 `is_required` TINYINT DEFAULT 0,
                 `show_in_customer_panel` TINYINT DEFAULT 1,
-                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY `uniq_custom_field_name` (`target_entity`, `field_name`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
             CREATE TABLE IF NOT EXISTS `custom_field_values` (
@@ -146,6 +156,7 @@
                 `field_id` INT NOT NULL,
                 `entity_id` INT NOT NULL,
                 `field_value` TEXT,
+                UNIQUE KEY `uniq_custom_field_value` (`field_id`, `entity_id`),
                 FOREIGN KEY (`field_id`) REFERENCES `custom_fields`(`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -227,7 +238,9 @@
                 `entity_id` INT NOT NULL,
                 `available_at` DATETIME NULL,
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY `unique_assignment` (`survey_id`, `customer_id`, `entity_type`, `entity_id`)
+                UNIQUE KEY `unique_assignment` (`survey_id`, `customer_id`, `entity_type`, `entity_id`),
+                FOREIGN KEY (`survey_id`) REFERENCES `surveys`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
             CREATE TABLE IF NOT EXISTS `otp_codes` (

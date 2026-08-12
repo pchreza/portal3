@@ -365,7 +365,7 @@ $projects = $pdo->query("
                 </div>
             <?php endif; ?>
 
-        <script>
+        <script nonce="<?= e(portal_csp_nonce()) ?>">
 (function(){
  const search=document.getElementById('customer_search'), select=document.getElementById('customer_id');
  if(!search||!select)return;

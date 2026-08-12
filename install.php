@@ -187,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
     <title>نصب سیستم پورتال مشتریان</title>
     <link rel="preload" href="assets/fonts/Vazirmatn-v33.003-wght.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="assets/fonts/vazirmatn.css">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="assets/tailwind.css">
     <style>
         body { font-family: 'Vazirmatn', Tahoma, Arial, sans-serif; }
     </style>

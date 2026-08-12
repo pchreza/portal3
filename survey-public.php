@@ -250,7 +250,7 @@ render_public_header($title, 'bg-slate-50 text-slate-800 min-h-screen py-8 px-4'
             </div>
         </form>
 
-        <script>
+        <script nonce="<?= e(portal_csp_nonce()) ?>">
         document.addEventListener('DOMContentLoaded', function(){
             var form = document.getElementById('survey-form');
             if (!form) return;

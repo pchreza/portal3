@@ -2,33 +2,49 @@
 // config.php — بوت‌استرپ برنامه: سشن امن، اتصال دیتابیس (PDO) و بارگذاری توابع مشترک
 // توابع کمکی در پوشه includes/functions/ دسته‌بندی شده‌اند.
 
+// تشخیص HTTPS: مستقیم یا پشت پراکسی (nginx/Cloudflare) — هدر X-Forwarded-Proto
+$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') == 443);
+$trust_proxy = filter_var((string) (getenv('PORTAL_TRUST_PROXY') ?: '0'), FILTER_VALIDATE_BOOLEAN);
+$fwd_proto = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+if ($trust_proxy && $fwd_proto === 'https') {
+    $is_https = true;
+}
+
 // --- هدرهای امنیتی پایه ---
 header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
-header('X-XSS-Protection: 1; mode=block');
+header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+if ($is_https) {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
 
 // --- راه‌اندازی سشن با تنظیمات امن کوکی ---
 if (session_status() === PHP_SESSION_NONE) {
-    // تشخیص HTTPS: مستقیم یا پشت پراکسی (nginx/Cloudflare) — هدر X-Forwarded-Proto
-    $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') == 443);
-    $fwd_proto = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
-    if ($fwd_proto === 'https') {
-        $is_https = true;
-    }
+    ini_set('session.use_only_cookies', '1');
+    ini_set('session.use_strict_mode', '1'); // فقط سشن‌های ساخته‌شده توسط سرور پذیرفته شوند
     session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
         'httponly' => true,
         'secure' => $is_https,
         'samesite' => 'Lax',
     ]);
-    ini_set('session.use_strict_mode', '1'); // فقط سشن‌های ساخته‌شده توسط سرور پذیرفته شوند
     session_start();
 }
 
-// --- حالت توسعه: در محیط عملیاتی مقدار را false کنید ---
-// (در حالت تست، کد تایید پیامک در پاسخ/سشن می‌آید؛ در حالت عادی فقط در لاگ سرور)
+// --- محیط اجرا و حالت توسعه ---
+// حالت امن پیش‌فرض production است؛ development فقط با environment صریح فعال می‌شود.
+$portal_env = strtolower(trim((string) (getenv('PORTAL_ENV') ?: 'production')));
+if (!defined('PORTAL_ENV')) {
+    define('PORTAL_ENV', $portal_env);
+}
 if (!defined('PORTAL_DEV_MODE')) {
-    define('PORTAL_DEV_MODE', true);
+    $dev_env = getenv('PORTAL_DEV_MODE');
+    $dev_enabled = $dev_env !== false
+        ? filter_var($dev_env, FILTER_VALIDATE_BOOLEAN)
+        : in_array($portal_env, ['local', 'development', 'test'], true);
+    define('PORTAL_DEV_MODE', $dev_enabled);
 }
 
 // --- اتصال به پایگاه داده ---
@@ -69,13 +85,35 @@ require_once __DIR__ . '/includes/functions/notifications.php';
 require_once __DIR__ . '/includes/functions/sms_triggers.php';
 require_once __DIR__ . '/includes/functions/excel.php';
 
-// --- اجرای خودکار مهاجرت‌های نسخه‌بندی‌شده ---
-// با آپدیت کد، نصب‌های موجود در اولین درخواست به‌صورت خودکار ارتقا می‌یابند.
+// --- Content Security Policy ---
+$script_nonce = portal_csp_nonce();
+header("Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'; object-src 'none'; img-src 'self' data: blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'nonce-{$script_nonce}'; script-src-attr 'none'; connect-src 'self'; frame-src 'none'");
+
+// --- حفاظت مرکزی CSRF برای تمام mutationهای HTTP ---
+// همهٔ فرم‌های داخلی state-changing باید csrf_input() داشته باشند. Installer
+// تنها استثناست، چون قبل از ساخته‌شدن session/DB اجرا می‌شود.
+if (!$is_install_page && (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST')) {
+    require_valid_csrf();
+}
+
+// --- اجرای migration ---
+// در production migration باید با bin/migrate.php و خارج از request اجرا شود.
+// auto-migrate فقط برای local/test یا با PORTAL_AUTO_MIGRATE=true مجاز است.
 require_once __DIR__ . '/migrations.php';
-if ($pdo) {
+$auto_migrate_env = getenv('PORTAL_AUTO_MIGRATE');
+$auto_migrate = $auto_migrate_env !== false
+    ? filter_var($auto_migrate_env, FILTER_VALIDATE_BOOLEAN)
+    : in_array(PORTAL_ENV, ['local', 'development', 'test'], true);
+if ($pdo && $auto_migrate) {
     if (portal_auto_migrate($pdo)) {
-        portal_cache_flush(); // مهاجرت اجرا شد — کش‌ها را باطل کن
+        portal_cache_flush(); // migration اجرا شد — کش‌ها را باطل کن
     }
+}
+if ($pdo && !$auto_migrate && !$is_install_page && PHP_SAPI !== 'cli'
+    && portal_schema_version($pdo) < PORTAL_SCHEMA_VERSION) {
+    http_response_code(503);
+    header('Retry-After: 300');
+    exit('<div style="font-family:Tahoma;direction:rtl;text-align:center;padding:50px"><h2>سامانه در حال ارتقاست</h2><p>مدیر سامانه باید migration نسخهٔ جدید را اجرا کند.</p></div>');
 }
 
 // --- پردازش سراسری فرم گزارش خطا (دکمه شناور) ---

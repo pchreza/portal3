@@ -45,24 +45,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $err = 'خطا در ایجاد مدیر (احتمالا نام کاربری تکراری است).';
             }
         }
-    } elseif ($a === 'permissions') {
-        // ذخیره دسترسی‌های مدیران عادی (مشترک برای همه مدیران عادی)
+    } elseif ($a === 'user_permissions') {
+        // ذخیرهٔ override اختصاصی؛ نبودن رکورد یعنی fallback به permission نقش.
+        $target_admin_id = (int) ($_POST['target_admin_id'] ?? 0);
         $perms = $_POST['perms'] ?? [];
         if (!is_array($perms)) {
             $perms = [];
         }
-        $pdo->prepare("DELETE FROM admin_permissions WHERE role = 'admin'")->execute();
-        $ins = $pdo->prepare("INSERT INTO admin_permissions (role, permission) VALUES ('admin', ?)");
-        foreach (array_keys(admin_permissions_list()) as $perm) {
-            if ($perm === 'admins') {
-                continue;
+        $target = $pdo->prepare("SELECT id FROM users WHERE id = ? AND role = 'admin' LIMIT 1");
+        $target->execute([$target_admin_id]);
+        if (!$target->fetchColumn()) {
+            $err = 'مدیر انتخاب‌شده معتبر نیست.';
+        } else {
+            $base = [];
+            $base_q = $pdo->query("SELECT permission FROM admin_permissions WHERE role = 'admin'");
+            foreach ($base_q->fetchAll() as $row) {
+                $base[(string) $row['permission']] = true;
             }
-            if (in_array($perm, $perms, true)) {
-                $ins->execute([$perm]);
+            $upsert = $pdo->prepare("INSERT INTO admin_user_permissions (user_id, permission, allowed) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE allowed = VALUES(allowed)");
+            $delete = $pdo->prepare("DELETE FROM admin_user_permissions WHERE user_id = ? AND permission = ?");
+            foreach (array_keys(admin_permissions_list()) as $perm) {
+                if ($perm === 'admins' || $perm === 'settings') {
+                    continue;
+                }
+                $wanted = in_array($perm, $perms, true);
+                $role_default = !empty($base[$perm]);
+                if ($wanted === $role_default) {
+                    $delete->execute([$target_admin_id, $perm]);
+                } else {
+                    $upsert->execute([$target_admin_id, $perm, $wanted ? 1 : 0]);
+                }
             }
+            log_activity($_SESSION['user_id'], "بروزرسانی دسترسی مدیر ID: {$target_admin_id}");
+            $msg = 'دسترسی‌های مدیر انتخاب‌شده با موفقیت ذخیره شد.';
         }
-        log_activity($_SESSION['user_id'], "بروزرسانی دسترسی‌های مدیران");
-        $msg = 'دسترسی‌های مدیران با موفقیت ذخیره شد.';
     } elseif ($a === 'delete') {
         $admin_id = (int) ($_POST['admin_id'] ?? 0);
         if ($admin_id === (int) $_SESSION['user_id']) {
@@ -78,11 +94,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ---------- داده‌ها ----------
 $admins = $pdo->query("SELECT id, username, first_name, last_name, mobile, role, created_at FROM users WHERE role IN ('admin', 'super_admin') ORDER BY id ASC")->fetchAll();
 
-// دسترسی‌های فعلی نقش admin
+// permissionهای پیش‌فرض نقش و overrideهای اختصاصی مدیران
 $current_perms = [];
 $q = $pdo->query("SELECT permission FROM admin_permissions WHERE role = 'admin'");
 foreach ($q->fetchAll() as $p) {
     $current_perms[] = $p['permission'];
+}
+$user_permission_overrides = [];
+$override_q = $pdo->query("SELECT user_id, permission, allowed FROM admin_user_permissions");
+foreach ($override_q->fetchAll() as $override) {
+    $user_permission_overrides[(string) $override['user_id']][(string) $override['permission']] = (bool) $override['allowed'];
 }
 
 render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-full mx-auto space-y-6');
@@ -164,7 +185,7 @@ render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-ful
                                         <td class="p-4">
                                             <div class="cell-actions flex items-center justify-center gap-2">
                                                 <?php if ($ad['role'] !== 'super_admin'): ?>
-                                                    <button type="button" data-perm-open data-admin-name="<?= e($ad['username']) ?>" class="btn btn-sm btn-ghost !text-indigo-600">دسترسی‌ها</button>
+                                                    <button type="button" data-perm-open data-admin-id="<?= (int) $ad['id'] ?>" data-admin-name="<?= e($ad['username']) ?>" class="btn btn-sm btn-ghost !text-indigo-600">دسترسی‌ها</button>
                                                     <form method="post" data-confirm-msg="حذف این مدیر؟">
                                                         <?php echo csrf_input(); ?>
                                                         <input type="hidden" name="action" value="delete">
@@ -184,21 +205,22 @@ render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-ful
                 </div>
             </div>
 
-            <!-- تنظیم دسترسی‌های مدیران (مشترک برای همه مدیران عادی) -->
+            <!-- تنظیم دسترسی‌های اختصاصی مدیر منتخب -->
             <section id="perm-box" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6" role="region" aria-labelledby="perm-heading" tabindex="-1">
                 <div class="mb-4 pb-3 border-b border-slate-100 flex items-center justify-between">
-                    <h3 id="perm-heading" class="text-lg font-bold text-slate-800 flex items-center gap-2"><?= icon('lock','w-5 h-5 text-indigo-600') ?> دسترسی‌های مدیران</h3>
+                    <h3 id="perm-heading" class="text-lg font-bold text-slate-800 flex items-center gap-2"><?= icon('lock','w-5 h-5 text-indigo-600') ?> دسترسی‌های مدیر منتخب</h3>
                     <div class="flex items-center gap-2"><span class="text-xs text-slate-500">برای: <b id="perm-admin-name" class="text-slate-700">—</b></span><button type="button" data-perm-close class="btn btn-icon btn-ghost !w-8 !h-8" aria-label="بستن تنظیمات دسترسی"><?= icon('x','w-4 h-4') ?></button></div>
                 </div>
-                <p class="text-xs text-slate-400 mb-3">این دسترسی‌ها برای <b>همه مدیران عادی</b> اعمال می‌شود (مدیر ارشد همیشه دسترسی کامل دارد).</p>
+                <p class="text-xs text-slate-400 mb-3">این تنظیمات فقط برای مدیر منتخب اعمال می‌شود؛ مدیر ارشد همیشه دسترسی کامل دارد. گزینهٔ بدون override از permission پیش‌فرض نقش پیروی می‌کند.</p>
                 <form method="post">
                     <?php echo csrf_input(); ?>
-                    <input type="hidden" name="action" value="permissions">
+                    <input type="hidden" name="action" value="user_permissions">
+                    <input type="hidden" name="target_admin_id" id="perm-target-id" value="">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         <?php foreach (admin_permissions_list() as $pkey => $plabel): ?>
                             <?php if ($pkey === 'admins') continue; ?>
                             <label class="flex items-center gap-2 p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:border-indigo-300 transition <?= in_array($pkey, $current_perms, true) ? 'bg-indigo-50/40' : '' ?>">
-                                <input type="checkbox" name="perms[]" value="<?= $pkey ?>" <?= in_array($pkey, $current_perms, true) ? 'checked' : '' ?> class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                <input type="checkbox" data-perm-checkbox data-permission="<?= e($pkey) ?>" name="perms[]" value="<?= e($pkey) ?>" <?= in_array($pkey, $current_perms, true) ? 'checked' : '' ?> class="w-4 h-4 text-indigo-600 rounded border-slate-300">
                                 <span class="text-sm text-slate-700"><?= $plabel ?></span>
                             </label>
                         <?php endforeach; ?>
@@ -208,12 +230,26 @@ render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-ful
                     </div>
                 </form>
             </section>
-            <script>
+            <script nonce="<?= e(portal_csp_nonce()) ?>">
             (function(){
-                var box=document.getElementById('perm-box'),name=document.getElementById('perm-admin-name'),lastTrigger=null;
-                if(!box||!name)return;
+                var box=document.getElementById('perm-box'),name=document.getElementById('perm-admin-name'),target=document.getElementById('perm-target-id'),lastTrigger=null;
+                var roleDefaults=<?= json_encode(array_fill_keys($current_perms, true), JSON_UNESCAPED_UNICODE) ?>;
+                var overrides=<?= json_encode($user_permission_overrides, JSON_UNESCAPED_UNICODE) ?>;
+                if(!box||!name||!target)return;
+                function open(trigger){
+                    lastTrigger=trigger;
+                    var id=trigger.dataset.adminId||'';
+                    var current=overrides[id]||{};
+                    target.value=id;
+                    name.textContent=trigger.dataset.adminName||'—';
+                    box.querySelectorAll('[data-perm-checkbox]').forEach(function(input){
+                        var key=input.dataset.permission;
+                        input.checked=Object.prototype.hasOwnProperty.call(current,key)?Boolean(current[key]):Boolean(roleDefaults[key]);
+                    });
+                    box.classList.remove('hidden');box.focus();
+                }
                 function close(){box.classList.add('hidden');if(lastTrigger)lastTrigger.focus();}
-                document.querySelectorAll('[data-perm-open]').forEach(function(trigger){trigger.addEventListener('click',function(){lastTrigger=trigger;name.textContent=trigger.dataset.adminName||'—';box.classList.remove('hidden');box.focus();});});
+                document.querySelectorAll('[data-perm-open]').forEach(function(trigger){trigger.addEventListener('click',function(){open(trigger);});});
                 box.querySelectorAll('[data-perm-close]').forEach(function(trigger){trigger.addEventListener('click',close);});
                 document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!box.classList.contains('hidden')){event.preventDefault();close();}});
             })();

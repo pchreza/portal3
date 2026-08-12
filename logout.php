@@ -2,11 +2,13 @@
 // logout.php — خروج امن: پاک‌سازی کامل سشن و کوکی
 require_once 'config.php';
 
-// محافظت CSRF برای خروج از طریق GET (لینک‌های داخل سایت توکن دارند)
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && !hash_equals(csrf_token(), (string) ($_GET['t'] ?? ''))) {
-    header('Location: index.php');
-    exit;
+// خروج فقط با POST مجاز است؛ GET نباید state را تغییر دهد.
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    header('Allow: POST');
+    http_response_code(405);
+    exit('روش درخواست برای خروج مجاز نیست.');
 }
+require_valid_csrf();
 
 // پاک کردن کامل داده‌های سشن
 $_SESSION = [];

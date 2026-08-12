@@ -44,16 +44,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ticket_status === 'closed') {
             $error = 'این تیکت بسته شده است و امکان ارسال پاسخ جدید وجود ندارد.';
         } elseif (!empty($message)) {
-            $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'admin', ?)");
-            $stmt->execute([$ticket_id, $_SESSION['user_id'], $message]);
+            try {
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'admin', ?)");
+                $stmt->execute([$ticket_id, $_SESSION['user_id'], $message]);
 
-            // Update ticket status to answered
-            $stmt = $pdo->prepare("UPDATE tickets SET status = 'answered' WHERE id = ?");
-            $stmt->execute([$ticket_id]);
+                // Update ticket status to answered
+                $stmt = $pdo->prepare("UPDATE tickets SET status = 'answered' WHERE id = ?");
+                $stmt->execute([$ticket_id]);
+                $pdo->commit();
 
-            log_activity($_SESSION['user_id'], "ارسال پاسخ به تیکت ID: {$ticket_id}");
-            sms_trigger_ticket_reply($ticket_id);
-            $success = 'پاسخ شما با موفقیت ثبت شد.';
+                log_activity($_SESSION['user_id'], "ارسال پاسخ به تیکت ID: {$ticket_id}");
+                try {
+                    sms_trigger_ticket_reply($ticket_id);
+                } catch (Throwable $sms_error) {
+                    error_log('[Admin Ticket SMS] ' . $sms_error->getMessage());
+                }
+                $success = 'پاسخ شما با موفقیت ثبت شد.';
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                error_log('[Admin Ticket Reply] ' . $e->getMessage());
+                $error = 'ثبت پاسخ انجام نشد. لطفاً دوباره تلاش کنید.';
+            }
         } else {
             $error = 'متن پاسخ نمی‌تواند خالی باشد.';
         }
@@ -232,7 +246,7 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 ma
                     <?php endif; ?>
                 </div>
 
-                <script>document.addEventListener('DOMContentLoaded',function(){var t=document.getElementById('chat-thread');if(t)t.scrollTop=t.scrollHeight;});</script>
+                <script nonce="<?= e(portal_csp_nonce()) ?>">document.addEventListener('DOMContentLoaded',function(){var t=document.getElementById('chat-thread');if(t)t.scrollTop=t.scrollHeight;});</script>
 
             <?php else: ?>
                 <!-- ===== فیلترها ===== -->

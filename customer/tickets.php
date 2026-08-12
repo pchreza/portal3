@@ -22,17 +22,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (empty($subject) || empty($message)) {
         $error = 'موضوع و متن پیام تیکت الزامی است.';
     } else {
-        $stmt = $pdo->prepare("INSERT INTO tickets (customer_id, subject, priority, department_id, status) VALUES (?, ?, ?, ?, 'open')");
-        $stmt->execute([$user_id, $subject, $priority, $department_id]);
-        $ticket_id = $pdo->lastInsertId();
+        try {
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare("INSERT INTO tickets (customer_id, subject, priority, department_id, status) VALUES (?, ?, ?, ?, 'open')");
+            $stmt->execute([$user_id, $subject, $priority, $department_id]);
+            $ticket_id = (int) $pdo->lastInsertId();
 
-        $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'customer', ?)");
-        $stmt->execute([$ticket_id, $user_id, $message]);
+            $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'customer', ?)");
+            $stmt->execute([$ticket_id, $user_id, $message]);
+            $pdo->commit();
 
-        log_activity($user_id, "ثبت تیکت پشتیبانی جدید: {$subject}");
-        $_SESSION['flash'] = 'تیکت پشتیبانی شما با موفقیت ثبت شد.';
-        header('Location: tickets.php');
-        exit;
+            log_activity($user_id, "ثبت تیکت پشتیبانی جدید: {$subject}");
+            $_SESSION['flash'] = 'تیکت پشتیبانی شما با موفقیت ثبت شد.';
+            header('Location: tickets.php');
+            exit;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log('[Customer Ticket Create] ' . $e->getMessage());
+            $error = 'ثبت تیکت انجام نشد. لطفاً دوباره تلاش کنید.';
+        }
     }
 }
 
@@ -47,17 +57,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $ticket = $stmt->fetch();
 
     if ($ticket && $ticket['status'] !== 'closed' && !empty($message)) {
-        $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'customer', ?)");
-        $stmt->execute([$ticket_id, $user_id, $message]);
+        try {
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'customer', ?)");
+            $stmt->execute([$ticket_id, $user_id, $message]);
 
-        // Update status back to open so admin sees it needs attention
-        $stmt = $pdo->prepare("UPDATE tickets SET status = 'open' WHERE id = ?");
-        $stmt->execute([$ticket_id]);
+            // Update status back to open so admin sees it needs attention
+            $stmt = $pdo->prepare("UPDATE tickets SET status = 'open' WHERE id = ?");
+            $stmt->execute([$ticket_id]);
+            $pdo->commit();
 
-        log_activity($user_id, "ارسال پاسخ به تیکت ID: {$ticket_id}");
-        $_SESSION['flash'] = 'پاسخ شما با موفقیت ارسال شد.';
-        header('Location: tickets.php?view=' . $ticket_id);
-        exit;
+            log_activity($user_id, "ارسال پاسخ به تیکت ID: {$ticket_id}");
+            $_SESSION['flash'] = 'پاسخ شما با موفقیت ارسال شد.';
+            header('Location: tickets.php?view=' . $ticket_id);
+            exit;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log('[Customer Ticket Reply] ' . $e->getMessage());
+            $error = 'ارسال پاسخ انجام نشد. لطفاً دوباره تلاش کنید.';
+        }
     } elseif ($ticket && $ticket['status'] === 'closed') {
         $error = 'این تیکت بسته شده است و امکان ارسال پاسخ جدید وجود ندارد.';
     } else {
@@ -169,7 +189,7 @@ $tickets = $stmt->fetchAll();
                     <?php endif; ?>
                 </div>
 
-                <script>document.addEventListener('DOMContentLoaded',function(){var t=document.getElementById('chat-thread');if(t)t.scrollTop=t.scrollHeight;});</script>
+                <script nonce="<?= e(portal_csp_nonce()) ?>">document.addEventListener('DOMContentLoaded',function(){var t=document.getElementById('chat-thread');if(t)t.scrollTop=t.scrollHeight;});</script>
 
             <?php elseif ($action === 'new'): ?>
                 <!-- New Ticket Form -->

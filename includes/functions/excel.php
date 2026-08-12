@@ -496,7 +496,13 @@ function excel_import_customers(array $rows, string $defaultPassword = ''): arra
     $added = 0;
     $errors = [];
     $seenUsernames = [];
+    $sms_ids = [];
+    $started_transaction = !$pdo->inTransaction();
+    if ($started_transaction) {
+        $pdo->beginTransaction();
+    }
 
+    try {
     foreach ($rows as $ri => $row) {
         if ($ri === 0 && excel_row_is_header($row)) {
             continue;
@@ -545,8 +551,24 @@ function excel_import_customers(array $rows, string $defaultPassword = ''): arra
         $seenUsernames[$username] = true;
         $added++;
 
-        // پیامک خوش‌آمد (اگر فعال باشد)
-        sms_trigger_welcome($uid);
+        // پیامک خوش‌آمد پس از commit ارسال می‌شود.
+        $sms_ids[] = $uid;
+    }
+    if ($started_transaction) {
+        $pdo->commit();
+    }
+    foreach ($sms_ids as $uid) {
+        try {
+            sms_trigger_welcome($uid);
+        } catch (Throwable $e) {
+            error_log('[Excel Customer Welcome SMS] ' . $e->getMessage());
+        }
+    }
+    } catch (Throwable $e) {
+        if ($started_transaction && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
     }
     return ['added' => $added, 'errors' => $errors];
 }
@@ -561,7 +583,13 @@ function excel_import_products(array $rows): array
     $added = 0;
     $errors = [];
     $customerCache = [];
+    $sms_ids = [];
+    $started_transaction = !$pdo->inTransaction();
+    if ($started_transaction) {
+        $pdo->beginTransaction();
+    }
 
+    try {
     foreach ($rows as $ri => $row) {
         if ($ri === 0 && excel_row_is_header($row)) {
             continue;
@@ -569,14 +597,16 @@ function excel_import_products(array $rows): array
         $title      = trim((string) ($row[0] ?? ''));
         $username   = trim((string) ($row[1] ?? ''));
         $desc       = trim((string) ($row[2] ?? ''));
-        $price      = trim((string) ($row[3] ?? ''));
+        $price      = normalize_money_input((string) ($row[3] ?? ''));
         $status     = excel_product_status_key((string) ($row[4] ?? ''));
         $purchase   = portal_date_to_db(trim((string) ($row[5] ?? ''))); // شمسی → میلادی (هماهنگ با فرم)
         $license    = trim((string) ($row[6] ?? ''));
 
         // ضدعفونی تزریق فرمول
         foreach (['title', 'username', 'desc', 'price', 'purchase', 'license'] as $kv) {
-            $$kv = excel_sanitize_formula($$kv);
+            if (is_string($$kv)) {
+                $$kv = excel_sanitize_formula($$kv);
+            }
         }
 
         $line = $ri + 1;
@@ -586,6 +616,10 @@ function excel_import_products(array $rows): array
         }
         if ($username === '') {
             $errors[] = "سطر {$line}: نام کاربری مشتری خالی است.";
+            continue;
+        }
+        if ($price === null) {
+            $errors[] = "سطر {$line}: قیمت باید عددی و حداکثر دو رقم اعشار داشته باشد.";
             continue;
         }
         if (!array_key_exists($username, $customerCache)) {
@@ -601,7 +635,23 @@ function excel_import_products(array $rows): array
         $q = $pdo->prepare("INSERT INTO products (customer_id, title, description, price, product_status, purchase_date, license_key) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $q->execute([$customerCache[$username], $title, $desc, $price, $status, $purchase, $license]);
         $added++;
-        sms_trigger_product_assigned((int) $pdo->lastInsertId());
+        $sms_ids[] = (int) $pdo->lastInsertId();
+    }
+    if ($started_transaction) {
+        $pdo->commit();
+    }
+    foreach ($sms_ids as $product_id) {
+        try {
+            sms_trigger_product_assigned($product_id);
+        } catch (Throwable $e) {
+            error_log('[Excel Product SMS] ' . $e->getMessage());
+        }
+    }
+    } catch (Throwable $e) {
+        if ($started_transaction && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
     }
     return ['added' => $added, 'errors' => $errors];
 }
@@ -616,7 +666,13 @@ function excel_import_projects(array $rows): array
     $added = 0;
     $errors = [];
     $customerCache = [];
+    $sms_ids = [];
+    $started_transaction = !$pdo->inTransaction();
+    if ($started_transaction) {
+        $pdo->beginTransaction();
+    }
 
+    try {
     foreach ($rows as $ri => $row) {
         if ($ri === 0 && excel_row_is_header($row)) {
             continue;
@@ -654,7 +710,23 @@ function excel_import_projects(array $rows): array
         $q = $pdo->prepare("INSERT INTO projects (customer_id, title, description, status, deadline) VALUES (?, ?, ?, ?, ?)");
         $q->execute([$customerCache[$username], $title, $desc, $status, $deadline]);
         $added++;
-        sms_trigger_project_assigned((int) $pdo->lastInsertId());
+        $sms_ids[] = (int) $pdo->lastInsertId();
+    }
+    if ($started_transaction) {
+        $pdo->commit();
+    }
+    foreach ($sms_ids as $project_id) {
+        try {
+            sms_trigger_project_assigned($project_id);
+        } catch (Throwable $e) {
+            error_log('[Excel Project SMS] ' . $e->getMessage());
+        }
+    }
+    } catch (Throwable $e) {
+        if ($started_transaction && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
     }
     return ['added' => $added, 'errors' => $errors];
 }
@@ -688,7 +760,7 @@ function render_excel_toolbar(array $opts): void
                 </a>
                 <?php endif; ?>
                 <?php if ($supportsImport): ?>
-                <button type="button" aria-controls="<?= $importId ?>" aria-expanded="false" onclick="var panel=document.getElementById('<?= $importId ?>'); var isOpen=panel.classList.toggle('hidden')===false; this.setAttribute('aria-expanded', String(isOpen)); this.classList.toggle('bg-emerald-600', isOpen); this.classList.toggle('text-white', isOpen); this.classList.toggle('bg-emerald-50', !isOpen); this.classList.toggle('text-emerald-700', !isOpen);" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition cursor-pointer">
+                <button type="button" aria-controls="<?= $importId ?>" aria-expanded="false" data-excel-toggle="<?= $importId ?>" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition cursor-pointer">
                     <span>ورود فایل</span>
                 </button>
                 <?php endif; ?>
@@ -712,5 +784,19 @@ function render_excel_toolbar(array $opts): void
         </div>
         <?php endif; ?>
     </div>
+    <script nonce="<?= e(portal_csp_nonce()) ?>">
+    document.querySelectorAll('[data-excel-toggle]').forEach(function(button){
+        button.addEventListener('click', function(){
+            var panel = document.getElementById(button.dataset.excelToggle);
+            if (!panel) return;
+            var isOpen = panel.classList.toggle('hidden') === false;
+            button.setAttribute('aria-expanded', String(isOpen));
+            button.classList.toggle('bg-emerald-600', isOpen);
+            button.classList.toggle('text-white', isOpen);
+            button.classList.toggle('bg-emerald-50', !isOpen);
+            button.classList.toggle('text-emerald-700', !isOpen);
+        });
+    });
+    </script>
     <?php
 }

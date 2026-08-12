@@ -8,7 +8,7 @@
 
 /** آخرین نسخه اسکیمای دیتابیس — هنگام افزودن مهاجرت جدید، این عدد را یک واحد زیاد کنید. */
 if (!defined('PORTAL_SCHEMA_VERSION')) {
-    define('PORTAL_SCHEMA_VERSION', 24);
+    define('PORTAL_SCHEMA_VERSION', 28);
 }
 
 function portal_column_exists(PDO $db, string $table, string $column): bool {
@@ -19,6 +19,15 @@ function portal_index_exists(PDO $db, string $table, string $index): bool {
 }
 function portal_fk_exists(PDO $db, string $table, string $fk): bool {
     $q=$db->prepare("SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME=? AND CONSTRAINT_NAME=? AND CONSTRAINT_TYPE='FOREIGN KEY'");$q->execute([$table,$fk]);return (bool)$q->fetchColumn();
+}
+
+function portal_schema_version(PDO $db): int
+{
+    try {
+        return (int) $db->query('SELECT COALESCE(MAX(version), 0) FROM schema_versions')->fetchColumn();
+    } catch (Throwable $e) {
+        return 0;
+    }
 }
 
 /**
@@ -317,6 +326,93 @@ function portal_migrations(PDO $pdo): void {
                         }
                     }
                 }
+            },
+            25=>function($db){
+                // API key پیامک از settings خارج شده و فقط از environment خوانده می‌شود.
+                $db->exec("UPDATE settings SET setting_value = '' WHERE setting_key = 'sms_api_key'");
+            },
+            26=>function($db){
+                // تبدیل امن مبلغ و تاریخ از VARCHAR به typeهای قابل محاسبه.
+                $date_specs = [
+                    ['projects', 'deadline'],
+                    ['products', 'purchase_date'],
+                    ['invoices', 'due_date'],
+                ];
+                foreach ($date_specs as [$table, $column]) {
+                    $rows = $db->query("SELECT id, {$column} FROM {$table} WHERE {$column} IS NOT NULL AND TRIM({$column}) <> ''")->fetchAll();
+                    $update = $db->prepare("UPDATE {$table} SET {$column} = ? WHERE id = ?");
+                    foreach ($rows as $row) {
+                        $raw = trim((string) $row[$column]);
+                        $converted = function_exists('portal_date_to_db') ? portal_date_to_db($raw) : $raw;
+                        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $converted)) {
+                            throw new RuntimeException("مقدار تاریخ ناسالم در {$table}.{$column} برای ID {$row['id']}");
+                        }
+                        $update->execute([$converted, (int) $row['id']]);
+                    }
+                    $db->exec("UPDATE {$table} SET {$column} = NULL WHERE {$column} = ''");
+                }
+
+                $money_specs = [
+                    ['products', 'price'],
+                    ['invoices', 'amount'],
+                ];
+                foreach ($money_specs as [$table, $column]) {
+                    $rows = $db->query("SELECT id, {$column} FROM {$table} WHERE {$column} IS NOT NULL AND TRIM({$column}) <> ''")->fetchAll();
+                    $update = $db->prepare("UPDATE {$table} SET {$column} = ? WHERE id = ?");
+                    foreach ($rows as $row) {
+                        $normalized = function_exists('normalize_money_input') ? normalize_money_input((string) $row[$column]) : null;
+                        if ($normalized === null) {
+                            throw new RuntimeException("مقدار مالی ناسالم در {$table}.{$column} برای ID {$row['id']}");
+                        }
+                        $update->execute([$normalized === '' ? null : $normalized, (int) $row['id']]);
+                    }
+                    $db->exec("UPDATE {$table} SET {$column} = NULL WHERE {$column} = ''");
+                }
+
+                $db->exec("ALTER TABLE projects MODIFY deadline DATE NULL DEFAULT NULL");
+                $db->exec("ALTER TABLE products MODIFY price DECIMAL(18,2) NULL DEFAULT NULL, MODIFY purchase_date DATE NULL DEFAULT NULL");
+                $db->exec("ALTER TABLE invoices MODIFY amount DECIMAL(18,2) NULL DEFAULT NULL, MODIFY due_date DATE NULL DEFAULT NULL");
+            },
+            27=>function($db){
+                // قبل از ساخت constraint، duplicate/orphan باید explicit گزارش شود و silently حذف نشود.
+                $duplicate_checks = [
+                    "SELECT COUNT(*) FROM (SELECT target_entity, field_name FROM custom_fields GROUP BY target_entity, field_name HAVING COUNT(*) > 1) d",
+                    "SELECT COUNT(*) FROM (SELECT field_id, entity_id FROM custom_field_values GROUP BY field_id, entity_id HAVING COUNT(*) > 1) d",
+                ];
+                foreach ($duplicate_checks as $sql) {
+                    if ((int) $db->query($sql)->fetchColumn() > 0) {
+                        throw new RuntimeException('برای اعمال constraint یکتا، دادهٔ تکراری باید ابتدا دستی بررسی شود.');
+                    }
+                }
+                if (!portal_index_exists($db, 'custom_fields', 'uniq_custom_field_name')) {
+                    $db->exec("CREATE UNIQUE INDEX uniq_custom_field_name ON custom_fields (target_entity, field_name)");
+                }
+                if (!portal_index_exists($db, 'custom_field_values', 'uniq_custom_field_value')) {
+                    $db->exec("CREATE UNIQUE INDEX uniq_custom_field_value ON custom_field_values (field_id, entity_id)");
+                }
+                $foreign_keys = [
+                    ['survey_assignments', 'fk_sa_survey', 'ALTER TABLE survey_assignments ADD CONSTRAINT fk_sa_survey FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE'],
+                    ['survey_assignments', 'fk_sa_customer', 'ALTER TABLE survey_assignments ADD CONSTRAINT fk_sa_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE'],
+                    ['tickets', 'fk_ticket_department', 'ALTER TABLE tickets ADD CONSTRAINT fk_ticket_department FOREIGN KEY (department_id) REFERENCES ticket_departments(id) ON DELETE SET NULL'],
+                    ['activity_logs', 'fk_activity_user', 'ALTER TABLE activity_logs ADD CONSTRAINT fk_activity_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL'],
+                    ['sms_logs', 'fk_sms_user', 'ALTER TABLE sms_logs ADD CONSTRAINT fk_sms_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL'],
+                    ['notifications', 'fk_notification_creator', 'ALTER TABLE notifications ADD CONSTRAINT fk_notification_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL'],
+                ];
+                foreach ($foreign_keys as [$table, $name, $sql]) {
+                    if (!portal_fk_exists($db, $table, $name)) {
+                        $db->exec($sql);
+                    }
+                }
+            },
+            28=>function($db){
+                $db->exec("CREATE TABLE IF NOT EXISTS admin_user_permissions (
+                    user_id INT NOT NULL,
+                    permission VARCHAR(60) NOT NULL,
+                    allowed TINYINT(1) NOT NULL DEFAULT 0,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (user_id, permission),
+                    CONSTRAINT fk_admin_user_permission_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             }
         ];
         // گارد: مطمئن شو ثابت نسخه با بالاترین مهاجرت هماهنگ است

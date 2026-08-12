@@ -353,7 +353,7 @@ render_admin_header('مدیریت نظرسنجی', 'p-8 max-w-7xl w-full mx-auto
                                             <span class="inline-block mt-1 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full"><?= htmlspecialchars($question_type_labels[$item['question_type']] ?? $item['question_type']) ?></span>
                                         </div>
                                         <div class="flex items-center gap-2 shrink-0">
-                                            <button type="button" class="btn btn-sm btn-ghost !text-indigo-600" onclick="document.getElementById('qedit-<?= $item['id'] ?>').classList.toggle('hidden');"><?= icon('edit') ?><span>ویرایش</span></button>
+                                            <button type="button" class="btn btn-sm btn-ghost !text-indigo-600" data-question-edit="<?= (int) $item['id'] ?>"><?= icon('edit') ?><span>ویرایش</span></button>
                                             <form method="post" data-confirm-msg="حذف شود؟">
                                                 <?php echo csrf_input(); ?>
                                                 <input type="hidden" name="action" value="delete_question">
@@ -381,7 +381,7 @@ render_admin_header('مدیریت نظرسنجی', 'p-8 max-w-7xl w-full mx-auto
                                                 </select>
                                             </div>
                                             <div class="md:col-span-3 flex justify-end gap-2">
-                                                <button type="button" class="btn btn-sm btn-secondary" onclick="this.closest('[data-question-item]').querySelector('#qedit-<?= $item['id'] ?>').classList.add('hidden')">انصراف</button>
+                                                <button type="button" class="btn btn-sm btn-secondary" data-question-cancel>انصراف</button>
                                                 <button class="btn btn-sm btn-primary"><?= icon('check') ?><span>ذخیره سؤال</span></button>
                                             </div>
                                         </form>
@@ -431,7 +431,7 @@ render_admin_header('مدیریت نظرسنجی', 'p-8 max-w-7xl w-full mx-auto
                         </div>
 
                         <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" id="survey_periodic" name="is_periodic" value="1" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" <?= $form['is_periodic'] ? 'checked' : '' ?> onchange="document.getElementById('period').hidden=!this.checked">
+                            <input type="checkbox" id="survey_periodic" name="is_periodic" value="1" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" <?= $form['is_periodic'] ? 'checked' : '' ?> data-periodic-toggle>
                             <span class="text-sm font-medium text-slate-700">فرم دوره‌ای (بعد از تکمیل فرم اولیه، دوباره فعال می‌شود)</span>
                         </label>
 
@@ -491,7 +491,7 @@ render_admin_header('مدیریت نظرسنجی', 'p-8 max-w-7xl w-full mx-auto
                         </div>
 
                         <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" id="survey_periodic" name="is_periodic" value="1" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" onchange="document.getElementById('period').hidden=!this.checked">
+                            <input type="checkbox" id="survey_periodic" name="is_periodic" value="1" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" data-periodic-toggle>
                             <span class="text-sm font-medium text-slate-700">فرم دوره‌ای (بعد از تکمیل فرم اولیه، دوباره فعال می‌شود)</span>
                         </label>
 
@@ -583,5 +583,29 @@ render_admin_header('مدیریت نظرسنجی', 'p-8 max-w-7xl w-full mx-auto
                     </div>
                 </div>
             <?php endif; ?>
+
+            <script nonce="<?= e(portal_csp_nonce()) ?>">
+            document.addEventListener('DOMContentLoaded', function(){
+                document.querySelectorAll('[data-question-edit]').forEach(function(button){
+                    button.addEventListener('click', function(){
+                        var edit = document.getElementById('qedit-' + button.dataset.questionEdit);
+                        if (edit) edit.classList.toggle('hidden');
+                    });
+                });
+                document.querySelectorAll('[data-question-cancel]').forEach(function(button){
+                    button.addEventListener('click', function(){
+                        var item = button.closest('[data-question-item]');
+                        var edit = item ? item.querySelector('[id^="qedit-"]') : null;
+                        if (edit) edit.classList.add('hidden');
+                    });
+                });
+                document.querySelectorAll('[data-periodic-toggle]').forEach(function(toggle){
+                    toggle.addEventListener('change', function(){
+                        var period = toggle.form ? toggle.form.querySelector('#period') : null;
+                        if (period) period.hidden = !toggle.checked;
+                    });
+                });
+            });
+            </script>
 
         <?php render_admin_footer();

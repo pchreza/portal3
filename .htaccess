@@ -13,6 +13,14 @@
     AddOutputFilterByType DEFLATE text/html text/plain text/css application/javascript application/json image/svg+xml
 </IfModule>
 <IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
 </IfModule>
+
+# فایل‌های پیکربندی، credential و ابزار توسعه نباید از وب قابل دریافت باشند.
+<FilesMatch "^(?:db_config\.php|\.env(?:\..*)?|composer\.(?:json|lock)|phpunit\.xml|phpstan\.neon|VERSION)$">
+    Require all denied
+</FilesMatch>
 Options -Indexes

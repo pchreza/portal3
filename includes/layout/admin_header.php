@@ -22,7 +22,7 @@ if ($admin_display_name === '') {
     <title><?= e($title) ?></title>
     <?= site_favicon_html() ?>
     <?= portal_font_css_link() ?>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="<?= e(portal_asset_href('assets/tailwind.css')) ?>">
     <style>
         body { font-family: 'Vazirmatn', Tahoma, Arial, sans-serif; }
         <?= $extraStyles ?>

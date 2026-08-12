@@ -258,7 +258,7 @@ render_customer_header(
                     </div>
                 </form>
 
-                <script>
+                <script nonce="<?= e(portal_csp_nonce()) ?>">
                 document.addEventListener('DOMContentLoaded', function(){
                     var form = document.getElementById('survey-form');
                     if (!form) return;

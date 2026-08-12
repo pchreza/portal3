@@ -250,8 +250,8 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                             </div>
                             <p class="text-xs text-slate-400 mt-2">برای انتخاب همه، از دکمه‌های زیر استفاده کنید:</p>
                             <div class="flex gap-3 mt-1">
-                                <button type="button" onclick="document.querySelectorAll('#custom-users-box input[type=checkbox]').forEach(c=>c.checked=true)" class="text-xs text-indigo-600 font-medium hover:underline cursor-pointer">انتخاب همه</button>
-                                <button type="button" onclick="document.querySelectorAll('#custom-users-box input[type=checkbox]').forEach(c=>c.checked=false)" class="text-xs text-slate-500 font-medium hover:underline cursor-pointer">پاک‌کردن</button>
+                                <button type="button" data-select-all-users class="text-xs text-indigo-600 font-medium hover:underline cursor-pointer">انتخاب همه</button>
+                                <button type="button" data-clear-all-users class="text-xs text-slate-500 font-medium hover:underline cursor-pointer">پاک‌کردن</button>
                             </div>
                         </div>
 
@@ -262,7 +262,7 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                     </form>
                 </div>
 
-                <script>
+                <script nonce="<?= e(portal_csp_nonce()) ?>">
                     // نمایش/مخفی‌کردن انتخاب دستی مشتریان بر اساس هدف
                     (function(){
                         var sel = document.getElementById('target_type');
@@ -273,6 +273,10 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                             box.querySelectorAll('input[type=checkbox]').forEach(function(c){ c.required = (sel.value === 'custom'); });
                         }
                         sel.addEventListener('change', toggle);
+                        var selectAll = document.querySelector('[data-select-all-users]');
+                        var clearAll = document.querySelector('[data-clear-all-users]');
+                        if (selectAll) selectAll.addEventListener('click', function(){box.querySelectorAll('input[type=checkbox]').forEach(function(c){c.checked=true;});});
+                        if (clearAll) clearAll.addEventListener('click', function(){box.querySelectorAll('input[type=checkbox]').forEach(function(c){c.checked=false;});});
                         toggle();
                     })();
                 </script>

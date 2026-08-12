@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@source "../*.php";
+@source "../admin/**/*.php";
+@source "../customer/**/*.php";
+@source "../includes/**/*.php";

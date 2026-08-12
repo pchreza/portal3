@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_setting('login_method', in_array($lm, ['username', 'mobile'], true) ? $lm : 'username');
 
         // --- تنظیمات پیامک ippanel ---
-        set_setting('sms_api_key', trim($_POST['sms_api_key'] ?? ''));
+        // API key هرگز در دیتابیس ذخیره نمی‌شود؛ از PORTAL_SMS_API_KEY خوانده می‌شود.
         set_setting('sms_pattern', trim($_POST['sms_pattern'] ?? ''));
         set_setting('sms_pattern_var', trim($_POST['sms_pattern_var'] ?? 'code'));
         set_setting('sms_from_number', trim($_POST['sms_from_number'] ?? ''));
@@ -454,7 +454,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                             </div>
                         </div>
                     </form>
-                    <form method="POST" class="mt-4" onsubmit="return confirm('کش سیستم پاک شود؟')">
+                    <form method="POST" class="mt-4" data-confirm-msg="کش سیستم پاک شود؟">
                         <?php echo csrf_input(); ?>
                         <input type="hidden" name="save_type" value="flush_cache">
                         <button class="btn btn-secondary"><?= icon('trash') ?><span>پاک‌سازی کش</span></button>
@@ -663,9 +663,14 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                         <div>
                             <h4 class="font-bold text-slate-800 text-sm mb-3">تنظیمات سرویس پیامک (IPPanel)</h4>
                             <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">API Key</label>
-                                    <input type="text" name="sms_api_key" dir="ltr" value="<?= htmlspecialchars(get_setting('sms_api_key', '')) ?>" placeholder="کلید API از پنل ippanel (Developers > Access Keys)" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm font-mono">
+                                <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                    <div class="flex items-start gap-3">
+                                        <span class="text-amber-600" aria-hidden="true"><?= icon('lock', 'w-5 h-5') ?></span>
+                                        <div>
+                                            <p class="text-sm font-semibold text-amber-900">کلید API پیامک خارج از دیتابیس نگهداری می‌شود</p>
+                                            <p class="text-xs text-amber-800 mt-1 leading-6">مقدار <code dir="ltr" class="font-mono">PORTAL_SMS_API_KEY</code> را در environment سرور تنظیم کنید. وضعیت فعلی: <strong><?= portal_sms_api_key() !== '' ? 'تنظیم شده' : 'تنظیم نشده' ?></strong>.</p>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">آدرس سایت (برای ساخت لینک پیامک‌ها)</label>
@@ -759,9 +764,9 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                     ?>
                                     <div class="sms-event-card border rounded-xl overflow-hidden <?= $ev_active ? 'border-indigo-200 ring-1 ring-indigo-100' : 'border-slate-200' ?>">
                                         <!-- سربرگ کارت (کلیک = باز/بسته کردن آکاردئون) -->
-                                        <div class="flex items-center justify-between gap-3 p-4 cursor-pointer select-none sms-event-head transition <?= $ev_active ? 'bg-indigo-50/40' : 'bg-slate-50/60 hover:bg-slate-50' ?>" role="button" tabindex="0" aria-expanded="<?= $ev_active ? 'true' : 'false' ?>" aria-controls="sms-body-<?= e($ev['event_key']) ?>" onclick="toggleSmsEventBody(this)">
+                                        <div class="flex items-center justify-between gap-3 p-4 cursor-pointer select-none sms-event-head transition <?= $ev_active ? 'bg-indigo-50/40' : 'bg-slate-50/60 hover:bg-slate-50' ?>" role="button" tabindex="0" aria-expanded="<?= $ev_active ? 'true' : 'false' ?>" aria-controls="sms-body-<?= e($ev['event_key']) ?>" data-sms-event-head>
                                             <div class="flex items-center gap-3">
-                                                <label class="relative inline-flex items-center cursor-pointer select-none" onclick="event.stopPropagation()" title="فعال/غیرفعال کردن رویداد">
+                                                <label class="relative inline-flex items-center cursor-pointer select-none" data-sms-event-switch title="فعال/غیرفعال کردن رویداد">
                                                     <input type="checkbox" name="event_<?= $ev['event_key'] ?>" value="1" <?= $ev_active ? 'checked' : '' ?> class="sr-only peer sms-event-toggle">
                                                     <div class="switch-track"></div>
                                                 </label>
@@ -802,7 +807,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
-                        <script>
+                        <script nonce="<?= e(portal_csp_nonce()) ?>">
                         // ===== آکاردئون رویدادهای پیامکی =====
                         // رویداد فعال = باز، غیرفعال = بسته (سوییچر و هدر هر دو کنترل می‌کنند)
                         function toggleSmsEventBody(headEl){
@@ -834,6 +839,11 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                 var cb = card.querySelector('.sms-event-toggle');
                                 var body = card.querySelector('.event-settings-body');
                                 var chev = card.querySelector('.event-chevron');
+                                var switchLabel = card.querySelector('[data-sms-event-switch]');
+                                head.addEventListener('click', function(e){
+                                    if (!e.target.closest('input,button,a,select,textarea')) toggleSmsEventBody(head);
+                                });
+                                if (switchLabel) switchLabel.addEventListener('click', function(e){e.stopPropagation();});
                                 head.addEventListener('keydown', function(e){
                                     if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('input,button,a,select,textarea')) {
                                         e.preventDefault();
@@ -868,7 +878,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                             <button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره رویدادهای پیامکی</span></button>
                         </div>
                         </form>
-                        <script>
+                        <script nonce="<?= e(portal_csp_nonce()) ?>">
                         // فعال/غیرفعال کردن فیلد «نام معادل در پترن» بر اساس تیک متغیر
                         document.addEventListener('DOMContentLoaded', function(){
                             document.querySelectorAll('input[type=checkbox][name^="vars_"]').forEach(function(cb){
@@ -1119,7 +1129,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">نسبت تصویر <span class="text-slate-400">(<?= $lc['split_ratio'] ?>٪ تصویر — <?= 100 - $lc['split_ratio'] ?>٪ فرم)</span></label>
-                                    <input type="range" name="split_ratio" min="40" max="75" step="5" value="<?= $lc['split_ratio'] ?>" class="w-full accent-indigo-600" oninput="document.getElementById('split_ratio_val').textContent=this.value+'٪ تصویر'">
+                                    <input type="range" name="split_ratio" min="40" max="75" step="5" value="<?= $lc['split_ratio'] ?>" class="w-full accent-indigo-600" data-split-ratio>
                                     <p class="text-xs text-slate-400 mt-1" id="split_ratio_val"><?= $lc['split_ratio'] ?>٪ تصویر</p>
                                 </div>
                                 <div class="md:col-span-2">
@@ -1173,14 +1183,14 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">رنگ آغاز گرادیان</label>
                                     <div class="flex items-center gap-2">
                                         <input type="color" name="branded_from" value="<?= e($lc['branded_from']) ?>" class="w-12 h-10 rounded border border-slate-300 cursor-pointer">
-                                        <input type="text" name="branded_from_text" value="<?= e($lc['branded_from']) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono" oninput="this.form.querySelector('[name=branded_from]').value=this.value">
+                                        <input type="text" name="branded_from_text" value="<?= e($lc['branded_from']) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono" data-color-sync="branded_from">
                                     </div>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1.5">رنگ پایان گرادیان</label>
                                     <div class="flex items-center gap-2">
                                         <input type="color" name="branded_to" value="<?= e($lc['branded_to']) ?>" class="w-12 h-10 rounded border border-slate-300 cursor-pointer">
-                                        <input type="text" name="branded_to_text" value="<?= e($lc['branded_to']) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono" oninput="this.form.querySelector('[name=branded_to]').value=this.value">
+                                        <input type="text" name="branded_to_text" value="<?= e($lc['branded_to']) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono" data-color-sync="branded_to">
                                     </div>
                                     <div class="mt-2 h-6 rounded-lg border border-slate-200" style="background:linear-gradient(135deg,<?= $lc['branded_from'] ?>,<?= $lc['branded_to'] ?>)"></div>
                                 </div>
@@ -1233,31 +1243,33 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                             <?php $hmenu = header_menu_items(); ?>
                             <div id="header-menu-rows" class="space-y-3">
                                 <?php if (empty($hmenu)): ?>
-                                    <div class="flex gap-2 items-center"><input type="text" name="menu_label[]" placeholder="متن منو (مثلا: تماس با ما)" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm"><input type="text" name="menu_url[]" placeholder="لینک (مثلا: /contact)" dir="ltr" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono"><select name="menu_target[]" class="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white"><option value="_self">همان تب</option><option value="blank">تب جدید</option></select><button type="button" onclick="this.closest('.flex').remove()" class="btn btn-sm btn-outline-danger shrink-0">حذف</button></div>
+                                    <div class="flex gap-2 items-center"><input type="text" name="menu_label[]" placeholder="متن منو (مثلا: تماس با ما)" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm"><input type="text" name="menu_url[]" placeholder="لینک (مثلا: /contact)" dir="ltr" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono"><select name="menu_target[]" class="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white"><option value="_self">همان تب</option><option value="blank">تب جدید</option></select><button type="button" data-remove-menu-row class="btn btn-sm btn-outline-danger shrink-0">حذف</button></div>
                                 <?php else: ?>
                                     <?php foreach ($hmenu as $mi): ?>
                                         <div class="flex gap-2 items-center">
                                             <input type="text" name="menu_label[]" value="<?= htmlspecialchars($mi['label']) ?>" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm">
                                             <input type="text" name="menu_url[]" value="<?= htmlspecialchars($mi['url']) ?>" dir="ltr" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono">
                                             <select name="menu_target[]" class="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white"><option value="_self" <?= ($mi['target'] ?? '') === '_self' ? 'selected' : '' ?>>همان تب</option><option value="blank" <?= ($mi['target'] ?? '') === '_blank' ? 'selected' : '' ?>>تب جدید</option></select>
-                                            <button type="button" onclick="this.closest('.flex').remove()" class="btn btn-sm btn-outline-danger shrink-0"><?= icon('trash') ?></button>
+                                            <button type="button" data-remove-menu-row class="btn btn-sm btn-outline-danger shrink-0"><?= icon('trash') ?></button>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </div>
-                            <button type="button" onclick="addHeaderMenuRow()" class="mt-2 btn btn-sm btn-secondary"><?= icon('plus') ?> افزودن آیتم</button>
-                            <script>
+                            <button type="button" data-add-menu-row class="mt-2 btn btn-sm btn-secondary"><?= icon('plus') ?> افزودن آیتم</button>
+                            <script nonce="<?= e(portal_csp_nonce()) ?>">
                             function addHeaderMenuRow(){
                                 var rows=document.getElementById('header-menu-rows');
                                 var d=document.createElement('div');d.className='flex gap-2 items-center';
-                                d.innerHTML='<input type="text" name="menu_label[]" placeholder="متن منو" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm"><input type="text" name="menu_url[]" placeholder="لینک" dir="ltr" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono"><select name="menu_target[]" class="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white"><option value="_self">همان تب</option><option value="blank">تب جدید</option></select><button type="button" onclick="this.parentElement.remove()" class="btn btn-sm btn-outline-danger shrink-0"><?= icon('trash') ?></button>';
+                                d.innerHTML='<input type="text" name="menu_label[]" placeholder="متن منو" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm"><input type="text" name="menu_url[]" placeholder="لینک" dir="ltr" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm font-mono"><select name="menu_target[]" class="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white"><option value="_self">همان تب</option><option value="blank">تب جدید</option></select><button type="button" data-remove-menu-row class="btn btn-sm btn-outline-danger shrink-0"><?= icon('trash') ?></button>';
                                 rows.appendChild(d);
+                                var remove = d.querySelector('[data-remove-menu-row]');
+                                if (remove) remove.addEventListener('click', function(){ d.remove(); });
                             }
                             </script>
                         </div>
 
                         <div class="pt-4 border-t border-slate-100 flex justify-end">
-                            <script>
+                            <script nonce="<?= e(portal_csp_nonce()) ?>">
                             // نمایش/مخفی‌کردن بخش‌های تنظیمات مرتبط با طرح انتخاب‌شده
                             document.addEventListener('DOMContentLoaded', function(){
                                 var layoutRadios = document.querySelectorAll('input[name="login_layout"]');
@@ -1271,6 +1283,18 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                     });
                                 }
                                 layoutRadios.forEach(function(r){ r.addEventListener('change', syncLayout); });
+                                document.querySelectorAll('[data-remove-menu-row]').forEach(function(button){
+                                    button.addEventListener('click', function(){ var row = button.closest('#header-menu-rows > div'); if (row) row.remove(); });
+                                });
+                                var addMenu = document.querySelector('[data-add-menu-row]');
+                                if (addMenu) addMenu.addEventListener('click', addHeaderMenuRow);
+                                var ratio = document.querySelector('[data-split-ratio]');
+                                var ratioLabel = document.getElementById('split_ratio_val');
+                                if (ratio && ratioLabel) ratio.addEventListener('input', function(){ ratioLabel.textContent = ratio.value + '٪ تصویر'; });
+                                document.querySelectorAll('[data-color-sync]').forEach(function(textInput){
+                                    var colorInput = textInput.form ? textInput.form.querySelector('[name="' + textInput.dataset.colorSync + '"]') : null;
+                                    if (colorInput) textInput.addEventListener('input', function(){ colorInput.value = textInput.value; });
+                                });
                                 syncLayout();
                             });
                             </script>
