@@ -42,6 +42,7 @@ final class GamificationSecurityTest extends TestCase
         try {
             self::assertNull(gamification_context_offer(42, 'survey_submitted'));
             self::assertFalse(gamification_customer_has_event(42, 'survey_submitted'));
+            self::assertSame('disabled', gamification_customer_event_status(42, 'survey_submitted')['state']);
         } finally {
             $pdo = $previousPdo;
             if ($previousSettings === null) {
@@ -49,6 +50,20 @@ final class GamificationSecurityTest extends TestCase
             } else {
                 $GLOBALS['__portal_settings_cache'] = $previousSettings;
             }
+        }
+    }
+
+    public function testAwardFeedbackStoresAOneTimeToastPayload(): void
+    {
+        $previousSession = $_SESSION ?? [];
+        $_SESSION = [];
+        try {
+            gamification_award_feedback(7, 'survey_submitted', 50);
+            self::assertSame('survey_submitted', $_SESSION['gamification_award_flash']['event_key']);
+            self::assertSame(50, $_SESSION['gamification_award_flash']['points']);
+            self::assertStringContainsString('50', $_SESSION['gamification_award_flash']['message']);
+        } finally {
+            $_SESSION = $previousSession;
         }
     }
 }

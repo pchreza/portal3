@@ -31,7 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'customer', ?)");
             $stmt->execute([$ticket_id, $user_id, $message]);
             $pdo->commit();
-            gamification_award_points($user_id, 'ticket_created', 'ticket_created:' . $ticket_id, 'امتیاز ثبت تیکت جدید', 'ticket', (string) $ticket_id);
+            $awardedPoints = gamification_award_points($user_id, 'ticket_created', 'ticket_created:' . $ticket_id, 'امتیاز ثبت تیکت جدید', 'ticket', (string) $ticket_id);
+            if ($awardedPoints > 0) {
+                gamification_award_feedback((int) $user_id, 'ticket_created', $awardedPoints);
+            }
 
             log_activity($user_id, "ثبت تیکت پشتیبانی جدید: {$subject}");
             $_SESSION['flash'] = 'تیکت پشتیبانی شما با موفقیت ثبت شد.';
@@ -68,7 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmt = $pdo->prepare("UPDATE tickets SET status = 'open' WHERE id = ?");
             $stmt->execute([$ticket_id]);
             $pdo->commit();
-            gamification_award_points($user_id, 'ticket_customer_reply', 'ticket_customer_reply:' . $reply_message_id, 'امتیاز پاسخ به تیکت', 'ticket_message', (string) $reply_message_id);
+            $awardedPoints = gamification_award_points($user_id, 'ticket_customer_reply', 'ticket_customer_reply:' . $reply_message_id, 'امتیاز پاسخ به تیکت', 'ticket_message', (string) $reply_message_id);
+            if ($awardedPoints > 0) {
+                gamification_award_feedback((int) $user_id, 'ticket_customer_reply', $awardedPoints);
+            }
 
             log_activity($user_id, "ارسال پاسخ به تیکت ID: {$ticket_id}");
             $_SESSION['flash'] = 'پاسخ شما با موفقیت ارسال شد.';

@@ -1,6 +1,6 @@
 # پورتال مشتریان Portal3
 
-**نسخهٔ فعلی:** `2.2.1`
+**نسخهٔ فعلی:** `2.2.2`
 **نوع سیستم:** پورتال مشتریان تحت وب با PHP و MariaDB/MySQL
 **زبان رابط کاربری:** فارسی و راست‌به‌چپ (RTL)
 **مخزن رسمی:** [github.com/pchreza/portal3](https://github.com/pchreza/portal3)
@@ -107,7 +107,7 @@ XAMPP:   C:\xampp\htdocs\portal3
 
 ```bash
 cd /c/laragon/www
-unzip /مسیر/portal3-v2.2.1-clean-20260812.zip
+unzip /مسیر/portal3-v2.2.2-clean-20260813.zip
 cd portal3
 ```
 
@@ -211,7 +211,7 @@ php bin/migrate.php
 خروجی موفق نسخهٔ فعلی باید شبیه این باشد:
 
 ```text
-Migration موفق بود؛ schema version=28.
+Migration موفق بود؛ schema version=31; cache flushed=...
 ```
 
 در production از اجرای migration از طریق browser یا فعال‌کردن دائمی auto-migration خودداری کنید. اگر نسخهٔ کد جدید باشد و schema قدیمی، برنامه با پیام «سامانه در حال ارتقاست» سرویس‌های web را موقتاً متوقف می‌کند تا مدیر migration را اجرا کند.

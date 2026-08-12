@@ -72,7 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assignment_id'])) {
                 }
 
                 $pdo->commit();
-                gamification_award_points($uid, 'survey_submitted', 'survey_submitted:' . (int) $as['survey_id'] . ':' . $uid, 'امتیاز تکمیل نظرسنجی', 'survey_response', (string) $rid);
+                $awardedPoints = gamification_award_points($uid, 'survey_submitted', 'survey_submitted:' . (int) $as['survey_id'] . ':' . $uid, 'امتیاز تکمیل نظرسنجی', 'survey_response', (string) $rid);
+                if ($awardedPoints > 0) {
+                    gamification_award_feedback($uid, 'survey_submitted', $awardedPoints);
+                }
                 header('Location: surveys.php?submitted=1');
                 exit;
             } catch (PDOException $e) {

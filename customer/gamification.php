@@ -65,8 +65,13 @@ foreach (gamification_event_catalog() as $eventKey => $event) {
         'daily_cap' => (int) $rule['daily_cap'],
         'icon' => $eventIcons[$eventKey] ?? 'star',
         'link' => $eventLinks[$eventKey] ?? null,
+        'status' => gamification_customer_event_status($customerId, $eventKey),
     ];
 }
+$availableEventCount = count(array_filter(
+    $activeEvents,
+    static fn (array $event): bool => (string) ($event['status']['state'] ?? '') === 'available'
+));
 
 $nextReward = null;
 foreach ($rewards as $reward) {
@@ -135,21 +140,31 @@ render_customer_header('امتیازها و پاداش‌ها', 'p-4 sm:p-6 lg:p
             <section class="grid grid-cols-1 sm:grid-cols-3 gap-4" aria-label="خلاصهٔ امتیازها">
                 <div class="card gamification-stat p-5"><div class="flex items-center justify-between gap-3"><span class="text-sm text-slate-500">کل کسب‌شده</span><span class="gamification-earn-icon w-9 h-9 !rounded-xl"><?= icon('plus', 'w-4 h-4') ?></span></div><strong class="block text-2xl font-extrabold text-emerald-600 mt-3 tabular-nums" dir="ltr"><?= number_format((int) $wallet['total_earned']) ?></strong><span class="text-xs text-slate-500">امتیاز در تمام فعالیت‌ها</span></div>
                 <div class="card gamification-stat p-5"><div class="flex items-center justify-between gap-3"><span class="text-sm text-slate-500">کل مصرف‌شده</span><span class="gamification-earn-icon w-9 h-9 !rounded-xl text-amber-600 bg-amber-50"><?= icon('link', 'w-4 h-4') ?></span></div><strong class="block text-2xl font-extrabold text-amber-600 mt-3 tabular-nums" dir="ltr"><?= number_format((int) $wallet['total_spent']) ?></strong><span class="text-xs text-slate-500">امتیاز تبدیل‌شده به پاداش</span></div>
-                <div class="card gamification-stat p-5"><div class="flex items-center justify-between gap-3"><span class="text-sm text-slate-500">راه‌های فعال کسب امتیاز</span><span class="gamification-earn-icon w-9 h-9 !rounded-xl text-indigo-600 bg-indigo-50"><?= icon('layers', 'w-4 h-4') ?></span></div><strong class="block text-2xl font-extrabold text-indigo-600 mt-3 tabular-nums" dir="ltr"><?= count($activeEvents) ?></strong><span class="text-xs text-slate-500">فعالیت قابل‌امتیازدهی</span></div>
+                <div class="card gamification-stat p-5"><div class="flex items-center justify-between gap-3"><span class="text-sm text-slate-500">روش‌های قابل دریافت</span><span class="gamification-earn-icon w-9 h-9 !rounded-xl text-indigo-600 bg-indigo-50"><?= icon('layers', 'w-4 h-4') ?></span></div><strong class="block text-2xl font-extrabold text-indigo-600 mt-3 tabular-nums" dir="ltr"><?= $availableEventCount ?></strong><span class="text-xs text-slate-500"><?= count($activeEvents) > $availableEventCount ? 'از ' . count($activeEvents) . ' روش تنظیم‌شده' : 'فعالیت قابل‌امتیازدهی' ?></span></div>
             </section>
 
             <section id="earn-points" class="card p-5 sm:p-6 space-y-4" aria-labelledby="earn-points-title">
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2"><div><h2 id="earn-points-title" class="text-lg sm:text-xl font-bold">چطور امتیاز بگیرم؟</h2><p class="text-sm text-slate-500 mt-1">هر کارت شما را به همان بخشی می‌برد که می‌توانید فعالیت را انجام دهید.</p></div><span class="badge badge-brand"><?= count($activeEvents) ?> روش فعال</span></div>
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2"><div><h2 id="earn-points-title" class="text-lg sm:text-xl font-bold">چطور امتیاز بگیرم؟</h2><p class="text-sm text-slate-500 mt-1">هر کارت وضعیت واقعی فعالیت را نشان می‌دهد؛ موارد دریافت‌شده دیگر دکمهٔ فعال ندارند.</p></div><span class="badge <?= $availableEventCount > 0 ? 'badge-brand' : 'badge-muted' ?>"><?= $availableEventCount ?> قابل دریافت از <?= count($activeEvents) ?> روش</span></div>
                 <?php if (!$activeEvents): ?>
                     <div class="alert alert-muted" role="status"><?= icon('info') ?><span>در حال حاضر روش فعالی برای کسب امتیاز تنظیم نشده است.</span></div>
                 <?php else: ?>
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                         <?php foreach ($activeEvents as $eventKey => $event): ?>
-                            <?php $eventCard = $event['link'] ? '<a href="' . e($event['link']) . '" class="gamification-earn-card group" aria-label="' . e($event['title']) . '">' : '<div class="gamification-earn-card">'; ?>
+                            <?php
+                            $eventState = (string) ($event['status']['state'] ?? 'available');
+                            $eventStateMeta = [
+                                'available' => ['label' => 'قابل دریافت', 'class' => 'badge-brand'],
+                                'received' => ['label' => 'قبلاً دریافت شده', 'class' => 'badge-success'],
+                                'daily_cap' => ['label' => 'سقف امروز تکمیل شد', 'class' => 'badge-warning'],
+                                'cooldown' => ['label' => 'در انتظار فعال‌شدن', 'class' => 'badge-muted'],
+                            ][$eventState] ?? ['label' => 'وضعیت نامشخص', 'class' => 'badge-muted'];
+                            $eventInteractive = $event['link'] && $eventState === 'available';
+                            $eventCard = $eventInteractive ? '<a href="' . e($event['link']) . '" class="gamification-earn-card group" aria-label="' . e($event['title']) . '">' : '<div class="gamification-earn-card">';
+                            ?>
                             <?= $eventCard ?>
-                                <span class="gamification-earn-icon"><?= icon($event['icon'], 'w-5 h-5') ?></span>
-                                <span class="min-w-0 flex-1"><span class="flex items-start justify-between gap-2"><b class="text-sm text-slate-900 leading-6"><bdi dir="auto"><?= e($event['title']) ?></bdi></b><span class="badge badge-brand shrink-0"><?= e(gamification_points_label($event['points'])) ?></span></span><span class="block text-xs text-slate-500 leading-5 mt-1"><?= e($event['description']) ?></span><?php if ($event['daily_cap'] > 0): ?><span class="block text-[11px] text-slate-400 mt-2">سقف روزانه: <?= e(gamification_points_label($event['daily_cap'])) ?></span><?php endif; ?></span>
-                            <?= $event['link'] ? '</a>' : '</div>' ?>
+                                <span class="gamification-earn-icon <?= $eventState === 'received' ? 'bg-emerald-50 text-emerald-600' : '' ?>"><?= icon($eventState === 'received' ? 'check' : $event['icon'], 'w-5 h-5') ?></span>
+                                <span class="min-w-0 flex-1"><span class="flex items-start justify-between gap-2"><b class="text-sm text-slate-900 leading-6"><bdi dir="auto"><?= e($event['title']) ?></bdi></b><span class="badge <?= e($eventStateMeta['class']) ?> shrink-0"><?= e($eventStateMeta['label']) ?></span></span><span class="block text-xs text-slate-500 leading-5 mt-1"><?= e($event['description']) ?></span><span class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2"><span class="text-xs font-semibold text-indigo-600"><?= e(gamification_points_label($event['points'])) ?></span><?php if ($event['daily_cap'] > 0): ?><span class="text-[11px] text-slate-400">سقف روزانه: <?= e(gamification_points_label($event['daily_cap'])) ?></span><?php endif; ?><?php if ($eventState === 'cooldown'): ?><span class="text-[11px] text-slate-400">حدود <?= (int) ceil(((int) $event['status']['cooldown_remaining']) / 60) ?> دقیقه دیگر</span><?php endif; ?></span></span>
+                            <?= $eventInteractive ? '</a>' : '</div>' ?>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>

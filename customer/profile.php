@@ -71,7 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['last_name'] = $last_name;
             // ذخیره فیلدهای سفارشی (اگر ماژول فعال باشد)
             save_custom_fields_values('customer', $user_id);
-            gamification_award_profile_completion((int) $user_id);
+            $awardedPoints = gamification_award_profile_completion((int) $user_id);
+            if ($awardedPoints > 0) {
+                gamification_award_feedback((int) $user_id, 'profile_completed', $awardedPoints);
+            }
             log_activity($user_id, "بروزرسانی پروفایل شخصی");
             $success = 'پروفایل شما با موفقیت بروزرسانی شد.';
         } catch (Exception $e) {
@@ -120,7 +123,7 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                 }
             }
             $profile_offer = gamification_context_offer((int) $user_id, 'profile_completed');
-            $profile_needs_completion = $profile_offer && !gamification_profile_is_complete((int) $user_id);
+            $profile_is_complete = gamification_profile_is_complete((int) $user_id);
             if (!empty($missing_fields)):
             ?>
                 <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
@@ -132,16 +135,16 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                 </div>
             <?php endif; ?>
 
-            <?php if ($profile_needs_completion): ?>
+            <?php if ($profile_offer): ?>
                 <aside class="alert alert-info items-center justify-between gap-4" role="note">
                     <div class="flex items-start gap-3 min-w-0">
                         <span class="shrink-0 mt-0.5"><?= icon('star', 'w-5 h-5') ?></span>
                         <div class="min-w-0">
-                            <h4 class="font-bold text-sm">با تکمیل پروفایل <?= e(gamification_points_label($profile_offer['points'])) ?> بگیرید</h4>
-                            <p class="microcopy text-xs mt-1">فیلدهای ستاره‌دار را کامل کنید و تغییرات را ذخیره کنید تا امتیاز شما ثبت شود.</p>
+                            <h4 class="font-bold text-sm"><?= $profile_is_complete ? 'با ذخیرهٔ پروفایل ' : 'با تکمیل پروفایل ' ?><?= e(gamification_points_label($profile_offer['points'])) ?> بگیرید</h4>
+                            <p class="microcopy text-xs mt-1"><?= $profile_is_complete ? 'اطلاعات شما کامل است؛ تغییرات را ذخیره کنید تا امتیاز این فعالیت ثبت شود.' : 'فیلدهای ستاره‌دار را کامل کنید و تغییرات را ذخیره کنید تا امتیاز شما ثبت شود.' ?></p>
                         </div>
                     </div>
-                    <a href="#profile-form" class="btn btn-primary btn-sm shrink-0">تکمیل پروفایل</a>
+                    <a href="#profile-form" class="btn btn-primary btn-sm shrink-0"><?= $profile_is_complete ? 'ذخیره و دریافت' : 'تکمیل پروفایل' ?></a>
                 </aside>
             <?php endif; ?>
 

@@ -189,6 +189,81 @@ function gamification_customer_has_event(int $customerId, string $eventKey): boo
     return (bool) $stmt->fetchColumn();
 }
 
+function gamification_customer_has_idempotency(int $customerId, string $idempotencyKey): bool
+{
+    global $pdo;
+    if (!$pdo || $customerId <= 0 || trim($idempotencyKey) === '') {
+        return false;
+    }
+    $stmt = $pdo->prepare('SELECT id FROM customer_point_ledger WHERE customer_id = ? AND idempotency_key = ? LIMIT 1');
+    $stmt->execute([$customerId, substr(trim($idempotencyKey), 0, 160)]);
+    return (bool) $stmt->fetchColumn();
+}
+
+/** @return array{state:string,points:int,daily_cap:int,cooldown_seconds:int,daily_earned:int,total_earned:int,cooldown_remaining:int,last_awarded_at:?string} */
+function gamification_customer_event_status(int $customerId, string $eventKey): array
+{
+    global $pdo;
+    $empty = ['state' => 'disabled', 'points' => 0, 'daily_cap' => 0, 'cooldown_seconds' => 0, 'daily_earned' => 0, 'total_earned' => 0, 'cooldown_remaining' => 0, 'last_awarded_at' => null];
+    if (!$pdo || $customerId <= 0 || !gamification_enabled() || !isset(gamification_event_catalog()[$eventKey])) {
+        return $empty;
+    }
+    $rule = gamification_rule($eventKey);
+    if (!$rule || !(int) $rule['is_active'] || (int) $rule['points'] <= 0) {
+        return $empty;
+    }
+    $totalStmt = $pdo->prepare('SELECT COALESCE(SUM(delta), 0) FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0');
+    $totalStmt->execute([$customerId, $eventKey]);
+    $dailyStmt = $pdo->prepare('SELECT COALESCE(SUM(delta), 0) FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 AND created_at >= UTC_DATE()');
+    $dailyStmt->execute([$customerId, $eventKey]);
+    $lastStmt = $pdo->prepare('SELECT created_at, UNIX_TIMESTAMP(created_at) created_epoch FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 ORDER BY id DESC LIMIT 1');
+    $lastStmt->execute([$customerId, $eventKey]);
+    $lastRow = $lastStmt->fetch();
+    $last = $lastRow['created_at'] ?? null;
+    $lastEpoch = (int) ($lastRow['created_epoch'] ?? 0);
+    $cooldown = min(2592000, max(0, (int) $rule['cooldown_seconds']));
+    $remaining = 0;
+    if ($lastEpoch > 0 && $cooldown > 0) {
+        $remaining = max(0, $cooldown - (time() - $lastEpoch));
+    }
+    $total = (int) $totalStmt->fetchColumn();
+    $daily = (int) $dailyStmt->fetchColumn();
+    $state = 'available';
+    if ($eventKey === 'profile_completed' && $total > 0) {
+        $state = 'received';
+    } elseif ((int) $rule['daily_cap'] > 0 && $daily >= (int) $rule['daily_cap']) {
+        $state = 'daily_cap';
+    } elseif ($remaining > 0) {
+        $state = 'cooldown';
+    }
+    return ['state' => $state, 'points' => (int) $rule['points'], 'daily_cap' => (int) $rule['daily_cap'], 'cooldown_seconds' => $cooldown, 'daily_earned' => $daily, 'total_earned' => $total, 'cooldown_remaining' => $remaining, 'last_awarded_at' => $last ? (string) $last : null];
+}
+
+function gamification_award_feedback(int $customerId, string $eventKey, int $points): void
+{
+    if ($customerId <= 0 || $points <= 0 || !isset(gamification_event_catalog()[$eventKey])) {
+        return;
+    }
+    $eventTitle = gamification_event_catalog()[$eventKey]['title'];
+    $message = 'برای «' . $eventTitle . '» ' . gamification_points_label($points) . ' گرفتید.';
+    $_SESSION['gamification_award_flash'] = ['message' => $message, 'event_key' => $eventKey, 'points' => $points];
+    if (function_exists('send_notification')) {
+        send_notification('امتیاز جدید دریافت کردید', $message, 'success', 'custom', '', [$customerId], null);
+    }
+}
+
+function gamification_bonus_feedback(int $customerId, int $points): void
+{
+    if ($customerId <= 0 || $points <= 0) {
+        return;
+    }
+    $message = 'کد هدیه پذیرفته شد و ' . gamification_points_label($points) . ' به موجودی شما اضافه شد.';
+    $_SESSION['gamification_award_flash'] = ['message' => $message, 'event_key' => 'bonus_code_redeemed', 'points' => $points];
+    if (function_exists('send_notification')) {
+        send_notification('امتیاز هدیه دریافت کردید', $message, 'success', 'custom', '', [$customerId], null);
+    }
+}
+
 /** @return array{event_key:string,title:string,description:string,points:int,daily_cap:int,cooldown_seconds:int}|null */
 function gamification_context_offer(int $customerId, string $eventKey): ?array
 {
@@ -199,7 +274,8 @@ function gamification_context_offer(int $customerId, string $eventKey): ?array
     if (!$rule || !(int) $rule['is_active'] || (int) $rule['points'] <= 0) {
         return null;
     }
-    if ($eventKey === 'profile_completed' && gamification_customer_has_event($customerId, $eventKey)) {
+    $status = gamification_customer_event_status($customerId, $eventKey);
+    if ($status['state'] !== 'available') {
         return null;
     }
     $event = gamification_event_catalog()[$eventKey];
@@ -253,6 +329,7 @@ function gamification_redeem_bonus_code(int $customerId, string $rawCode): array
         $pdo->prepare('UPDATE bonus_code_campaigns SET redemptions_count = redemptions_count + 1 WHERE id = ?')->execute([(int) $campaign['id']]);
         $pdo->prepare('UPDATE customer_point_wallets SET balance = ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP WHERE customer_id = ?')->execute([$newBalance, $points, $customerId]);
         $pdo->commit();
+        gamification_bonus_feedback($customerId, $points);
         return ['points' => $points, 'balance' => $newBalance];
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
@@ -268,7 +345,7 @@ function gamification_list_rewards(int $customerId = 0): array
     if (!$pdo) return [];
     $sql = "SELECT r.*, s.name site_name, s.base_url, s.is_active site_active,
                    (SELECT COUNT(*) FROM reward_coupon_pool cp WHERE cp.reward_id = r.id AND cp.status = 'available' AND (cp.expires_at IS NULL OR cp.expires_at >= UTC_TIMESTAMP())) available_codes
-            FROM reward_catalog r LEFT JOIN reward_sites s ON s.id = r.site_id WHERE r.is_active = 1 ORDER BY r.points_cost, r.id";
+            FROM reward_catalog r JOIN reward_sites s ON s.id = r.site_id WHERE r.is_active = 1 AND s.is_active = 1 ORDER BY r.points_cost, r.id";
     $rows = $pdo->query($sql)->fetchAll();
     if ($customerId > 0) {
         foreach ($rows as &$row) {

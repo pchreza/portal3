@@ -8,7 +8,7 @@
 
 /** آخرین نسخه اسکیمای دیتابیس — هنگام افزودن مهاجرت جدید، این عدد را یک واحد زیاد کنید. */
 if (!defined('PORTAL_SCHEMA_VERSION')) {
-    define('PORTAL_SCHEMA_VERSION', 29);
+    define('PORTAL_SCHEMA_VERSION', 31);
 }
 
 function portal_column_exists(PDO $db, string $table, string $column): bool {
@@ -597,6 +597,15 @@ function portal_migrations(PDO $pdo): void {
                     ('ticket_created', 10, 30, 3600, 0, 'امتیاز ثبت تیکت جدید با سقف ضداسپم'),
                     ('ticket_customer_reply', 5, 20, 1800, 0, 'امتیاز پاسخ مشتری به تیکت با cooldown'),
                     ('bonus_code_redeemed', 0, 0, 0, 0, 'امتیاز campaignهای کد هدیه به‌صورت اختصاصی campaign تعیین می‌شود')");
+            },
+            30=>function($db){
+                // در UI جدید هر کد کمپین برای هر مشتری فقط یک‌بار مصرف می‌شود؛
+                // مقدار legacy را با unique constraint موجود همسان کن.
+                $db->exec("UPDATE bonus_code_campaigns SET max_per_customer = 1 WHERE max_per_customer <> 1");
+            },
+            31=>function($db){
+                // قرارداد جدید تنظیمات: امتیاز مثبت یعنی فعال؛ صفر یعنی خاموش.
+                $db->exec("UPDATE gamification_rules SET is_active = IF(points > 0, 1, 0)");
             }
         ];
         // گارد: مطمئن شو ثابت نسخه با بالاترین مهاجرت هماهنگ است

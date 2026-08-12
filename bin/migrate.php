@@ -17,8 +17,11 @@ if (!$pdo instanceof PDO) {
 
 try {
     portal_migrations($pdo);
+    // Migration ممکن است تنظیمات یا defaultهای جدید اضافه کند؛ cache فایل را
+    // باطل کن تا اولین درخواست وب، مقدار تازه را مستقیم از DB بخواند.
+    $flushedCache = function_exists('portal_cache_flush') ? portal_cache_flush() : 0;
     $version = (int) $pdo->query('SELECT COALESCE(MAX(version), 0) FROM schema_versions')->fetchColumn();
-    fwrite(STDOUT, "Migration موفق بود؛ schema version={$version}.\n");
+    fwrite(STDOUT, "Migration موفق بود؛ schema version={$version}; cache flushed={$flushedCache}.\n");
 } catch (Throwable $e) {
     error_log('[Portal Migration CLI] ' . $e->getMessage());
     fwrite(STDERR, "Migration انجام نشد؛ جزئیات در لاگ سرور ثبت شد.\n");

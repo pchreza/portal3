@@ -315,3 +315,76 @@ helper مرکزی `gamification_context_offer()` فعال‌بودن ماژول 
 | اصلاح | include صریح `includes/functions/settings.php` به bootstrap اضافه شد و تست fail-closed برای helper جدید ثبت گردید. |
 | آزمون | PASS؛ PHPUnit پس از اصلاح ۱۳ تست و ۴۳ assertion را موفق اجرا کرد. |
 | وضعیت | رفع شد. |
+
+
+## PLATFORM-AUDIT-20260813 — ممیزی و اصلاحات Gamification v2.2.2
+
+**دامنه:** ماتریس customer/super_admin × dashboard/profile/surveys/tickets/notifications/admin Gamification × available/received/cooldown/daily cap/redeem/duplicate/disabled/RBAC.
+
+### AUDIT-001 — cache stale پس از migration
+
+| فیلد | شرح |
+|---|---|
+| شدت | متوسط؛ می‌توانست setting جدید یا module toggle را تا پایان TTL کهنه نشان دهد. |
+| علت | `bin/migrate.php` پس از اجرای migration cache فایل تنظیمات را invalid نمی‌کرد. |
+| اصلاح | پس از migration، `portal_cache_flush()` اجرا می‌شود و تعداد فایل‌های پاک‌شده در خروجی CLI اعلام می‌گردد. |
+| آزمون | قبل `2` cache؛ خروجی `schema version=30; cache flushed=2`؛ بعد `0` cache. |
+| وضعیت | رفع شد. |
+
+### AUDIT-002 — وضعیت دریافت‌شده و شمارندهٔ misleading در داشبورد
+
+| فیلد | شرح |
+|---|---|
+| شدت | متوسط؛ profile پس از award همچنان در «روش‌های فعال» شمرده می‌شد و CTA ذهنی ایجاد می‌کرد. |
+| علت | شمارندهٔ dashboard تعداد ruleهای پیکربندی‌شده را به‌جای state=`available` می‌شمرد. |
+| اصلاح | `availableEventCount` اضافه شد؛ dashboard اکنون «۱ قابل دریافت از ۴ روش تنظیم‌شده» نشان می‌دهد و کارت received لینک فعال ندارد. Profile نیز تا قبل از award، در حالت کامل‌بودن اطلاعات پیام «با ذخیرهٔ پروفایل ... امتیاز بگیرید» نشان می‌دهد. |
+| آزمون | browser E2E: profile پس از award با badge «قبلاً دریافت شده» و شمارندهٔ available صحیح نمایش داده شد. |
+| وضعیت | رفع شد. |
+
+### AUDIT-003 — ساده‌سازی تنظیمات rule و legacy consistency
+
+| فیلد | شرح |
+|---|---|
+| شدت | متوسط؛ checkbox مستقل فعال‌بودن با points می‌توانست وضعیت متناقض بسازد و تنظیمات را پیچیده کند. |
+| اصلاح | checkboxهای تکراری حذف شد؛ امتیاز مثبت یعنی فعال و صفر یعنی خاموش. migration 31 همین قرارداد را برای ruleهای legacy همسان می‌کند و `save_rule` قدیمی نیز همین رفتار را اعمال می‌کند. |
+| آزمون | پنل مدیر بدون checkbox rule، با badge فعال/خاموش و سه ورودی اصلی smoke شد؛ schema به 31 رسید. |
+| وضعیت | رفع شد. |
+
+### AUDIT-004 — گزارش ناقص موجودی مشتریان
+
+| فیلد | شرح |
+|---|---|
+| شدت | متوسط؛ `LIMIT 200` بدون صفحه‌بندی می‌توانست مشتریان بیشتر را بی‌صدا پنهان کند. |
+| اصلاح | گزارش مدیر به page size=50، شمارش کل، متن بازهٔ نمایش و navigation RTL مجهز شد. |
+| آزمون | browser: «نمایش ۱ تا ۱ از ۱ مشتری» و جدول balance/earned/spent/ledger مشاهده شد. |
+| وضعیت | رفع شد. |
+
+### AUDIT-005 — reward متصل به سایت خاموش
+
+| فیلد | شرح |
+|---|---|
+| شدت | متوسط؛ reward فعال ولی سایت مقصد خاموش می‌توانست CTA دریافت غیرقابل‌استفاده داشته باشد. |
+| اصلاح | `gamification_list_rewards()` فقط rewardهای متصل به سایت فعال را برای مشتری برمی‌گرداند؛ badge مدیر نیز «سایت خاموش» را از «فعال» جدا می‌کند و KPI کدهای آماده فقط مقصدهای فعال را می‌شمرد. |
+| آزمون | با خاموش‌کردن سایت، catalog مشتری empty state صحیح نشان داد و بعد از تست سایت restore شد. |
+| وضعیت | رفع شد. |
+
+### AUDIT-006 — اختلاف timezone در cooldown
+
+| فیلد | شرح |
+|---|---|
+| شدت | متوسط؛ `strtotime(created_at)` در PHP و UTC query در SQL می‌توانست روی Laragon/هاست با timezone متفاوت، زمان باقی‌مانده را نادرست کند. |
+| اصلاح | status اکنون `UNIX_TIMESTAMP(created_at)` را از MariaDB می‌گیرد و با epoch فعلی مقایسه می‌کند. |
+| آزمون | lint، PHPUnit و PHPStan پس از اصلاح موفق بودند؛ browser cooldown روزانه/دقیقه‌ای مقدار منطقی نشان داد. |
+| وضعیت | رفع شد. |
+
+### شواهد E2E نقش‌ها و اعلان‌ها
+
+در نقش customer، profile، survey، ticket create، ticket reply، bonus redeem، reward pool redeem و duplicate rejection با browser اجرا شدند. هر award واقعی toast شناور و اعلان inbox success ایجاد کرد؛ duplicateها موجودی/ledger را افزایش ندادند. در نقش customer، دسترسی مستقیم به `admin/gamification.php` به داشبورد مشتری redirect شد. در نقش super_admin، ruleها، سایت، pool، ledger و گزارش aggregate مشتریان قابل مشاهده بودند.
+
+### کنترل کیفیت release
+
+- PHPUnit: ۱۴ تست و ۴۷ assertion موفق.
+- PHPStan: ۵۰ فایل بدون خطا.
+- PHP lint: فایل‌های تغییرکرده بدون خطا.
+- migration: schema version 31 و cache flush فعال.
+- browser smoke: customer و super_admin، RTL، responsive snapshot، module disabled/enabled، reward site disabled/enabled، notification unread/read و duplicate safety.
