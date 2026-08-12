@@ -98,6 +98,9 @@ $tickets = $stmt->fetchAll();
     'تیکت‌های پشتیبانی',
     'p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
+    '',
+    '',
+    'تیکت‌ها'
 ); ?>
 
 

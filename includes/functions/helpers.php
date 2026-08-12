@@ -385,7 +385,7 @@ function render_entity_card(string $type, array $row, string $style = 'vertical'
             }
             $survey_html .= '</div>';
         } elseif (!empty($surveys)) {
-            $survey_html = '<div class="inline-flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg">' . icon('check', 'w-4 h-4') . '<span>پاسخ شما ثبت شده است؛ سپاس از همراهی شما</span></div>';
+            $survey_html = '<div class="inline-flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg">' . icon('check', 'w-4 h-4') . '<span>پاسخ شما ثبت شد</span></div>';
         }
     }
 
@@ -936,7 +936,7 @@ function send_otp_code(string $mobile): array
     $rate = $pdo->prepare("SELECT COUNT(*) FROM otp_codes WHERE mobile = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)");
     $rate->execute([$m]);
     if ((int) $rate->fetchColumn() >= 3) {
-        return ['ok' => false, 'message' => 'تعداد درخواست‌های ارسال کد زیاد است. لطفا ۱۰ دقیقه دیگر تلاش کنید.'];
+        return ['ok' => false, 'message' => 'تعداد درخواست‌های ارسال کد زیاد است. لطفاً ۱۰ دقیقه دیگر تلاش کنید.'];
     }
 
     $code = generate_otp_code();
@@ -1280,6 +1280,16 @@ function sanitize_hex_color(string $val, string $default = '#4f46e5'): string
     return $default;
 }
 
+/** متن پیش‌فرض و سازگار subtitle ورود؛ مقدار legacy قدیمی را به copy جدید ارتقا می‌دهد. */
+function login_subtitle_value(): string
+{
+    $legacy = 'لطفا برای ورود به حساب کاربری خود اطلاعات زیر را وارد کنید';
+    $subtitle = trim((string) get_setting('login_subtitle', ''));
+    return $subtitle === '' || $subtitle === $legacy
+        ? 'برای ورود، نام کاربری و رمز عبور خود را وارد کنید'
+        : $subtitle;
+}
+
 /**
  * پیکربندی کامل صفحه ورود (برای رندر index.php)
  */
@@ -1288,7 +1298,7 @@ function login_config(): array
     $c = [
         'layout'       => active_login_layout(),
         'title'        => get_setting('site_title', 'پورتال مشتریان'),
-        'subtitle'     => get_setting('login_subtitle', 'لطفا برای ورود به حساب کاربری خود اطلاعات زیر را وارد کنید'),
+        'subtitle'     => login_subtitle_value(),
         'footer'       => get_setting('footer_text', 'سیستم هوشمند پورتال مشتریان'),
 
         // طرح دوطرفه
@@ -1751,10 +1761,35 @@ function ui_base_path(): string
     return '';
 }
 
+/** آدرس asset محلی با نسخهٔ مبتنی بر mtime برای invalidation کش پس از انتشار */
+function portal_asset_href(string $relative_path): string
+{
+    $relative_path = ltrim($relative_path, '/');
+    $url = ui_base_path() . $relative_path;
+    $file = dirname(__DIR__, 2) . '/' . $relative_path;
+
+    if (is_file($file)) {
+        $url .= '?v=' . rawurlencode((string) filemtime($file));
+    }
+
+    return $url;
+}
+
+/** preload و stylesheet فونت محلی Vazirmatn؛ نام فایل نسخه‌دار از cache پایدار پشتیبانی می‌کند. */
+function portal_font_css_link(): string
+{
+    $base = ui_base_path();
+    $font = e($base . 'assets/fonts/Vazirmatn-v33.003-wght.woff2');
+    $css = e(portal_asset_href('assets/fonts/vazirmatn.css'));
+
+    return '<link rel="preload" href="' . $font . '" as="font" type="font/woff2" crossorigin>' . "\n"
+        . '<link rel="stylesheet" href="' . $css . '">' . "\n";
+}
+
 /** لینک CSS سیستم طراحی (portal-ui.css) — در <head> همه قالب‌ها */
 function portal_ui_css_link(): string
 {
-    return '<link rel="stylesheet" href="' . e(ui_base_path() . 'assets/portal-ui.css') . '">' . "\n";
+    return '<link rel="stylesheet" href="' . e(portal_asset_href('assets/portal-ui.css')) . '">' . "\n";
 }
 
 /** اسکریپت اولیه‌سازی دارک‌مود (قبل از رندر — جلوگیری از FOUC) */
@@ -1918,13 +1953,15 @@ function render_admin_footer(): void
  * @param string $topbarActions  محتوای اضافه سمت راست نوار بالا (اختیاری)
  * @param string $topbarUser     نام نمایشی کاربر در نوار بالا (اختیاری؛ در صورت
  *                               خالی بودن از اطلاعات سشن خوانده می‌شود)
+ * @param string $mobileTitle    عنوان کوتاهِ اختیاری برای جلوگیری از شکست ناخواسته در نوار موبایل
  */
 function render_customer_header(
     string $title,
     string $mainClass = 'p-8 max-w-7xl w-full mx-auto space-y-6',
     string $extraStyles = '',
     string $topbarActions = '',
-    string $topbarUser = ''
+    string $topbarUser = '',
+    string $mobileTitle = ''
 ): void {
     include __DIR__ . '/../layout/customer_header.php';
 }

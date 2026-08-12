@@ -671,40 +671,44 @@ function render_excel_toolbar(array $opts): void
 {
     $page = $opts['page'] ?? 'customers.php';
     $importId = 'excel-import-panel-' . md5($page);
+    $supportsImport = !empty($opts['withImport']);
+    $toolbarHint = $supportsImport
+        ? 'خروجی و ورود داده‌ها با فایل Excel (XLSX یا CSV)'
+        : 'دریافت خروجی داده‌ها با فایل Excel (XLSX یا CSV)';
     ?>
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div class="excel-toolbar bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="excel-toolbar-actions flex flex-wrap items-center gap-2">
                 <a href="<?= e($page) ?>?export=xlsx" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition shadow-sm cursor-pointer">
-                    <span>خروجی اکسل</span>
+                    <span>دریافت فایل</span>
                 </a>
                 <?php if (!empty($opts['withSample'])): ?>
                 <a href="<?= e($page) ?>?sample=xlsx" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition cursor-pointer">
-                    <span>دانلود نمونه فایل اکسل</span>
+                    <span>دریافت نمونه</span>
                 </a>
                 <?php endif; ?>
-                <?php if (!empty($opts['withImport'])): ?>
-                <button type="button" onclick="document.getElementById('<?= $importId ?>').classList.toggle('hidden'); this.classList.toggle('bg-emerald-600'); this.classList.toggle('text-white'); this.classList.toggle('bg-emerald-50'); this.classList.toggle('text-emerald-700');" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition cursor-pointer">
-                    <span>وارد کردن از اکسل</span>
+                <?php if ($supportsImport): ?>
+                <button type="button" aria-controls="<?= $importId ?>" aria-expanded="false" onclick="var panel=document.getElementById('<?= $importId ?>'); var isOpen=panel.classList.toggle('hidden')===false; this.setAttribute('aria-expanded', String(isOpen)); this.classList.toggle('bg-emerald-600', isOpen); this.classList.toggle('text-white', isOpen); this.classList.toggle('bg-emerald-50', !isOpen); this.classList.toggle('text-emerald-700', !isOpen);" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition cursor-pointer">
+                    <span>ورود فایل</span>
                 </button>
                 <?php endif; ?>
             </div>
-            <div class="text-[11px] text-slate-400">خروجی و ورود داده‌ها در قالب Excel (xlsx / csv)</div>
+            <div class="excel-toolbar-hint microcopy text-[11px] text-slate-400"><?= e($toolbarHint) ?></div>
         </div>
 
-        <?php if (!empty($opts['withImport'])): ?>
+        <?php if ($supportsImport): ?>
         <div id="<?= $importId ?>" class="hidden mt-4 pt-4 border-t border-slate-100">
             <form method="post" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3 items-end flex-wrap">
                 <?php echo csrf_input(); ?>
                 <input type="hidden" name="action" value="excel_import">
                 <div class="flex-1 min-w-[220px] w-full sm:w-auto">
-                    <label class="block text-[11px] text-slate-500 mb-1">فایل اکسل (.xlsx یا .csv)</label>
-                    <input type="file" name="excel_file" accept=".xlsx,.csv" required class="block w-full text-xs text-slate-600 file:ms-2 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium file:cursor-pointer">
+                    <label class="block text-[11px] text-slate-500 mb-1" for="<?= $importId ?>-file">فایل Excel (XLSX یا CSV)</label>
+                    <input type="file" id="<?= $importId ?>-file" name="excel_file" accept=".xlsx,.csv" required class="block w-full text-xs text-slate-600 file:ms-2 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium file:cursor-pointer">
                 </div>
                 <?= $opts['importExtra'] ?? '' ?>
-                <button class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition cursor-pointer">شروع ورود داده‌ها</button>
+                <button class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition cursor-pointer">ورود داده‌ها</button>
             </form>
-            <p class="text-[11px] text-slate-400 mt-2 leading-relaxed"><?= $opts['importHint'] ?? '' ?> ابتدا «نمونه فایل اکسل» را دانلود کنید و داده‌ها را مطابق همان ستون‌ها وارد کنید (سطر اول = عنوان ستون‌ها).</p>
+            <p class="microcopy text-[11px] text-slate-400 mt-2 leading-relaxed"><?= $opts['importHint'] ?? '' ?> از «نمونه فایل» استفاده کنید و داده‌ها را دقیقاً با همان ستون‌ها وارد کنید؛ سطر اول عنوان ستون‌هاست.</p>
         </div>
         <?php endif; ?>
     </div>

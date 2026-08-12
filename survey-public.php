@@ -170,7 +170,7 @@ render_public_header($title, 'bg-slate-50 text-slate-800 min-h-screen py-8 px-4'
         <div class="survey-box">
             <div class="ic-big"><?= icon('check', 'w-9 h-9') ?></div>
             <h1 class="font-bold text-slate-900 leading-snug mb-2">پاسخ شما ثبت شد</h1>
-            <p class="body-sm text-slate-600 leading-relaxed mb-6">از وقتی که برای تکمیل این نظرسنجی گذاشتید سپاسگزاریم. پاسخ شما با موفقیت ثبت شد.</p>
+            <p class="microcopy body-sm text-slate-600 leading-relaxed mb-6">سپاس از زمانی که برای تکمیل این نظرسنجی گذاشتید.</p>
             <a href="<?= e(rtrim(get_setting('site_url', ''), '/') ?: './') ?>" class="btn btn-primary btn-lg"><?= icon('home') ?><span>بازگشت به سایت</span></a>
         </div>
 
@@ -178,7 +178,7 @@ render_public_header($title, 'bg-slate-50 text-slate-800 min-h-screen py-8 px-4'
         <div class="survey-box">
             <div class="ic-big ic-muted"><?= icon('info', 'w-9 h-9') ?></div>
             <h1 class="font-bold text-slate-900 leading-snug mb-2">قبلاً ثبت شده است</h1>
-            <p class="body-sm text-slate-600 leading-relaxed">شما قبلاً به این نظرسنجی پاسخ داده‌اید. سپاس از همراهی شما.</p>
+            <p class="microcopy body-sm text-slate-600 leading-relaxed">این نظرسنجی قبلاً توسط شما تکمیل شده است. سپاس از همراهی شما.</p>
         </div>
 
     <?php elseif ($err): ?>

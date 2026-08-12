@@ -1,0 +1,12 @@
+/*
+ * Vazirmatn v33.003 — local variable font.
+ * Source: https://github.com/rastikerdar/vazirmatn
+ * License: SIL Open Font License 1.1 (see OFL-Vazirmatn.txt).
+ */
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('./Vazirmatn-v33.003-wght.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}

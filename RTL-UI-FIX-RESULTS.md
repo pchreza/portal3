@@ -93,3 +93,30 @@
 | keyboard smoke | PASS؛ اولین Tab به «پرش به محتوای اصلی» رسید و focus ring قابل مشاهده بود؛ رفتار Escape/Tab trap drawer و modal در گذر اول نیز تأیید شده است. |
 
 فایل `db_config.php` عمداً به دلیل credentials محلی خارج از commit باقی می‌ماند. پوشهٔ `rtl-qa-round2/` فقط شامل گزارش و شواهد QA است و فایل‌های حساس نشست/credential در commit نهایی وارد نخواهد شد.
+
+
+## گذر سوم — فونت محلی، microcopy و typography — 2026-08-12
+
+در این گذر، وابستگی runtime به فونت CDN حذف شد و فونت variable نسخهٔ pin‌شدهٔ Vazirmatn به‌صورت محلی اضافه شد. فایل `Vazirmatn-v33.003-wght.woff2` با اندازهٔ 111,152 بایت و hash برابر `4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92` در `assets/fonts/` قرار گرفت و متن مجوز OFL نیز کنار آن نگهداری شد. stylesheet محلی وزن‌های 100 تا 900 را با `font-display: swap` پوشش می‌دهد؛ helper مشترک نیز preload فونت و versioning مبتنی بر mtime برای CSS را ارائه می‌کند.
+
+| حوزه | اصلاح اجرایی | نتیجهٔ تأیید |
+|---|---|---|
+| فونت و performance | حذف لینک Vazirmatn از jsDelivr در public/admin/customer/install؛ افزودن local preload و stylesheet؛ versioning برای `portal-ui.css`. | در runtime واقعی پنل مدیریت و مشتری، Vazirmatn محلی loaded شد و request به `rastikerdar` یا Google Fonts صفر بود. |
+| عنوان نوار مشتری | افزودن `mobileTitle` اختیاری به renderer؛ عنوان‌های تیکت و فاکتور در موبایل به «تیکت‌ها» و «فاکتورها» کوتاه شدند و عنوان کامل در desktop حفظ شد. | در 390×844 عنوان‌ها تک‌خطی، بدون overlap و با `title` کامل باقی ماندند. |
+| فاکتور | «لیست صورتحساب‌های صادر شده» به «فاکتورهای صادرشده» تبدیل شد و wrapper قبلی شماره/عنوان حفظ شد. | heading و کارت فاکتور مشتری در 390×844 بدون شکست عمودی یا فاصلهٔ زائد نمایش داده شدند. |
+| اعلان مشتری | در mobile، تاریخ از کنار عنوان به ردیف مستقل منتقل شد تا عنوان mixed فضای کافی داشته باشد؛ `copy-wrap` برای title/body اضافه شد. | عنوان اعلان fixture از چهار خط فشرده به دو خط خوانا کاهش یافت و URL، شناسه و تاریخ LTR باقی ماندند. |
+| toolbar اکسل | CTAها به «دریافت فایل»، «دریافت نمونه» و «ورود فایل» کوتاه شدند؛ راهنمای فقط‌خروجی از متن نادرست «ورود و خروج» جدا شد؛ `aria-controls` و `aria-expanded` برای پنل import افزوده شد. | toolbar مدیریت مشتریان و تیکت‌ها در 390×844 بدون شکستن CTAها نمایش داده شد. |
+| نگارش و microcopy | «لطفا» به «لطفاً»، «کد تایید» به «کد تأیید»، پیام‌های موفقیت نظرسنجی کوتاه، و CTA مبهم پروفایل به «تکمیل بعداً» تبدیل شد. | پیام‌ها کوتاه‌تر، یکدست‌تر و بدون تکرار معنایی شدند. |
+| سازگاری تنظیمات موجود | `login_subtitle_value()` مقدار legacy قدیمی را فقط در صورت خالی‌بودن یا برابر بودن با مقدار legacy به copy جدید ارتقا می‌دهد و متن سفارشی مدیر را حفظ می‌کند. | copy جدید بدون migration مخرب روی دیتابیس‌های موجود نیز در صفحه ورود و تنظیمات نمایان می‌شود. |
+
+### شواهد و اعتبارسنجی گذر سوم
+
+| آزمون | نتیجه |
+|---|---|
+| lint کامل PHP خارج از `vendor` | PASS؛ خروجی در `rtl-qa-round3/php-lint.log` ذخیره شد. |
+| `git diff --check` | PASS. |
+| runtime font check در admin/customer | PASS؛ font family برابر `Vazirmatn, Tahoma, Arial, sans-serif`، فونت local loaded و CDN font requests برابر صفر. |
+| screenshots واقعی 390×844 | PASS برای تیکت، فاکتور و اعلان مشتری و مشتری/تیکت مدیریت. |
+| title و CTA wrapping | PASS؛ عناوین کوتاه موبایل و toolbar اکسل تک‌خطی و قابل لمس باقی ماندند. |
+
+Asset فونت با مجوز SIL Open Font License 1.1 در `assets/fonts/OFL-Vazirmatn.txt` ثبت شده است. فایل‌های نشست، cookie، header و HTML آزمون از artifacts حذف شدند و فقط تصاویر QA، گزارش typography و lint log باقی مانده‌اند.

@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
         $admin_lastname = trim($_POST['admin_lastname']);
 
         if (empty($admin_username) || empty($admin_password)) {
-            $error = 'لطفا نام کاربری و رمز عبور ادمین را وارد کنید.';
+            $error = 'لطفاً نام کاربری و رمز عبور مدیر را وارد کنید.';
         } else {
             $hashed_password = password_hash($admin_password, PASSWORD_DEFAULT);
             // ادمین اول سیستم به‌عنوان «مدیر ارشد (سوپر ادمین)» ساخته می‌شود
@@ -171,8 +171,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نصب سیستم پورتال مشتریان</title>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="preload" href="assets/fonts/Vazirmatn-v33.003-wght.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="assets/fonts/vazirmatn.css">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body { font-family: 'Vazirmatn', Tahoma, Arial, sans-serif; }

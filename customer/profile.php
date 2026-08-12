@@ -120,9 +120,9 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                 <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
                     <div>
                         <h4 class="font-bold text-amber-800 text-base">تکمیل اطلاعات الزامی</h4>
-                        <p class="text-sm text-amber-700 mt-1">مدیر سیستم برخی از فیلدهای پروفایل شما را به عنوان فیلد اجباری تعیین کرده است. لطفا آن‌ها را تکمیل کنید.</p>
+                        <p class="microcopy text-sm text-amber-700 mt-1">برخی از اطلاعات پروفایل شما باید تکمیل شوند. لطفاً فیلدهای خواسته‌شده را وارد کنید.</p>
                     </div>
-                    <form method="POST" class="inline"><?php echo csrf_input(); ?><input type="hidden" name="action" value="skip_profile"><button type="submit" class="btn btn-primary">رد کردن فعلی (ورود به داشبورد)</button></form>
+                    <form method="POST" class="inline"><?php echo csrf_input(); ?><input type="hidden" name="action" value="skip_profile"><button type="submit" class="btn btn-primary">تکمیل بعداً</button></form>
                 </div>
             <?php endif; ?>
 

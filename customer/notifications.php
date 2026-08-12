@@ -49,15 +49,15 @@ render_customer_header(
                         <div class="card card-hover p-5 flex items-start gap-4 <?= $n['is_read'] ? '' : 'border-indigo-300' ?>">
                             <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0"><?= notification_type_icon($n['ntype']) ?></div>
                             <div class="flex-1 min-w-0">
-                                <div class="flex items-start justify-between gap-3">
-                                    <h4 class="font-bold text-slate-900 break-words flex items-start gap-2 <?= $n['is_read'] ? '' : 'text-indigo-900' ?>">
+                                <div class="notification-head flex items-start justify-between gap-3">
+                                    <h4 class="notification-title copy-wrap font-bold text-slate-900 flex items-start gap-2 <?= $n['is_read'] ? '' : 'text-indigo-900' ?>">
                                         <?php if (!$n['is_read']): ?><span class="w-2 h-2 rounded-full bg-red-500 mt-2 flex-shrink-0" aria-hidden="true"></span><?php endif; ?>
                                         <span><bdi dir="auto"><?= htmlspecialchars($n['title']) ?></bdi></span>
                                     </h4>
                                     <span class="text-xs text-slate-400 value-ltr whitespace-nowrap flex-shrink-0" dir="ltr"><?= htmlspecialchars(fa_datetime($n['created_at'])) ?></span>
                                 </div>
                                 <?php if ($n['body']): ?>
-                                    <p class="body-sm text-slate-600 leading-relaxed mt-1.5 whitespace-pre-line break-words"><bdi dir="auto"><?= nl2br(htmlspecialchars($n['body'])) ?></bdi></p>
+                                    <p class="copy-wrap body-sm text-slate-600 leading-relaxed mt-1.5 whitespace-pre-line"><bdi dir="auto"><?= nl2br(htmlspecialchars($n['body'])) ?></bdi></p>
                                 <?php endif; ?>
                                 <div class="flex items-center gap-2 mt-3 flex-wrap">
                                     <?= notification_type_badge($n['ntype']) ?>

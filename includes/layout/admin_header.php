@@ -21,8 +21,7 @@ if ($admin_display_name === '') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($title) ?></title>
     <?= site_favicon_html() ?>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <?= portal_font_css_link() ?>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body { font-family: 'Vazirmatn', Tahoma, Arial, sans-serif; }
@@ -39,7 +38,7 @@ if ($admin_display_name === '') {
 
     <div class="flex-1 flex flex-col min-w-0">
         <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-10 relative">
-            <h1 class="text-lg font-bold text-slate-800 truncate" title="<?= e($title) ?>"><?= e($title) ?></h1>
+            <h1 class="portal-page-title text-lg font-bold text-slate-800 truncate" title="<?= e($title) ?>"><?= e($title) ?></h1>
 
             <?php
                 $ha = get_setting('header_menu_align', 'start');

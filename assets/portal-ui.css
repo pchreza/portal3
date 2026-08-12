@@ -296,20 +296,42 @@ h1,h2,h3,h4,h5,h6 { line-height: 1.4; }
 .overline { font-size: .6875rem; font-weight: 600; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .875rem; }
 
-/* ---------- 8. MICRO-INTERACTION & MOTION ---------- */
+/* ---------- 8. CONTENT DENSITY & WRAPPING ---------- */
+/* متن‌های کاربر یا copy بلند باید در واژه‌های بسیار طولانی overflow نکنند، بدون شکستن بی‌دلیل copy کوتاه. */
+.copy-wrap { overflow-wrap: anywhere; text-wrap: pretty; }
+.microcopy { line-height: 1.6; text-wrap: pretty; }
+.portal-page-title { min-width: 0; }
+
+@media (max-width: 767px) {
+  .portal-page-title { flex: 1 1 auto; font-size: .9375rem; line-height: 1.35; }
+  .excel-toolbar-actions { width: 100%; gap: .5rem; }
+  .excel-toolbar-actions > a,
+  .excel-toolbar-actions > button {
+    flex: 1 1 auto;
+    min-height: 2.75rem;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .excel-toolbar-hint { width: 100%; line-height: 1.55; }
+  .notification-head { flex-direction: column; gap: .3rem; }
+  .notification-head > .notification-title { width: 100%; }
+  .notification-head > [dir="ltr"] { align-self: flex-start; }
+}
+
+/* ---------- 9. MICRO-INTERACTION & MOTION ---------- */
 .btn:active:not(:disabled) { transform: scale(.98); }
 a, button { transition: background-color .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease); }
 .card-hover { transition: box-shadow .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease); }
 .card-hover:hover { transform: translateY(-2px); }
 
-/* ---------- 9. EMPTY / ERROR / SUCCESS STATE ---------- */
+/* ---------- 10. EMPTY / ERROR / SUCCESS STATE ---------- */
 .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:2.5rem 1.5rem; color: var(--fg-muted); }
 .empty-state .empty-icon { width:3rem; height:3rem; border-radius: 1rem; background: var(--surface-2); color: var(--fg-faint); display:flex; align-items:center; justify-content:center; margin-bottom: .75rem; }
 .empty-state h3 { font-size: 1rem; font-weight:700; color: var(--fg); }
 .empty-state p { font-size: .875rem; color: var(--fg-muted); margin-top:.25rem; max-width: 24rem; }
 .empty-state .empty-action { margin-top: 1rem; }
 
-/* ---------- 10. STICKY MOBILE ACTION BAR ---------- */
+/* ---------- 11. STICKY MOBILE ACTION BAR ---------- */
 .mobile-action-bar { display:none; }
 .mobile-nav-open { overflow: hidden; }
 .mobile-nav-backdrop { display: none; position: fixed; inset: 0; z-index: 45; border: 0; background: rgba(15,23,42,.52); cursor: pointer; }
@@ -333,16 +355,16 @@ a, button { transition: background-color .15s var(--ease), color .15s var(--ease
   .mobile-action-bar .btn { flex:1; }
 }
 
-/* ---------- 11. STICKY TABLE HEADER ---------- */
+/* ---------- 12. STICKY TABLE HEADER ---------- */
 .table-scroll thead th { position: sticky; top: 0; z-index: 2; }
 @media (max-width:767px){ .table-scroll thead th { position: static; } }
 
-/* ---------- 12. IMAGE SKELETON ---------- */
+/* ---------- 13. IMAGE SKELETON ---------- */
 .img-skeleton { background: linear-gradient(100deg, var(--surface-3) 40%, var(--border) 50%, var(--surface-3) 60%); background-size: 200% 100%; animation: imgsh 1.3s infinite; }
 @keyframes imgsh { to { background-position: -200% 0; } }
 img { background: var(--surface-3); }
 
-/* ---------- 13. CHAT THREAD (tickets) ---------- */
+/* ---------- 14. CHAT THREAD (tickets) ---------- */
 .chat-thread { max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding: .25rem .25rem .5rem; }
 .chat-row { display: flex; gap: .75rem; align-items: flex-end; }
 .chat-row.mine { flex-direction: row-reverse; }
@@ -358,11 +380,11 @@ img { background: var(--surface-3); }
 .chat-reply-box { position: sticky; bottom: 0; background: var(--surface); }
 @media (max-width:767px){ .chat-bubble { max-width: 82%; } .chat-reply-box { padding: .5rem 0 calc(.5rem + env(safe-area-inset-bottom,0)); } }
 
-/* ---------- 14. HEADER CUSTOM MENU ---------- */
+/* ---------- 15. HEADER CUSTOM MENU ---------- */
 .header-menu-link { display: none; }
 @media (min-width: 768px) { .header-menu-link { display: inline-flex; } }
 
-/* ---------- 15. TOAST ---------- */
+/* ---------- 16. TOAST ---------- */
 .toast-region { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); inset-inline-end: auto; z-index: 1900; display:flex; flex-direction:column; gap:.5rem; max-width: 22rem; width: calc(100% - 2rem); pointer-events:none; }
 .toast { display:flex; align-items:flex-start; gap:.6rem; padding:.8rem 1rem; border-radius: 12px; background: var(--surface); border:1px solid var(--border); box-shadow: 0 8px 24px -12px rgba(15,23,42,.3); font-size:.875rem; line-height:1.5; pointer-events:auto; animation: toastin .25s var(--ease); }
 .toast-success { border-inline-start: 3px solid var(--success); }

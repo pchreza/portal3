@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (login_is_locked($username, $login_ip)) {
             $error = 'به‌دلیل چند تلاش ناموفق، ورود موقتاً برای ۱۵ دقیقه محدود شده است.';
         } elseif (empty($username) || empty($password)) {
-            $error = 'لطفا نام کاربری و رمز عبور را وارد کنید.';
+            $error = 'لطفاً نام کاربری و رمز عبور را وارد کنید.';
         } else {
             $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
             $stmt->execute([$username]);
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = send_otp_code($mobile);
             if ($result['ok']) {
                 $_SESSION['otp_mobile'] = normalize_mobile_db($mobile);
-                $success = 'کد تایید برای شماره شما ارسال شد. لطفا کد را وارد کنید.';
+                $success = 'کد تأیید ارسال شد. لطفاً کد را وارد کنید.';
             } else {
                 $error = $result['message'];
             }
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'کاربری با این شماره موبایل یافت نشد.';
                 } elseif (count($matches) > 1) {
                     // امنیت: چند کاربر با یک شماره — ورود رد می‌شود تا وضعیت رفع شود
-                    $error = 'این شماره موبایل برای چند کاربر ثبت شده است. لطفا با پشتیبانی تماس بگیرید.';
+                    $error = 'این شماره موبایل برای چند کاربر ثبت شده است. لطفاً با پشتیبانی تماس بگیرید.';
                 } else {
                     $user = $matches[0];
                     unset($_SESSION['otp_mobile']);
@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $site_title = get_setting('site_title', 'پورتال مشتریان');
-$login_subtitle = get_setting('login_subtitle', 'لطفا برای ورود به حساب کاربری خود اطلاعات زیر را وارد کنید');
+$login_subtitle = login_subtitle_value();
 $footer_text = get_setting('footer_text', 'سیستم هوشمند پورتال مشتریان');
 
 $otp_step = ($login_method === 'mobile' && !empty($_SESSION['otp_mobile'])) ? 2 : 1;

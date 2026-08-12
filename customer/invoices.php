@@ -14,11 +14,14 @@ $invoices = $stmt->fetchAll();
     'فاکتورها و صورتحساب‌ها',
     'p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
+    '',
+    '',
+    'فاکتورها'
 ); ?>
 
 
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-bold text-slate-800">لیست صورتحساب‌های صادر شده (<?php echo count($invoices); ?>)</h3>
+                <h3 class="text-lg font-bold text-slate-800">فاکتورهای صادرشده (<?php echo count($invoices); ?>)</h3>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

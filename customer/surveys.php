@@ -7,7 +7,7 @@ $uid = (int) $_SESSION['user_id'];
 ensure_survey_assignments($uid);
 
 $msg = isset($_GET['submitted'])
-    ? 'پاسخ شما با موفقیت ثبت شد. از وقتی که برای تکمیل این فرم گذاشتید سپاسگزاریم.'
+    ? 'پاسخ شما ثبت شد. سپاس از زمانی که برای تکمیل فرم گذاشتید.'
     : '';
 $err = '';
 
@@ -308,7 +308,7 @@ render_customer_header(
 
                                 <div class="pt-3 border-t border-slate-100 mt-auto">
                                     <?php if ($i['answered']): ?>
-                                        <span class="badge badge-success"><?= icon('check', 'w-3.5 h-3.5') ?> پاسخ شما ثبت شده است؛ سپاس از همراهی شما</span>
+                                        <span class="badge badge-success"><?= icon('check', 'w-3.5 h-3.5') ?> پاسخ شما ثبت شد</span>
                                     <?php elseif (!$i['entity_exists']): ?>
                                         <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-slate-100 px-3 py-2 rounded-lg">مورد مربوطه حذف شده است</span>
                                     <?php elseif (strtotime($i['available_at'] ?? '') > time()): ?>
