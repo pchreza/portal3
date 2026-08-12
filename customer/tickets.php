@@ -116,6 +116,14 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'list';
 $stmt = $pdo->prepare("SELECT * FROM tickets WHERE customer_id = ? ORDER BY id DESC");
 $stmt->execute([$user_id]);
 $tickets = $stmt->fetchAll();
+$ticket_create_offer = gamification_context_offer((int) $user_id, 'ticket_created');
+$ticket_reply_offer = gamification_context_offer((int) $user_id, 'ticket_customer_reply');
+$ticket_context_offer = null;
+if ($active_ticket && $active_ticket['status'] !== 'closed' && is_array($ticket_reply_offer)) {
+    $ticket_context_offer = $ticket_reply_offer;
+} elseif (is_array($ticket_create_offer)) {
+    $ticket_context_offer = $ticket_create_offer;
+}
 ?>
 <?php render_customer_header(
     'تیکت‌های پشتیبانی',
@@ -137,6 +145,22 @@ $tickets = $stmt->fetchAll();
                 <div class="alert alert-danger">
                     <?php echo htmlspecialchars($error); ?>
                 </div>
+            <?php endif; ?>
+
+            <?php if (is_array($ticket_context_offer)): ?>
+                <aside class="alert alert-info items-center gap-3" role="note">
+                    <span class="shrink-0 mt-0.5"><?= icon('star', 'w-5 h-5') ?></span>
+                    <div class="min-w-0">
+                        <?php if ($ticket_context_offer['event_key'] === 'ticket_customer_reply'): ?>
+                            <h3 class="font-bold text-sm">با ارسال پاسخ معتبر <?= e(gamification_points_label($ticket_context_offer['points'])) ?> بگیرید</h3>
+                            <p class="microcopy text-xs mt-1">پاسخ خود را در همین گفتگو ارسال کنید؛ امتیاز پس از ثبت موفق پاسخ محاسبه می‌شود.</p>
+                        <?php else: ?>
+                            <h3 class="font-bold text-sm">با ثبت تیکت جدید <?= e(gamification_points_label($ticket_context_offer['points'])) ?> بگیرید</h3>
+                            <p class="microcopy text-xs mt-1">موضوع و شرح درخواست را کامل بنویسید و تیکت را ارسال کنید تا امتیاز شما ثبت شود.</p>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (!$active_ticket && $action !== 'new'): ?><a href="tickets.php?action=new" class="btn btn-primary btn-sm shrink-0">ثبت تیکت</a><?php endif; ?>
+                </aside>
             <?php endif; ?>
 
             <?php if ($active_ticket): ?>

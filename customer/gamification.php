@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $summary = gamification_customer_summary($customerId);
+$wallet = $summary['wallet'];
 $rewards = gamification_list_rewards($customerId);
 foreach ($rewards as &$reward) {
     if (!isset($_SESSION['gamification_reward_nonce'][(int) $reward['id']])) {
@@ -38,20 +39,181 @@ foreach ($rewards as &$reward) {
 }
 unset($reward);
 
-render_customer_header('امتیازها و پاداش‌ها', 'p-8 max-w-6xl w-full mx-auto space-y-6', '', '');
+$eventIcons = [
+    'profile_completed' => 'user',
+    'survey_submitted' => 'star',
+    'ticket_created' => 'ticket',
+    'ticket_customer_reply' => 'message',
+    'bonus_code_redeemed' => 'star',
+];
+$eventLinks = [
+    'profile_completed' => 'profile.php',
+    'survey_submitted' => 'surveys.php',
+    'ticket_created' => 'tickets.php?action=new',
+    'ticket_customer_reply' => 'tickets.php',
+];
+$activeEvents = [];
+foreach (gamification_event_catalog() as $eventKey => $event) {
+    $rule = gamification_rule($eventKey);
+    if (!$rule || !(int) $rule['is_active'] || (int) $rule['points'] <= 0) {
+        continue;
+    }
+    $activeEvents[$eventKey] = [
+        'title' => $event['title'],
+        'description' => $event['description'],
+        'points' => (int) $rule['points'],
+        'daily_cap' => (int) $rule['daily_cap'],
+        'icon' => $eventIcons[$eventKey] ?? 'star',
+        'link' => $eventLinks[$eventKey] ?? null,
+    ];
+}
+
+$nextReward = null;
+foreach ($rewards as $reward) {
+    if ((int) ($reward['customer_redemptions'] ?? 0) >= (int) $reward['max_per_customer']) {
+        continue;
+    }
+    if ($nextReward === null || (int) $reward['points_cost'] < (int) $nextReward['points_cost']) {
+        $nextReward = $reward;
+    }
+}
+$nextRewardCost = $nextReward ? max(1, (int) $nextReward['points_cost']) : 0;
+$nextRewardProgress = $nextRewardCost > 0 ? min(100, (int) floor(((int) $wallet['balance'] / $nextRewardCost) * 100)) : 0;
+$nextRewardRemaining = $nextRewardCost > 0 ? max(0, $nextRewardCost - (int) $wallet['balance']) : 0;
+
+$customer_gamification_styles = '
+.gamification-hero{background:linear-gradient(135deg,var(--ring),color-mix(in srgb,var(--ring) 68%,#0f172a));color:#fff;border-radius:1.5rem;box-shadow:0 18px 36px -24px color-mix(in srgb,var(--ring) 70%,transparent)}
+.gamification-hero-muted{color:color-mix(in srgb,#fff 78%,transparent)}
+.gamification-progress{height:.65rem;background:color-mix(in srgb,var(--fg-strong) 12%,transparent);border-radius:999px;overflow:hidden}
+.gamification-progress-fill{display:block;width:0;height:100%;background:var(--ring);border-radius:inherit;transition:width .35s var(--ease)}
+.gamification-hero .gamification-progress{background:rgba(255,255,255,.22)}
+.gamification-hero .gamification-progress-fill{background:#fff}
+.gamification-earn-card{display:flex;align-items:flex-start;gap:.85rem;min-height:7.25rem;padding:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);transition:box-shadow .2s var(--ease),border-color .2s var(--ease),transform .2s var(--ease)}
+.gamification-earn-card:hover{border-color:color-mix(in srgb,var(--ring) 42%,var(--border));box-shadow:0 10px 24px -16px color-mix(in srgb,var(--ring) 40%,transparent);transform:translateY(-2px)}
+.gamification-earn-icon{display:flex;align-items:center;justify-content:center;width:2.5rem;height:2.5rem;flex:0 0 2.5rem;border-radius:.85rem;background:color-mix(in srgb,var(--ring) 12%,transparent);color:var(--ring)}
+.gamification-reward-card{display:flex;flex-direction:column;gap:.85rem;padding:1.15rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);transition:box-shadow .2s var(--ease),border-color .2s var(--ease)}
+.gamification-reward-card:hover{border-color:color-mix(in srgb,var(--ring) 38%,var(--border));box-shadow:0 10px 24px -18px rgba(15,23,42,.3)}
+.gamification-stat{min-height:6.75rem}
+.gamification-code{letter-spacing:.06em;font-variant-numeric:tabular-nums}
+@media (max-width:767px){.gamification-hero{border-radius:1.25rem}.gamification-hero .btn{width:100%}.gamification-earn-card{min-height:0}.gamification-reward-card{padding:1rem}}
+';
+
+render_customer_header('امتیازها و پاداش‌ها', 'p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto space-y-6', $customer_gamification_styles, '', '');
 ?>
-            <?php if ($success): ?><div class="alert alert-success" role="status"><?= icon('check') ?><span><?= e($success) ?></span></div><?php endif; ?>
-            <?php if ($error): ?><div class="alert alert-danger" role="alert"><?= icon('alert') ?><span><?= e($error) ?></span></div><?php endif; ?>
+            <?php if ($success): ?>
+                <div class="alert alert-success" role="status" aria-live="polite"><?= icon('check') ?><span><?= e($success) ?></span></div>
+            <?php endif; ?>
+            <?php if ($error): ?>
+                <div class="alert alert-danger" role="alert" aria-live="assertive"><?= icon('alert') ?><span><?= e($error) ?></span></div>
+            <?php endif; ?>
 
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"><div><h2 class="text-2xl font-bold text-slate-900">امتیازها و پاداش‌های من</h2><p class="text-sm text-slate-500 mt-1">برای فعالیت‌های ارزشمند امتیاز بگیرید و آن را به کد تخفیف تبدیل کنید.</p></div><div class="card px-6 py-4 bg-indigo-600 text-white"><span class="text-sm text-indigo-100">موجودی قابل‌مصرف</span><strong class="block text-3xl mt-1" dir="ltr"><?= number_format($summary['wallet']['balance']) ?></strong><span class="text-xs text-indigo-100">امتیاز</span></div></div>
+            <section class="gamification-hero p-5 sm:p-6 lg:p-8" aria-labelledby="gamification-title">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div class="min-w-0 max-w-2xl">
+                        <span class="inline-flex items-center gap-2 text-xs font-semibold rounded-full px-3 py-1 bg-white/15 text-white mb-4"><?= icon('star', 'w-4 h-4') ?><span>باشگاه امتیاز و پاداش</span></span>
+                        <h1 id="gamification-title" class="text-2xl sm:text-3xl font-extrabold tracking-tight">امتیازهای شما، برای هر قدم ارزشمند</h1>
+                        <p class="gamification-hero-muted text-sm sm:text-base leading-7 mt-3 max-w-xl">با فعالیت در پورتال امتیاز بگیرید، مسیر پیشرفت خود را ببینید و امتیازها را به پاداش‌های قابل‌استفاده تبدیل کنید.</p>
+                        <div class="flex flex-col sm:flex-row gap-3 mt-5">
+                            <a href="#reward-catalog" class="btn bg-white text-slate-900 hover:bg-slate-100">دیدن پاداش‌ها</a>
+                            <a href="#earn-points" class="btn border border-white/35 text-white hover:bg-white/10">راه‌های کسب امتیاز</a>
+                        </div>
+                    </div>
+                    <div class="w-full lg:max-w-xs rounded-2xl p-5 bg-white/10 border border-white/20 backdrop-blur-sm">
+                        <p class="text-sm gamification-hero-muted">موجودی قابل‌مصرف</p>
+                        <div class="flex items-end gap-2 mt-1"><strong class="text-4xl font-extrabold tabular-nums" dir="ltr"><?= number_format((int) $wallet['balance']) ?></strong><span class="text-sm gamification-hero-muted mb-1">امتیاز</span></div>
+                        <?php if ($nextReward): ?>
+                            <div class="flex items-center justify-between gap-3 mt-5 text-xs"><span class="gamification-hero-muted">هدف بعدی: <b class="text-white"><bdi dir="auto"><?= e($nextReward['title']) ?></bdi></b></span><span class="text-white tabular-nums" dir="ltr"><?= $nextRewardProgress ?>%</span></div>
+                            <div class="gamification-progress mt-2" role="progressbar" aria-label="پیشرفت تا پاداش بعدی" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $nextRewardProgress ?>"><span class="gamification-progress-fill" data-gamification-progress="<?= $nextRewardProgress ?>"></span></div>
+                            <p class="text-xs gamification-hero-muted mt-2"><?= $nextRewardRemaining > 0 ? 'فقط ' . e(gamification_points_label($nextRewardRemaining)) . ' تا این پاداش فاصله دارید.' : 'این پاداش با موجودی فعلی شما قابل دریافت است.' ?></p>
+                        <?php else: ?>
+                            <p class="text-xs gamification-hero-muted mt-4">هنوز پاداش فعالی برای نمایش تنظیم نشده است.</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </section>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4"><div class="card p-5"><span class="text-sm text-slate-500">کل امتیاز کسب‌شده</span><strong class="block text-2xl text-emerald-600 mt-2" dir="ltr"><?= number_format($summary['wallet']['total_earned']) ?></strong></div><div class="card p-5"><span class="text-sm text-slate-500">کل امتیاز مصرف‌شده</span><strong class="block text-2xl text-amber-600 mt-2" dir="ltr"><?= number_format($summary['wallet']['total_spent']) ?></strong></div><div class="card p-5"><span class="text-sm text-slate-500">روش‌های کسب امتیاز</span><strong class="block text-2xl text-indigo-600 mt-2" dir="ltr"><?= count(gamification_event_catalog()) ?></strong></div></div>
+            <section class="grid grid-cols-1 sm:grid-cols-3 gap-4" aria-label="خلاصهٔ امتیازها">
+                <div class="card gamification-stat p-5"><div class="flex items-center justify-between gap-3"><span class="text-sm text-slate-500">کل کسب‌شده</span><span class="gamification-earn-icon w-9 h-9 !rounded-xl"><?= icon('plus', 'w-4 h-4') ?></span></div><strong class="block text-2xl font-extrabold text-emerald-600 mt-3 tabular-nums" dir="ltr"><?= number_format((int) $wallet['total_earned']) ?></strong><span class="text-xs text-slate-500">امتیاز در تمام فعالیت‌ها</span></div>
+                <div class="card gamification-stat p-5"><div class="flex items-center justify-between gap-3"><span class="text-sm text-slate-500">کل مصرف‌شده</span><span class="gamification-earn-icon w-9 h-9 !rounded-xl text-amber-600 bg-amber-50"><?= icon('link', 'w-4 h-4') ?></span></div><strong class="block text-2xl font-extrabold text-amber-600 mt-3 tabular-nums" dir="ltr"><?= number_format((int) $wallet['total_spent']) ?></strong><span class="text-xs text-slate-500">امتیاز تبدیل‌شده به پاداش</span></div>
+                <div class="card gamification-stat p-5"><div class="flex items-center justify-between gap-3"><span class="text-sm text-slate-500">راه‌های فعال کسب امتیاز</span><span class="gamification-earn-icon w-9 h-9 !rounded-xl text-indigo-600 bg-indigo-50"><?= icon('layers', 'w-4 h-4') ?></span></div><strong class="block text-2xl font-extrabold text-indigo-600 mt-3 tabular-nums" dir="ltr"><?= count($activeEvents) ?></strong><span class="text-xs text-slate-500">فعالیت قابل‌امتیازدهی</span></div>
+            </section>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><section class="card p-5 space-y-4"><div><h3 class="text-lg font-bold">کد هدیه دارید؟</h3><p class="text-sm text-slate-500 mt-1">کد نمایشگاه یا کمپین را وارد کنید؛ هر کد فقط طبق policy همان کمپین پذیرفته می‌شود.</p></div><form method="post" class="flex flex-col sm:flex-row gap-3"><?= csrf_input() ?><input type="hidden" name="action" value="redeem_bonus"><input class="input flex-1" name="bonus_code" required maxlength="64" dir="ltr" autocomplete="off" placeholder="EXPO2026"><button class="btn btn-primary" type="submit">ثبت کد هدیه</button></form></section><section class="card p-5"><h3 class="text-lg font-bold">چطور امتیاز بگیرم؟</h3><div class="mt-3 space-y-2 text-sm text-slate-600"><?php foreach (gamification_event_catalog() as $eventKey => $event): $rule = gamification_rule($eventKey); if (!$rule || !(int) $rule['is_active'] || (int) $rule['points'] <= 0) continue; ?><div class="flex items-center justify-between gap-3 border-b last:border-0 py-2"><span><?= e($event['title']) ?></span><strong class="text-indigo-600"><?= gamification_points_label((int) $rule['points']) ?></strong></div><?php endforeach; ?></div></section></div>
+            <section id="earn-points" class="card p-5 sm:p-6 space-y-4" aria-labelledby="earn-points-title">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2"><div><h2 id="earn-points-title" class="text-lg sm:text-xl font-bold">چطور امتیاز بگیرم؟</h2><p class="text-sm text-slate-500 mt-1">هر کارت شما را به همان بخشی می‌برد که می‌توانید فعالیت را انجام دهید.</p></div><span class="badge badge-brand"><?= count($activeEvents) ?> روش فعال</span></div>
+                <?php if (!$activeEvents): ?>
+                    <div class="alert alert-muted" role="status"><?= icon('info') ?><span>در حال حاضر روش فعالی برای کسب امتیاز تنظیم نشده است.</span></div>
+                <?php else: ?>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                        <?php foreach ($activeEvents as $eventKey => $event): ?>
+                            <?php $eventCard = $event['link'] ? '<a href="' . e($event['link']) . '" class="gamification-earn-card group" aria-label="' . e($event['title']) . '">' : '<div class="gamification-earn-card">'; ?>
+                            <?= $eventCard ?>
+                                <span class="gamification-earn-icon"><?= icon($event['icon'], 'w-5 h-5') ?></span>
+                                <span class="min-w-0 flex-1"><span class="flex items-start justify-between gap-2"><b class="text-sm text-slate-900 leading-6"><bdi dir="auto"><?= e($event['title']) ?></bdi></b><span class="badge badge-brand shrink-0"><?= e(gamification_points_label($event['points'])) ?></span></span><span class="block text-xs text-slate-500 leading-5 mt-1"><?= e($event['description']) ?></span><?php if ($event['daily_cap'] > 0): ?><span class="block text-[11px] text-slate-400 mt-2">سقف روزانه: <?= e(gamification_points_label($event['daily_cap'])) ?></span><?php endif; ?></span>
+                            <?= $event['link'] ? '</a>' : '</div>' ?>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </section>
 
-            <section class="card p-5 space-y-4"><div><h3 class="text-lg font-bold">پاداش‌های قابل‌دریافت</h3><p class="text-sm text-slate-500 mt-1">پس از دریافت، کد و لینک سایت مقصد در همین صفحه نمایش داده می‌شود.</p></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><?php if (!$rewards): ?><p class="text-slate-500">هنوز پاداشی برای دریافت تنظیم نشده است.</p><?php endif; ?><?php foreach ($rewards as $reward): $canRedeem = (int) $summary['wallet']['balance'] >= (int) $reward['points_cost'] && (int) $reward['is_active'] && (int) $reward['site_active'] && ((string) $reward['coupon_mode'] === 'fixed' || (int) $reward['available_codes'] > 0) && (int) ($reward['customer_redemptions'] ?? 0) < (int) $reward['max_per_customer']; ?><div class="border rounded-2xl p-5 flex flex-col gap-3"><div class="flex items-start justify-between gap-3"><div><h4 class="font-bold text-slate-900"><?= e($reward['title']) ?></h4><p class="text-sm text-slate-500 mt-1"><?= e($reward['description']) ?></p></div><span class="badge badge-primary whitespace-nowrap"><?= gamification_points_label((int) $reward['points_cost']) ?></span></div><div class="text-xs text-slate-500">سایت مقصد: <b><?= e($reward['site_name']) ?></b> · اعتبار: <?= (int) $reward['valid_days'] > 0 ? (int) $reward['valid_days'] . ' روز' : 'بدون انقضا' ?></div><?php if ((int) ($reward['customer_redemptions'] ?? 0) >= (int) $reward['max_per_customer']): ?><p class="text-xs text-amber-700 bg-amber-50 rounded-lg p-2">سقف دریافت این پاداش برای شما تکمیل شده است.</p><?php elseif ((string) $reward['coupon_mode'] === 'pool' && (int) $reward['available_codes'] <= 0): ?><p class="text-xs text-slate-500 bg-slate-50 rounded-lg p-2">کد این پاداش موقتاً موجود نیست.</p><?php endif; ?><form method="post" data-confirm-msg="با کسر <?= e(gamification_points_label((int) $reward['points_cost'])) ?> این پاداش صادر می‌شود. ادامه می‌دهید؟" data-confirm-title="تأیید دریافت پاداش" data-confirm-ok-label="دریافت پاداش" data-confirm-tone="primary"><?= csrf_input() ?><input type="hidden" name="action" value="redeem_reward"><input type="hidden" name="reward_id" value="<?= (int) $reward['id'] ?>"><input type="hidden" name="reward_nonce" value="<?= e($reward['nonce']) ?>"><button class="btn btn-primary w-full" type="submit" <?= $canRedeem ? '' : 'disabled' ?>><?= icon('star') ?><span><?= $canRedeem ? 'دریافت پاداش' : 'امکان دریافت نیست' ?></span></button></form></div><?php endforeach; ?></div></section>
+            <section class="card p-5 sm:p-6" aria-labelledby="bonus-code-title">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                    <div class="flex items-start gap-3 min-w-0"><span class="gamification-earn-icon shrink-0"><?= icon('star', 'w-5 h-5') ?></span><div><h2 id="bonus-code-title" class="text-lg font-bold">کد هدیه دارید؟</h2><p class="text-sm text-slate-500 mt-1 leading-6">کد نمایشگاه یا کمپین را وارد کنید؛ پس از اعتبارسنجی، امتیاز همان لحظه به موجودی شما اضافه می‌شود.</p></div></div>
+                    <form method="post" class="flex flex-col sm:flex-row gap-3 w-full lg:max-w-lg"><?= csrf_input() ?><input type="hidden" name="action" value="redeem_bonus"><label class="sr-only" for="bonus_code">کد هدیه</label><input class="input flex-1" id="bonus_code" name="bonus_code" required maxlength="64" dir="ltr" autocomplete="off" placeholder="EXPO2026"><button class="btn btn-primary shrink-0" type="submit"><?= icon('check') ?><span>ثبت کد هدیه</span></button></form>
+                </div>
+            </section>
 
-            <?php if ($issuedReward): ?><section class="card p-6 border-2 border-emerald-200 bg-emerald-50 space-y-4" aria-live="polite"><div><h3 class="text-lg font-bold text-emerald-900">پاداش شما آماده است</h3><p class="text-sm text-emerald-800 mt-1"><?= e(get_setting('gamification_store_message', 'کد تخفیف را هنگام خرید در سایت مقصد وارد کنید.')) ?></p></div><div class="bg-white rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><span class="text-sm text-slate-500">کد تخفیف</span><code class="text-xl font-bold text-slate-900" dir="ltr"><?= e($issuedReward['coupon_code']) ?></code></div><div class="flex flex-wrap gap-3"><a class="btn btn-primary" href="<?= e($issuedReward['redirect_url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('link') ?><span>رفتن به سایت فروش</span></a><?php if ($issuedReward['expires_at']): ?><span class="text-xs text-emerald-800 self-center">اعتبار تا <?= e($issuedReward['expires_at']) ?></span><?php endif; ?></div></section><?php endif; ?>
+            <section id="reward-catalog" class="card p-5 sm:p-6 space-y-5" aria-labelledby="reward-catalog-title">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2"><div><h2 id="reward-catalog-title" class="text-lg sm:text-xl font-bold">پاداش‌های قابل‌دریافت</h2><p class="text-sm text-slate-500 mt-1">پیشرفت هر پاداش را ببینید و وقتی آماده شد، آن را با یک کلیک دریافت کنید.</p></div><span class="badge badge-muted"><?= count($rewards) ?> پاداش فعال</span></div>
+                <?php if (!$rewards): ?>
+                    <?= empty_state('هنوز پاداشی برای دریافت تنظیم نشده است.', 'با فعال‌شدن پاداش‌ها، گزینه‌های تبدیل امتیاز در این بخش نمایش داده می‌شوند.', 'star') ?>
+                <?php else: ?>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <?php foreach ($rewards as $reward): ?>
+                            <?php
+                            $rewardCost = max(1, (int) $reward['points_cost']);
+                            $rewardProgress = min(100, (int) floor(((int) $wallet['balance'] / $rewardCost) * 100));
+                            $rewardRemaining = max(0, $rewardCost - (int) $wallet['balance']);
+                            $customerLimitReached = (int) ($reward['customer_redemptions'] ?? 0) >= (int) $reward['max_per_customer'];
+                            $canRedeem = (int) $wallet['balance'] >= $rewardCost && (int) $reward['is_active'] && (int) $reward['site_active'] && ((string) $reward['coupon_mode'] === 'fixed' || (int) $reward['available_codes'] > 0) && !$customerLimitReached;
+                            ?>
+                            <article class="gamification-reward-card">
+                                <div class="flex items-start justify-between gap-3"><div class="min-w-0"><h3 class="font-bold text-slate-900 leading-6"><bdi dir="auto"><?= e($reward['title']) ?></bdi></h3><p class="text-sm text-slate-500 mt-1 leading-6"><bdi dir="auto"><?= e($reward['description']) ?></bdi></p></div><span class="badge badge-brand shrink-0"><?= e(gamification_points_label($rewardCost)) ?></span></div>
+                                <div class="text-xs text-slate-500 flex flex-wrap gap-x-3 gap-y-1"><span>سایت مقصد: <b class="text-slate-700"><bdi dir="auto"><?= e($reward['site_name']) ?></bdi></b></span><span>اعتبار: <?= (int) $reward['valid_days'] > 0 ? (int) $reward['valid_days'] . ' روز' : 'بدون انقضا' ?></span></div>
+                                <div><div class="flex items-center justify-between gap-3 text-xs mb-2"><span class="text-slate-500">پیشرفت شما</span><span class="font-semibold <?= $rewardProgress >= 100 ? 'text-emerald-600' : 'text-indigo-600' ?>"><?= $rewardProgress >= 100 ? 'آمادهٔ دریافت' : e(gamification_points_label($rewardRemaining)) . ' تا دریافت' ?></span></div><div class="gamification-progress" role="progressbar" aria-label="پیشرفت تا پاداش <?= e($reward['title']) ?>" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $rewardProgress ?>"><span class="gamification-progress-fill" data-gamification-progress="<?= $rewardProgress ?>"></span></div></div>
+                                <?php if ($customerLimitReached): ?><p class="text-xs text-amber-700 bg-amber-50 rounded-lg p-3" role="status">سقف دریافت این پاداش برای شما تکمیل شده است.</p><?php elseif ((string) $reward['coupon_mode'] === 'pool' && (int) $reward['available_codes'] <= 0): ?><p class="text-xs text-slate-500 bg-slate-50 rounded-lg p-3" role="status">کد این پاداش موقتاً موجود نیست.</p><?php endif; ?>
+                                <form method="post" class="mt-auto" data-confirm-msg="با کسر <?= e(gamification_points_label($rewardCost)) ?> این پاداش صادر می‌شود. ادامه می‌دهید؟" data-confirm-title="تأیید دریافت پاداش" data-confirm-ok-label="دریافت پاداش" data-confirm-tone="primary"><?= csrf_input() ?><input type="hidden" name="action" value="redeem_reward"><input type="hidden" name="reward_id" value="<?= (int) $reward['id'] ?>"><input type="hidden" name="reward_nonce" value="<?= e($reward['nonce']) ?>"><button class="btn <?= $canRedeem ? 'btn-primary' : 'btn-secondary' ?> w-full" type="submit" <?= $canRedeem ? '' : 'disabled' ?>><?= icon('star') ?><span><?= $canRedeem ? 'دریافت پاداش' : 'امکان دریافت نیست' ?></span></button></form>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </section>
 
-            <section class="card p-5 space-y-4"><h3 class="text-lg font-bold">تاریخچهٔ امتیازها</h3><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-slate-500 border-b"><th class="text-start p-3">شرح</th><th class="text-start p-3">تغییر</th><th class="text-start p-3">مانده</th><th class="text-start p-3">زمان</th></tr></thead><tbody><?php if (!$summary['ledger']): ?><tr><td colspan="4" class="p-5 text-center text-slate-500">هنوز تراکنشی ثبت نشده است.</td></tr><?php endif; ?><?php foreach ($summary['ledger'] as $entry): ?><tr class="border-b last:border-0"><td class="p-3"><?= e($entry['description']) ?></td><td class="p-3 <?= (int) $entry['delta'] > 0 ? 'text-emerald-600' : 'text-red-600' ?>" dir="ltr"><?= (int) $entry['delta'] > 0 ? '+' : '' ?><?= (int) $entry['delta'] ?></td><td class="p-3" dir="ltr"><?= (int) $entry['balance_after'] ?></td><td class="p-3 text-xs" dir="ltr"><?= e($entry['created_at']) ?></td></tr><?php endforeach; ?></tbody></table></div></section>
+            <?php if ($issuedReward): ?>
+                <section class="card p-5 sm:p-6 border-2 border-emerald-200 bg-emerald-50 space-y-4" aria-live="polite" aria-labelledby="issued-reward-title"><div class="flex items-start gap-3"><span class="shrink-0 text-emerald-700 mt-0.5"><?= icon('check', 'w-5 h-5') ?></span><div><h2 id="issued-reward-title" class="text-lg font-bold text-emerald-900">پاداش شما آماده است</h2><p class="text-sm text-emerald-800 mt-1 leading-6"><?= e(get_setting('gamification_store_message', 'کد تخفیف را هنگام خرید در سایت مقصد وارد کنید.')) ?></p></div></div><div class="bg-white rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><span class="text-sm text-slate-500">کد تخفیف</span><div class="flex items-center gap-2"><code class="text-xl font-bold text-slate-900 gamification-code" dir="ltr"><?= e($issuedReward['coupon_code']) ?></code><button type="button" class="btn btn-secondary btn-sm" data-copy-value="<?= e($issuedReward['coupon_code']) ?>">کپی کد</button></div></div><div class="flex flex-col sm:flex-row sm:items-center gap-3"><a class="btn btn-primary" href="<?= e($issuedReward['redirect_url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('link') ?><span>رفتن به سایت فروش</span></a><?php if ($issuedReward['expires_at']): ?><span class="text-xs text-emerald-800">اعتبار تا <?= e(fa_datetime($issuedReward['expires_at'])) ?></span><?php endif; ?></div></section>
+            <?php endif; ?>
+
+            <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+                <section class="card p-5 sm:p-6 space-y-4 xl:col-span-3" aria-labelledby="ledger-title"><div><h2 id="ledger-title" class="text-lg font-bold">تاریخچهٔ امتیازها</h2><p class="text-sm text-slate-500 mt-1">آخرین تغییرات موجودی شما در دفترکل امتیاز.</p></div><div class="table-scroll"><table class="table table-card-mobile"><thead><tr><th>شرح</th><th>تغییر</th><th>مانده</th><th>زمان</th></tr></thead><tbody><?php if (!$summary['ledger']): ?><tr><td colspan="4" class="p-5 text-center text-slate-500">هنوز تراکنشی ثبت نشده است.</td></tr><?php endif; ?><?php foreach ($summary['ledger'] as $entry): $delta = (int) $entry['delta']; ?><tr><td data-label="شرح" class="font-medium text-slate-800"><?= e($entry['description']) ?></td><td data-label="تغییر"><span class="badge <?= $delta > 0 ? 'badge-success' : 'badge-danger' ?> tabular-nums" dir="ltr"><?= $delta > 0 ? '+' : '' ?><?= number_format($delta) ?></span></td><td data-label="مانده" class="tabular-nums" dir="ltr"><?= number_format((int) $entry['balance_after']) ?></td><td data-label="زمان" class="text-xs text-slate-500 value-ltr whitespace-nowrap" dir="ltr"><?= e(fa_datetime((string) $entry['created_at'])) ?></td></tr><?php endforeach; ?></tbody></table></div></section>
+                <section class="card p-5 sm:p-6 space-y-4 xl:col-span-2" aria-labelledby="redemptions-title"><div><h2 id="redemptions-title" class="text-lg font-bold">پاداش‌های اخیر</h2><p class="text-sm text-slate-500 mt-1">پاداش‌هایی که تاکنون دریافت کرده‌اید.</p></div><?php if (!$summary['redemptions']): ?><div class="alert alert-muted" role="status"><?= icon('info') ?><span>هنوز پاداشی دریافت نکرده‌اید.</span></div><?php else: ?><div class="space-y-3"><?php foreach (array_slice($summary['redemptions'], 0, 5) as $redemption): ?><div class="rounded-xl border border-slate-200 p-3"><div class="flex items-start justify-between gap-3"><b class="text-sm text-slate-800"><bdi dir="auto"><?= e($redemption['reward_title']) ?></bdi></b><span class="badge badge-success">صادرشده</span></div><div class="flex items-center justify-between gap-3 mt-2 text-xs text-slate-500"><code class="gamification-code" dir="ltr"><?= e($redemption['coupon_code_snapshot']) ?></code><span><?= e(fa_datetime((string) $redemption['created_at'])) ?></span></div></div><?php endforeach; ?></div><?php endif; ?></section>
+            </div>
+
+            <script nonce="<?= e(portal_csp_nonce()) ?>">
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('[data-gamification-progress]').forEach(function (bar) {
+                    var progress = Math.max(0, Math.min(100, Number(bar.getAttribute('data-gamification-progress')) || 0));
+                    bar.style.width = progress + '%';
+                });
+                document.querySelectorAll('[data-copy-value]').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        var value = button.getAttribute('data-copy-value') || '';
+                        if (!navigator.clipboard || !value) return;
+                        navigator.clipboard.writeText(value).then(function () {
+                            var original = button.textContent;
+                            button.textContent = 'کپی شد';
+                            window.setTimeout(function () { button.textContent = original; }, 1800);
+                        });
+                    });
+                });
+            });
+            </script>
 <?php render_customer_footer(); ?>

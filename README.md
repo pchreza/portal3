@@ -1,6 +1,6 @@
 # پورتال مشتریان Portal3
 
-**نسخهٔ فعلی:** `2.1.1`
+**نسخهٔ فعلی:** `2.2.1`
 **نوع سیستم:** پورتال مشتریان تحت وب با PHP و MariaDB/MySQL
 **زبان رابط کاربری:** فارسی و راست‌به‌چپ (RTL)
 **مخزن رسمی:** [github.com/pchreza/portal3](https://github.com/pchreza/portal3)
@@ -47,6 +47,7 @@ Portal3 امکانات زیر را در اختیار مدیر و مشتری قر
 | گزارش و ثبت خطا | ثبت گزارش خطا توسط کاربر از رابط سیستم و مشاهدهٔ آن توسط مدیر مجاز |
 | Excel و CSV | ورود و خروجی‌گیری اطلاعات در مسیرهای پشتیبانی‌شده با PhpSpreadsheet |
 | رابط کاربری | طراحی فارسی RTL، فونت محلی Vazirmatn، responsive برای موبایل، accessibility پایه و assetهای local بدون وابستگی به CDN |
+| Gamification | کیف امتیاز مشتری، ruleهای قابل‌تنظیم، کد هدیه، پاداش و coupon pool؛ همراه با داشبورد پیشرفت و اعلان contextual در پروفایل، نظرسنجی و تیکت |
 
 ## معماری و مسیرهای مهم
 
@@ -106,7 +107,7 @@ XAMPP:   C:\xampp\htdocs\portal3
 
 ```bash
 cd /c/laragon/www
-unzip /مسیر/portal3-v2.1.1-clean-20260812.zip
+unzip /مسیر/portal3-v2.2.1-clean-20260812.zip
 cd portal3
 ```
 

@@ -30,4 +30,25 @@ final class GamificationSecurityTest extends TestCase
         self::assertFalse(gamification_validate_https_url('javascript:alert(1)'));
         self::assertFalse(gamification_validate_https_url('https://'));
     }
+
+    public function testContextOfferFailsClosedWhenGamificationIsDisabled(): void
+    {
+        global $pdo;
+        $previousPdo = $pdo ?? null;
+        $previousSettings = $GLOBALS['__portal_settings_cache'] ?? null;
+        $pdo = null;
+        $GLOBALS['__portal_settings_cache'] = ['module_gamification' => '0'];
+
+        try {
+            self::assertNull(gamification_context_offer(42, 'survey_submitted'));
+            self::assertFalse(gamification_customer_has_event(42, 'survey_submitted'));
+        } finally {
+            $pdo = $previousPdo;
+            if ($previousSettings === null) {
+                unset($GLOBALS['__portal_settings_cache']);
+            } else {
+                $GLOBALS['__portal_settings_cache'] = $previousSettings;
+            }
+        }
+    }
 }

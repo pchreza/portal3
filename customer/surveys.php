@@ -139,6 +139,17 @@ $x = $pdo->prepare(
 );
 $x->execute([$uid]);
 $items = $x->fetchAll();
+$survey_offer = gamification_context_offer($uid, 'survey_submitted');
+$has_pending_survey = (bool) $takeData;
+if (!$has_pending_survey) {
+    foreach ($items as $survey_item) {
+        if (!(int) $survey_item['answered'] && (int) $survey_item['entity_exists'] && strtotime((string) $survey_item['available_at']) <= time()) {
+            $has_pending_survey = true;
+            break;
+        }
+    }
+}
+$survey_context_visible = is_array($survey_offer) && $has_pending_survey;
 
 // ---------- استایل اختصاصی (بازطراحی FULLMASTER — فقط presentation) ----------
 $customer_survey_styles = '
@@ -195,6 +206,16 @@ render_customer_header(
 
             <?php if ($err): ?>
                 <div class="alert alert-danger" role="alert"><?= icon('alert') ?><span><?= htmlspecialchars($err) ?></span></div>
+            <?php endif; ?>
+
+            <?php if ($survey_context_visible): ?>
+                <aside class="alert alert-info items-center gap-3" role="note">
+                    <span class="shrink-0 mt-0.5"><?= icon('star', 'w-5 h-5') ?></span>
+                    <div class="min-w-0">
+                        <h3 class="font-bold text-sm"><?= $takeData ? 'با ثبت این نظرسنجی ' : 'با تکمیل هر نظرسنجی ' ?><?= e(gamification_points_label($survey_offer['points'])) ?> بگیرید</h3>
+                        <p class="microcopy text-xs mt-1">پاسخ همهٔ سؤال‌ها را کامل کنید و روی «ثبت نهایی پاسخ» بزنید تا امتیاز برای شما ثبت شود.</p>
+                    </div>
+                </aside>
             <?php endif; ?>
 
             <?php if ($takeData): ?>

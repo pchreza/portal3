@@ -178,6 +178,41 @@ function gamification_award_profile_completion(int $customerId): int
     return gamification_award_points($customerId, 'profile_completed', 'profile_completed:' . $customerId, 'امتیاز تکمیل کامل پروفایل', 'customer', (string) $customerId);
 }
 
+function gamification_customer_has_event(int $customerId, string $eventKey): bool
+{
+    global $pdo;
+    if (!$pdo || $customerId <= 0 || !isset(gamification_event_catalog()[$eventKey])) {
+        return false;
+    }
+    $stmt = $pdo->prepare('SELECT id FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 LIMIT 1');
+    $stmt->execute([$customerId, $eventKey]);
+    return (bool) $stmt->fetchColumn();
+}
+
+/** @return array{event_key:string,title:string,description:string,points:int,daily_cap:int,cooldown_seconds:int}|null */
+function gamification_context_offer(int $customerId, string $eventKey): ?array
+{
+    if (!gamification_enabled() || $customerId <= 0 || !isset(gamification_event_catalog()[$eventKey])) {
+        return null;
+    }
+    $rule = gamification_rule($eventKey);
+    if (!$rule || !(int) $rule['is_active'] || (int) $rule['points'] <= 0) {
+        return null;
+    }
+    if ($eventKey === 'profile_completed' && gamification_customer_has_event($customerId, $eventKey)) {
+        return null;
+    }
+    $event = gamification_event_catalog()[$eventKey];
+    return [
+        'event_key' => $eventKey,
+        'title' => $event['title'],
+        'description' => $event['description'],
+        'points' => (int) $rule['points'],
+        'daily_cap' => (int) $rule['daily_cap'],
+        'cooldown_seconds' => (int) $rule['cooldown_seconds'],
+    ];
+}
+
 /** @return array{points:int,balance:int} */
 function gamification_redeem_bonus_code(int $customerId, string $rawCode): array
 {

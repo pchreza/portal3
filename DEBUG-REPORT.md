@@ -278,3 +278,40 @@ Smoke report کامل در `http-smoke-report.txt` ذخیره شد.
 - Upgrade E2E از schema 28 به 29: موفق.
 - Regression امنیتی کد و URL: موفق.
 - بررسی iconهای UI و تعادل فرم‌های مدیر/مشتری: موفق.
+
+
+## FEATURE-002 — بهبود UX داشبورد و اعلان contextual Gamification
+
+**نسخه:** 2.2.1
+
+**وضعیت:** پیاده‌سازی و regression کامل شد.
+
+### تغییرات UX
+
+داشبورد مشتری در `customer/gamification.php` با hero موجودی، progress تا پاداش بعدی، KPIهای کل کسب/مصرف، کارت‌های قابل‌کلیک کسب امتیاز، progress هر پاداش، وضعیت موجودی coupon pool، تاریخچهٔ responsive و نمایش خواناتر پاداش‌های اخیر بازطراحی شد. کد صادرشده امکان copy دارد و اعداد، کدها، URLها و عنوان‌های ترکیبی با جداسازی جهت مناسب نمایش داده می‌شوند.
+
+### اعلان‌های contextual
+
+helper مرکزی `gamification_context_offer()` فعال‌بودن ماژول و rule و مثبت‌بودن امتیاز را بررسی می‌کند. در پروفایل، اعلان فقط تا قبل از ثبت امتیاز تکمیل کامل نمایش داده می‌شود. در نظرسنجی، اعلان فقط در صورت وجود فرم قابل‌تکمیل نمایش داده می‌شود. در تیکت، بسته به حالت صفحه، امتیاز ثبت تیکت جدید یا پاسخ معتبر پیشنهاد می‌شود. اعلان‌ها با `alert-info` سبک و responsive هستند و هنگام خاموش‌بودن Gamification یا rule مربوطه حذف می‌شوند.
+
+### آزمون و دیباگ
+
+| مورد | نتیجه |
+|---|---|
+| PHPUnit | PASS؛ ۱۳ تست و ۴۳ assertion |
+| PHPStan | PASS؛ ۵۰ فایل بدون خطا |
+| PHP lint | PASS؛ تمام فایل‌های PHP |
+| Tailwind local build | PASS؛ utilityهای جدید در `assets/tailwind.css` تولید شدند |
+| regression helper خاموش | PASS؛ در حالت disabled و بدون PDO fail-closed است |
+| ZIP policy | PASS؛ بدون tests، vendor، Git، `db_config.php`، cache، upload محیط توسعه و backup archive |
+| smoke authenticated در sandbox | محدود؛ server موجود قبل از اجرای migration پاسخ maintenance با HTTP 503 داد، نه خطای syntax/runtime این تغییر |
+
+### BUG-010 — dependency ناقص در PHPUnit bootstrap برای helper settings
+
+| فیلد | شرح |
+|---|---|
+| شدت | پایین؛ فقط regression test جدید در محیط تست شکست می‌خورد و runtime production تحت تأثیر نبود. |
+| علت ریشه‌ای | `tests/bootstrap.php` پیش از این `settings.php` را load نمی‌کرد، درحالی‌که `gamification_enabled()` به `is_module_enabled()` وابسته است. |
+| اصلاح | include صریح `includes/functions/settings.php` به bootstrap اضافه شد و تست fail-closed برای helper جدید ثبت گردید. |
+| آزمون | PASS؛ PHPUnit پس از اصلاح ۱۳ تست و ۴۳ assertion را موفق اجرا کرد. |
+| وضعیت | رفع شد. |
