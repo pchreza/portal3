@@ -214,7 +214,7 @@ $question_type_labels = [
     'star_rating' => 'ستاره‌ای',
 ];
 
-render_admin_header('مدیریت نظرسنجی', 'p-8 max-w-7xl w-full mx-auto space-y-6');
+render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admin-page portal-surveys-page p-8 max-w-7xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($msg): ?>

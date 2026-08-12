@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $departments = $pdo->query("SELECT d.*, (SELECT COUNT(*) FROM tickets t WHERE t.department_id = d.id) ticket_count FROM ticket_departments d ORDER BY d.sort_order ASC, d.id ASC")->fetchAll();
 
-render_admin_header('مدیریت دپارتمان‌های تیکت', 'p-8 max-w-4xl w-full mx-auto space-y-6');
+render_admin_header('مدیریت دپارتمان‌های تیکت', 'portal-page-main portal-admin-page p-8 max-w-4xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($msg): ?>

@@ -154,7 +154,7 @@ $customers = $customers_stmt->fetchAll();
 ?>
 <?php render_admin_header(
     'مدیریت مشتریان',
-    'p-8 max-w-7xl w-full mx-auto space-y-6',
+    'portal-page-main portal-admin-page p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     ''
 ); ?>
@@ -180,8 +180,8 @@ $customers = $customers_stmt->fetchAll();
 
             <?php if ($action === 'add' || $action === 'edit'): ?>
                 <!-- Add / Edit Form -->
-                <div class="card p-6 md:p-8">
-                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
+                <div class="portal-form-card card p-6 md:p-8">
+                    <div class="portal-section-heading flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
                         <h3 class="text-lg font-bold text-slate-800"><?php echo $action === 'edit' ? 'ویرایش اطلاعات مشتری' : 'تعریف مشتری جدید'; ?></h3>
                         <a href="customers.php" class="btn btn-ghost btn-sm"><?= icon('back') ?><span>بازگشت به لیست</span></a>
                     </div>
@@ -192,7 +192,7 @@ $customers = $customers_stmt->fetchAll();
                             <input type="hidden" name="id" value="<?php echo $edit_customer['id']; ?>">
                         <?php endif; ?>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="portal-form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="label" for="username">نام کاربری (برای ورود)<span class="required-star" aria-hidden="true">*</span></label>
                                 <input type="text" name="username" id="username" value="<?php echo htmlspecialchars($edit_customer['username'] ?? ''); ?>" required dir="ltr" class="input value-ltr"><p class="field-error" style="display:none"></p>
@@ -242,11 +242,11 @@ $customers = $customers_stmt->fetchAll();
                             <?php echo render_custom_fields_inputs('customer', $edit_customer['id'] ?? 0); ?>
                         </div>
 
-                        <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-slate-200">
+                        <div class="portal-form-actions desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-slate-200">
                             <a href="customers.php" class="btn btn-secondary">انصراف</a>
                             <button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره اطلاعات مشتری</span></button>
                         </div>
-                        <div class="mobile-action-bar">
+                        <div class="portal-mobile-form-actions mobile-action-bar">
                             <a href="customers.php" class="btn btn-secondary">انصراف</a>
                             <button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره</span></button>
                         </div>
@@ -255,12 +255,12 @@ $customers = $customers_stmt->fetchAll();
 
             <?php else: ?>
                 <!-- Customer List View -->
-                <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="portal-list-toolbar flex flex-wrap items-center justify-between gap-3">
                     <h3 class="text-lg font-bold text-slate-800">لیست مشتریان (<?php echo count($customers); ?>)</h3>
                     <a href="customers.php?action=add" class="btn btn-primary"><?= icon('plus') ?><span>افزودن مشتری جدید</span></a>
                 </div>
 
-                <div class="card overflow-hidden">
+                <div class="portal-list-card card overflow-hidden">
                     <div class="table-scroll">
                         <table class="table table-card-mobile">
                             <thead>

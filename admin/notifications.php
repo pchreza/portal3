@@ -95,7 +95,7 @@ $notifications = $pdo->query(
 // مشتریان برای انتخاب دستی
 $customers_all = $pdo->query("SELECT id, first_name, last_name, username FROM users WHERE role = 'customer' ORDER BY first_name ASC")->fetchAll();
 
-render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p-8 max-w-7xl w-full mx-auto space-y-6');
+render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'portal-page-main portal-admin-page p-8 max-w-7xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($msg): ?>

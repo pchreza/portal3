@@ -28,7 +28,7 @@ $unread = unread_notifications_count($uid);
 
 render_customer_header(
     'اعلانات من',
-    'p-8 max-w-5xl w-full mx-auto space-y-6',
+    'portal-page-main p-8 max-w-5xl w-full mx-auto space-y-6',
     '',
     $unread > 0 ? '<form method="POST" class="inline">' . csrf_input() . '<input type="hidden" name="action" value="read_all"><button type="submit" class="btn btn-sm btn-secondary">' . icon('check') . '<span>خواندن همه</span></button></form>' : ''
 );

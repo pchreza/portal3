@@ -12,7 +12,7 @@ $invoices = $stmt->fetchAll();
 ?>
 <?php render_customer_header(
     'فاکتورها و صورتحساب‌ها',
-    'p-8 max-w-7xl w-full mx-auto space-y-6',
+    'portal-page-main p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     '',
     '',
@@ -20,12 +20,12 @@ $invoices = $stmt->fetchAll();
 ); ?>
 
 
-            <div class="flex items-center justify-between">
+            <div class="portal-list-toolbar flex items-center justify-between">
                 <h3 class="text-lg font-bold text-slate-800">فاکتورهای صادرشده (<?php echo count($invoices); ?>)</h3>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
+            <div class="portal-list-card card bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="table-scroll overflow-x-auto">
                     <table class="table table-card-mobile">
                         <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">
                             <tr>
@@ -55,9 +55,9 @@ $invoices = $stmt->fetchAll();
                                         <td data-label="وضعیت" class="p-4">
                                             <?php 
                                                 $st = $inv['status'];
-                                                if ($st === 'paid') echo '<span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium">پرداخت شده</span>';
-                                                elseif ($st === 'unpaid') echo '<span class="bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full font-medium">پرداخت نشده</span>';
-                                                else echo '<span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-full font-medium">لغو شده</span>';
+                                                if ($st === 'paid') echo '<span class="badge badge-success">پرداخت شده</span>';
+                                                elseif ($st === 'unpaid') echo '<span class="badge badge-warning">پرداخت نشده</span>';
+                                                else echo '<span class="badge badge-muted">لغو شده</span>';
                                             ?>
                                         </td>
                                         <td data-label="تاریخ صدور" class="p-4 text-center text-xs text-slate-500 value-ltr whitespace-nowrap" dir="ltr"><?php echo htmlspecialchars($inv['created_at']); ?></td>

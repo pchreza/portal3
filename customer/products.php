@@ -29,22 +29,22 @@ $full_name = trim($customer['first_name'] . ' ' . $customer['last_name']) !== ''
 ?>
 <?php render_customer_header(
     'محصولات و سرویس‌های من',
-    'p-8 max-w-7xl w-full mx-auto space-y-6',
+    'portal-page-main p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     '',
     $full_name
 ); ?>
 
-            <div class="flex items-center justify-between">
+            <div class="portal-list-toolbar flex items-center justify-between">
                 <h3 class="text-lg font-bold text-slate-800">لیست محصولات شما (<?php echo count($products); ?>)</h3>
             </div>
 
             <?php if (empty($products)): ?>
-                <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
+                <div class="portal-empty-card card empty-state bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
                     هیچ محصولی تاکنون برای شما ثبت نشده است.
                 </div>
             <?php else: ?>
-                <div class="<?= entity_card_grid_class($card_style) ?>">
+                <div class="portal-entity-grid <?= entity_card_grid_class($card_style) ?>">
                     <?php foreach ($products as $prod): ?>
                         <?php echo render_entity_card('product', $prod, $card_style, $survey_map[$prod['id']] ?? [], $surveys_enabled); ?>
                     <?php endforeach; ?>

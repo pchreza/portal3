@@ -32,13 +32,13 @@ if ($admin_display_name === '') {
     <?= portal_darkmode_init() ?>
     <?= datepicker_assets_css() ?>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex">
+<body class="portal-shell portal-shell-admin bg-slate-50 text-slate-800 min-h-screen flex">
     <?= portal_skip_link() ?>
     <?php include dirname(__DIR__, 2) . '/admin/sidebar.php'; ?>
 
-    <div class="flex-1 flex flex-col min-w-0">
-        <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-10 relative">
-            <h1 class="portal-page-title text-lg font-bold text-slate-800 truncate" title="<?= e($title) ?>"><?= e($title) ?></h1>
+    <div class="portal-app-frame flex-1 flex flex-col min-w-0">
+        <header class="portal-topbar bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-10 relative">
+            <h1 class="portal-page-title portal-topbar-title text-lg font-bold text-slate-800 truncate" title="<?= e($title) ?>"><?= e($title) ?></h1>
 
             <?php
                 $ha = get_setting('header_menu_align', 'start');
@@ -54,10 +54,10 @@ if ($admin_display_name === '') {
             <?php endif; ?>
 
             <div class="flex items-center gap-3">
-                <span class="text-sm text-slate-600 font-medium hidden sm:inline">مدیر: <strong class="text-slate-800"><?= e($admin_display_name) ?></strong></span>
+                <span class="portal-user-chip text-sm text-slate-600 font-medium hidden sm:inline"><span class="portal-user-avatar" aria-hidden="true"><?= icon('user', 'w-4 h-4') ?></span><span>مدیر: <strong class="text-slate-800"><?= e($admin_display_name) ?></strong></span></span>
                 <?= portal_theme_toggle() ?>
                 <?= $topbarActions ?>
             </div>
         </header>
 
-        <main id="main-content" class="<?= e($mainClass) ?>">
+        <main id="main-content" class="portal-main <?= e($mainClass) ?>">

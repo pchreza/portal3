@@ -61,7 +61,7 @@ $q = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $q->execute([$uid]);
 $admin = $q->fetch();
 
-render_admin_header('پروفایل مدیر سیستم', 'p-8 max-w-3xl w-full mx-auto space-y-6');
+render_admin_header('پروفایل مدیر سیستم', 'portal-page-main portal-admin-page portal-profile-page p-8 max-w-3xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($msg): ?>

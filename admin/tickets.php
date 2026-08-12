@@ -157,7 +157,7 @@ $tickets = $tickets->fetchAll();
 // ---------- داده‌های کمکی ----------
 $departments = ticket_departments();
 
-render_admin_header('تیکت‌های پشتیبانی مشتریان', 'p-8 max-w-7xl w-full mx-auto space-y-6');
+render_admin_header('تیکت‌های پشتیبانی مشتریان', 'portal-page-main portal-admin-page portal-tickets-page p-8 max-w-7xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($success): ?>

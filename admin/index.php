@@ -25,59 +25,59 @@ $recent_logs      = $admin_dash['recent_logs'];
 ?>
 <?php render_admin_header(
     'داشبورد مدیریت پیشرفته',
-    'p-8 max-w-7xl w-full mx-auto space-y-8',
+    'portal-dashboard-main portal-admin-dashboard p-8 max-w-7xl w-full mx-auto space-y-8',
     '',
     '<form method="post" action="../logout.php" class="md:hidden"><input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"><button type="submit" class="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">خروج</button></form>'
 ); ?>
 
             
             <!-- Stats Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                <div class="card p-5 flex items-center justify-between">
+            <div class="portal-kpi-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                <div class="portal-stat-card card p-5 flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-slate-500 font-medium">کل مشتریان</p>
-                        <p class="text-3xl font-bold text-slate-900 mt-1"><?php echo (int) $customers_count; ?></p>
+                        <p class="portal-stat-label text-sm text-slate-500 font-medium">کل مشتریان</p>
+                        <p class="portal-stat-value text-3xl font-bold text-slate-900 mt-1"><?php echo (int) $customers_count; ?></p>
                     </div>
-                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><?= icon('users', 'w-6 h-6') ?></div>
+                    <div class="portal-stat-icon w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><?= icon('users', 'w-6 h-6') ?></div>
                 </div>
 
                 <?php if (is_module_enabled('projects')): ?>
-                <div class="card p-5 flex items-center justify-between">
+                <div class="portal-stat-card card p-5 flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-slate-500 font-medium">پروژه‌های فعال</p>
-                        <p class="text-3xl font-bold text-slate-900 mt-1"><?php echo (int) $projects_count; ?></p>
+                        <p class="portal-stat-label text-sm text-slate-500 font-medium">پروژه‌های فعال</p>
+                        <p class="portal-stat-value text-3xl font-bold text-slate-900 mt-1"><?php echo (int) $projects_count; ?></p>
                     </div>
-                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><?= icon('folder', 'w-6 h-6') ?></div>
+                    <div class="portal-stat-icon w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><?= icon('folder', 'w-6 h-6') ?></div>
                 </div>
                 <?php endif; ?>
 
                 <?php if (is_module_enabled('products')): ?>
-                <div class="card p-5 flex items-center justify-between">
+                <div class="portal-stat-card card p-5 flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-slate-500 font-medium">محصولات</p>
-                        <p class="text-3xl font-bold text-slate-900 mt-1"><?php echo (int) $products_count; ?></p>
+                        <p class="portal-stat-label text-sm text-slate-500 font-medium">محصولات</p>
+                        <p class="portal-stat-value text-3xl font-bold text-slate-900 mt-1"><?php echo (int) $products_count; ?></p>
                     </div>
-                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><?= icon('box', 'w-6 h-6') ?></div>
+                    <div class="portal-stat-icon w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><?= icon('box', 'w-6 h-6') ?></div>
                 </div>
                 <?php endif; ?>
 
                 <?php if (is_module_enabled('tickets')): ?>
-                <div class="card p-5 flex items-center justify-between">
+                <div class="portal-stat-card card p-5 flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-slate-500 font-medium">تیکت‌های باز</p>
-                        <p class="text-3xl font-bold text-slate-900 mt-1"><?php echo (int) $tickets_count; ?></p>
+                        <p class="portal-stat-label text-sm text-slate-500 font-medium">تیکت‌های باز</p>
+                        <p class="portal-stat-value text-3xl font-bold text-slate-900 mt-1"><?php echo (int) $tickets_count; ?></p>
                     </div>
-                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><?= icon('ticket', 'w-6 h-6') ?></div>
+                    <div class="portal-stat-icon w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><?= icon('ticket', 'w-6 h-6') ?></div>
                 </div>
                 <?php endif; ?>
             </div>
 
             <!-- Quick Actions & Recent Customers -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="portal-content-grid grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Recent Customers -->
                 <div class="lg:col-span-2 space-y-6">
-                    <div class="card overflow-hidden">
-                        <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+                    <div class="portal-dashboard-card card overflow-hidden">
+                        <div class="portal-section-heading p-5 border-b border-slate-200 flex items-center justify-between">
                             <h3 class="font-semibold text-slate-800 text-sm leading-tight">مشتریان اخیر</h3>
                             <a href="customers.php" class="btn btn-ghost btn-sm"><?= icon('users') ?><span>مشاهده همه</span></a>
                         </div>
@@ -110,8 +110,8 @@ $recent_logs      = $admin_dash['recent_logs'];
                     </div>
 
                     <!-- Recent Activity Stream -->
-                    <div class="card p-5">
-                        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                    <div class="portal-dashboard-card card p-5">
+                        <div class="portal-section-heading flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                             <h3 class="font-semibold text-slate-800 text-sm leading-tight">آخرین فعالیت‌های سیستم</h3>
                             <a href="logs.php" class="btn btn-ghost btn-sm"><?= icon('file') ?><span>مشاهده کامل</span></a>
                         </div>
@@ -135,7 +135,7 @@ $recent_logs      = $admin_dash['recent_logs'];
                 </div>
 
                 <!-- Quick Links Box -->
-                <div class="card p-5 space-y-3">
+                <div class="portal-dashboard-card card p-5 space-y-3">
                     <h3 class="font-semibold text-slate-800 text-sm leading-tight mb-1">دسترسی سریع</h3>
                     <?php if ($_SESSION['role'] === 'super_admin' || admin_can('customers')): ?>
                     <a href="customers.php?action=add" class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition group">

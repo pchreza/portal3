@@ -37,13 +37,13 @@ if ($customer_display_name === '') {
     <?= portal_darkmode_init() ?>
     <?= datepicker_assets_css() ?>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex">
+<body class="portal-shell portal-shell-customer bg-slate-50 text-slate-800 min-h-screen flex">
     <?= portal_skip_link() ?>
     <?php include dirname(__DIR__, 2) . '/customer/sidebar.php'; ?>
 
-    <div class="flex-1 flex flex-col min-w-0">
-        <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-10 relative">
-            <h1 class="portal-page-title text-lg font-bold text-slate-800 truncate" title="<?= e($title) ?>">
+    <div class="portal-app-frame flex-1 flex flex-col min-w-0">
+        <header class="portal-topbar bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-10 relative">
+            <h1 class="portal-page-title portal-topbar-title text-lg font-bold text-slate-800 truncate" title="<?= e($title) ?>">
                 <span class="sm:hidden"><?= e($mobileTitle !== '' ? $mobileTitle : $title) ?></span>
                 <span class="hidden sm:inline"><?= e($title) ?></span>
             </h1>
@@ -60,7 +60,7 @@ if ($customer_display_name === '') {
             </div>
             <?php endif; ?>
             <div class="flex items-center gap-2 sm:gap-3">
-                <span class="text-sm text-slate-600 font-medium hidden sm:inline">کاربر: <strong class="text-slate-800"><?= e($customer_display_name) ?></strong></span>
+                <span class="portal-user-chip text-sm text-slate-600 font-medium hidden sm:inline"><span class="portal-user-avatar" aria-hidden="true"><?= icon('user', 'w-4 h-4') ?></span><span>کاربر: <strong class="text-slate-800"><?= e($customer_display_name) ?></strong></span></span>
 
                 <!-- زنگوله اعلانات -->
                 <?php if (!empty($_SESSION['user_id']) && $_SESSION['role'] === 'customer'): ?>
@@ -138,4 +138,4 @@ if ($customer_display_name === '') {
             </div>
         </header>
 
-        <main id="main-content" class="<?= e($mainClass) ?>">
+        <main id="main-content" class="portal-main <?= e($mainClass) ?>">

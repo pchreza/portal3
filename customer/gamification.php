@@ -103,7 +103,7 @@ $customer_gamification_styles = '
 @media (max-width:767px){.gamification-hero{border-radius:1.25rem}.gamification-hero .btn{width:100%}.gamification-earn-card{min-height:0}.gamification-reward-card{padding:1rem}}
 ';
 
-render_customer_header('امتیازها و پاداش‌ها', 'p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto space-y-6', $customer_gamification_styles, '', '');
+render_customer_header('امتیازها و پاداش‌ها', 'portal-page-main portal-gamification-page p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto space-y-6', $customer_gamification_styles, '', '');
 ?>
             <?php if ($success): ?>
                 <div class="alert alert-success" role="status" aria-live="polite"><?= icon('check') ?><span><?= e($success) ?></span></div>

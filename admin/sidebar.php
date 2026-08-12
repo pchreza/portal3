@@ -7,25 +7,26 @@ $site_title_short = get_setting('site_title', 'پورتال مشتریان');
 ?>
 <style>@media (max-width:767px){body{padding-top:3.5rem}}</style>
 <!-- هدر موبایل + دکمه منو -->
-<div class="md:hidden fixed top-0 inset-x-0 z-40 h-14 bg-slate-900 text-white flex items-center gap-3 px-4 shadow-lg">
+<div class="portal-mobile-bar md:hidden fixed top-0 inset-x-0 z-40 h-14 bg-slate-900 text-white flex items-center gap-3 px-4 shadow-lg">
     <button type="button" aria-label="باز کردن منو" aria-expanded="false" aria-controls="mobile-admin-menu" class="hamburger-btn shrink-0"><?= icon('menu') ?></button>
     <span class="font-bold truncate min-w-0"><?= htmlspecialchars($site_title_short) ?> — مدیریت</span>
 </div>
 <button type="button" class="mobile-nav-backdrop" aria-label="بستن منوی مدیریت" tabindex="-1"></button>
-<aside id="mobile-admin-menu" class="hidden md:flex w-64 bg-slate-900 text-slate-300 flex-col fixed inset-y-0 right-0 z-50 border-l border-slate-800 flex-shrink-0 shadow-2xl md:sticky md:top-0 md:h-screen md:overflow-hidden md:inset-y-auto md:right-auto md:left-auto">
-    <div class="flex-1 overflow-y-auto min-h-0">
-        <div class="px-5 py-5 border-b border-slate-800 flex items-center gap-3">
+<aside id="mobile-admin-menu" class="portal-sidebar portal-sidebar-admin hidden md:flex w-64 bg-slate-900 text-slate-300 flex-col fixed inset-y-0 right-0 z-50 border-l border-slate-800 flex-shrink-0 shadow-2xl md:sticky md:top-0 md:h-screen md:overflow-hidden md:inset-y-auto md:right-auto md:left-auto">
+    <div class="portal-sidebar-scroll flex-1 overflow-y-auto min-h-0">
+        <div class="portal-sidebar-brand px-5 py-5 border-b border-slate-800 flex items-center gap-3">
             <div class="flex-shrink-0"><?= site_logo_html('w-11 h-11 rounded-xl text-lg flex-shrink-0') ?></div>
             <div class="min-w-0">
                 <div class="text-white font-bold text-base leading-snug truncate"><?= htmlspecialchars(get_setting('site_title', 'پورتال مشتریان')) ?> <span class="text-slate-400 font-normal">— مدیریت</span></div>
                 <p class="text-xs text-slate-400 mt-1 leading-relaxed">مدیریت هوشمند مشتریان و پروژه‌ها</p>
             </div>
         </div>
-        <nav class="p-4 space-y-1.5 text-sm" aria-label="منوی مدیریت">
+        <nav class="portal-sidebar-nav p-4 space-y-1.5 text-sm" aria-label="منوی مدیریت"><p class="portal-nav-section-label">دسترسی سریع</p>
             <?php if ($is_super || admin_can('dashboard')): ?>
             <a href="index.php" class="nav-item <?php echo $current_page === 'index.php' ? 'active' : ''; ?>"><?= icon('dashboard') ?><span>داشبورد</span></a>
             <?php endif; ?>
 
+            <p class="portal-nav-section-label portal-nav-section-label-spaced">مدیریت سامانه</p>
             <?php if ($is_super || admin_can('customers')): ?>
             <a href="customers.php" class="nav-item <?php echo $current_page === 'customers.php' ? 'active' : ''; ?>"><?= icon('users') ?><span>مدیریت مشتریان</span></a>
             <?php endif; ?>
@@ -58,6 +59,7 @@ $site_title_short = get_setting('site_title', 'پورتال مشتریان');
             <a href="custom_fields.php" class="nav-item <?php echo $current_page === 'custom_fields.php' ? 'active' : ''; ?>"><?= icon('wrench') ?><span>فیلدهای سفارشی پویا</span></a>
             <?php endif; ?>
 
+            <p class="portal-nav-section-label portal-nav-section-label-spaced">ارتباط و گزارش</p>
             <?php if (($is_super || admin_can('notifications')) && is_module_enabled('notifications')): ?>
             <a href="notifications.php" class="nav-item <?php echo $current_page === 'notifications.php' ? 'active' : ''; ?>"><?= icon('bell') ?><span>اعلانات و اطلاع‌رسانی</span></a>
             <?php endif; ?>

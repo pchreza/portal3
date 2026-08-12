@@ -16,7 +16,7 @@ $logs = $pdo->query("
 ?>
 <?php render_admin_header(
     'گزارش فعالیت‌ها و تاریخچه سیستم',
-    'p-8 max-w-7xl w-full mx-auto space-y-6',
+    'portal-page-main portal-admin-page p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     ''
 ); ?>

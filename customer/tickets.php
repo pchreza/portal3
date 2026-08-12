@@ -133,7 +133,7 @@ if ($active_ticket && $active_ticket['status'] !== 'closed' && is_array($ticket_
 ?>
 <?php render_customer_header(
     'تیکت‌های پشتیبانی',
-    'p-8 max-w-7xl w-full mx-auto space-y-6',
+    'portal-page-main portal-tickets-page p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     '',
     '',

@@ -131,7 +131,7 @@ $widget_colors = [
 ?>
 <?php render_customer_header(
     'داشبورد اختصاصی مشتری',
-    'p-8 max-w-7xl w-full mx-auto space-y-8',
+    'portal-dashboard-main p-8 max-w-7xl w-full mx-auto space-y-8',
     '',
     '',
     $full_name
@@ -140,7 +140,7 @@ $widget_colors = [
             <?php if (is_module_enabled('surveys') && dash_widget_enabled('dash_survey_banner')): ?>
                 <?php if ($pending_surveys > 0): ?>
                     <!-- نظرسنجی در انتظار -->
-                    <a href="surveys.php" class="block bg-indigo-600 text-white rounded-2xl p-5 shadow-sm hover:bg-indigo-700 transition">
+                    <a href="surveys.php" class="portal-context-banner block bg-indigo-600 text-white rounded-2xl p-5 shadow-sm hover:bg-indigo-700 transition">
                         <div class="flex items-center justify-between">
                             <div>
                                 <div class="font-bold text-lg">نظرسنجی‌های شما</div>
@@ -151,7 +151,7 @@ $widget_colors = [
                     </a>
                 <?php elseif ($next_survey_days > 0): ?>
                     <!-- نظرسنجی دوره‌ای آینده -->
-                    <a href="surveys.php" class="block bg-amber-500 text-white rounded-2xl p-5 shadow-sm hover:bg-amber-600 transition">
+                    <a href="surveys.php" class="portal-context-banner block bg-amber-500 text-white rounded-2xl p-5 shadow-sm hover:bg-amber-600 transition">
                         <div class="flex items-center justify-between">
                             <div>
                                 <div class="font-bold text-lg">نظرسنجی بعدی</div>
@@ -162,7 +162,7 @@ $widget_colors = [
                     </a>
                 <?php else: ?>
                     <!-- همه نظرسنجی‌ها کامل شده -->
-                    <div class="block bg-emerald-600 text-white rounded-2xl p-5 shadow-sm">
+                    <div class="portal-context-banner block bg-emerald-600 text-white rounded-2xl p-5 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
                                 <div class="font-bold text-lg">سپاس از همراهی شما</div>
@@ -197,7 +197,7 @@ $widget_colors = [
 
             <?php if (dash_widget_enabled('dash_welcome')): ?>
             <!-- Welcome Widget Banner -->
-            <div class="bg-gradient-to-l from-indigo-600 to-violet-600 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="portal-dashboard-hero portal-hero bg-gradient-to-l from-indigo-600 to-violet-600 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
                 <div class="space-y-2">
                     <span class="bg-white/20 text-xs px-3 py-1 rounded-full font-medium">پنل هوشمند مشتریان</span>
                     <h2 class="text-2xl md:text-3xl font-bold">خوش آمدید، <?php echo htmlspecialchars($full_name); ?> عزیز!</h2>
@@ -210,34 +210,34 @@ $widget_colors = [
             <?php endif; ?>
 
             <!-- Stats Overview Widgets (داینامیک — فقط ماژول‌های فعال) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <div class="portal-kpi-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 <?php
                     $wicon = [
                         'projects.php' => 'folder', 'products.php' => 'box', 'invoices.php' => 'card',
-                        'tickets.php' => 'ticket', 'surveys.php' => 'star', 'notifications.php' => 'bell', 'gamification.php' => 'gift',
+                        'tickets.php' => 'ticket', 'surveys.php' => 'star', 'notifications.php' => 'bell', 'gamification.php' => 'star',
                         'profile.php' => 'user', 'index.php' => 'dashboard',
                     ];
                     foreach ($stat_widgets as $w):
                 ?>
-                    <a href="<?= $w['link'] ?>" class="card card-hover p-5 flex items-center justify-between transition group">
+                    <a href="<?= $w['link'] ?>" class="portal-stat-card card card-hover p-5 flex items-center justify-between transition group">
                         <div>
-                            <p class="text-sm text-slate-500 font-medium"><?= htmlspecialchars($w['label']) ?></p>
-                            <p class="text-3xl font-bold text-slate-900 mt-1">
+                            <p class="portal-stat-label text-sm text-slate-500 font-medium"><?= htmlspecialchars($w['label']) ?></p>
+                            <p class="portal-stat-value text-3xl font-bold text-slate-900 mt-1">
                                 <?php if ($w['count'] !== ''): ?><?= (int) $w['count'] ?><?php else: ?><span class="text-xl">—</span><?php endif; ?>
                             </p>
                         </div>
-                        <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition"><?= icon($wicon[$w['link']] ?? 'dashboard', 'w-6 h-6') ?></div>
+                        <div class="portal-stat-icon w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition"><?= icon($wicon[$w['link']] ?? 'dashboard', 'w-6 h-6') ?></div>
                     </a>
                 <?php endforeach; ?>
             </div>
 
             <!-- Recent Widgets Grid (داینامیک — فقط ماژول‌های فعال + اعلانات) -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="portal-content-grid grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                 <?php if (dash_widget_enabled('dash_recent_notifications')): ?>
                 <!-- اعلانات اخیر -->
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="portal-dashboard-card card bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                    <div class="portal-section-heading flex items-center justify-between pb-3 border-b border-slate-100">
                         <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><?= icon('bell', 'w-5 h-5 text-indigo-600') ?> اعلانات اخیر</h3>
                         <a href="notifications.php" class="btn btn-ghost btn-sm"><?= icon('chevron-d') ?><span>مشاهده همه</span></a>
                     </div>
@@ -266,8 +266,8 @@ $widget_colors = [
 
                 <?php if (is_module_enabled('projects') && dash_widget_enabled('dash_recent_projects')): ?>
                     <!-- Projects Widget -->
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div class="portal-dashboard-card card bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                        <div class="portal-section-heading flex items-center justify-between pb-3 border-b border-slate-100">
                             <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><?= icon('folder', 'w-5 h-5 text-indigo-600') ?> پروژه‌های اخیر شما</h3>
                             <a href="projects.php" class="btn btn-ghost btn-sm"><?= icon('chevron-d') ?><span>مشاهده همه</span></a>
                         </div>
@@ -298,8 +298,8 @@ $widget_colors = [
 
                 <?php if (is_module_enabled('products') && dash_widget_enabled('dash_recent_products')): ?>
                     <!-- Products Widget -->
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div class="portal-dashboard-card card bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                        <div class="portal-section-heading flex items-center justify-between pb-3 border-b border-slate-100">
                             <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><?= icon('box', 'w-5 h-5 text-indigo-600') ?> محصولات اخیر</h3>
                             <a href="products.php" class="btn btn-ghost btn-sm"><?= icon('chevron-d') ?><span>مشاهده همه</span></a>
                         </div>
@@ -322,8 +322,8 @@ $widget_colors = [
 
                 <!-- اگر هیچ کدام از ماژول‌های پایینی فعال نبود، ویجت جایگزین -->
                 <?php if (dash_widget_enabled('dash_quick_access') && (!is_module_enabled('projects') || !dash_widget_enabled('dash_recent_projects')) && (!is_module_enabled('products') || !dash_widget_enabled('dash_recent_products'))): ?>
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div class="portal-dashboard-card card bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                        <div class="portal-section-heading flex items-center justify-between pb-3 border-b border-slate-100">
                             <h3 class="font-semibold text-slate-800 text-sm leading-tight mb-1">دسترسی سریع</h3>
                         </div>
                         <div class="space-y-3">

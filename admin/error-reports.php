@@ -34,7 +34,7 @@ $reports = error_reports_list(200);
 $counts = ['new' => 0, 'reviewing' => 0, 'resolved' => 0];
 foreach ($reports as $r) { $counts[$r['status']] = ($counts[$r['status']] ?? 0) + 1; }
 
-render_admin_header('گزارش‌های خطا', 'p-8 max-w-7xl w-full mx-auto space-y-6');
+render_admin_header('گزارش‌های خطا', 'portal-page-main portal-admin-page p-8 max-w-7xl w-full mx-auto space-y-6');
 ?>
 
 <?php if ($msg): ?><div class="alert alert-success" role="status"><?= icon('check') ?><span><?= htmlspecialchars($msg) ?></span></div><?php endif; ?>

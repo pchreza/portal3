@@ -94,7 +94,7 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
 ?>
 <?php render_customer_header(
     'پروفایل کاربری',
-    'p-8 max-w-4xl w-full mx-auto space-y-6',
+    'portal-page-main portal-profile-page p-8 max-w-4xl w-full mx-auto space-y-6',
     '',
     '',
     $full_name
@@ -126,7 +126,7 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
             $profile_is_complete = gamification_profile_is_complete((int) $user_id);
             if (!empty($missing_fields)):
             ?>
-                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="portal-completion-banner portal-context-banner bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
                     <div>
                         <h4 class="font-bold text-amber-800 text-base">تکمیل اطلاعات الزامی</h4>
                         <p class="microcopy text-sm text-amber-700 mt-1">برخی از اطلاعات پروفایل شما باید تکمیل شوند. لطفاً فیلدهای خواسته‌شده را وارد کنید.</p>
@@ -148,15 +148,15 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                 </aside>
             <?php endif; ?>
 
-            <div id="profile-form" class="card p-6 md:p-8">
-                <div class="mb-6 pb-4 border-b border-slate-200">
+            <div id="profile-form" class="portal-form-card card p-6 md:p-8">
+                <div class="portal-section-heading mb-6 pb-4 border-b border-slate-200">
                     <h3 class="text-lg font-bold text-slate-800">ویرایش اطلاعات شخصی</h3>
                     <p class="text-sm text-slate-500 mt-1">اطلاعات سازمانی و شخصی خود را در این بخش مشاهده و ویرایش کنید.</p>
                 </div>
 
                 <form method="POST" class="space-y-6" novalidate><?php echo csrf_input(); ?>
                     <div class="form-error-summary" style="display:none" role="alert"></div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="portal-form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="label" for="pf_username">نام کاربری</label>
                             <input type="text" id="pf_username" value="<?php echo htmlspecialchars($user['username']); ?>" dir="ltr" disabled class="value-ltr input bg-slate-100 text-slate-500 cursor-not-allowed">
@@ -205,7 +205,7 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
 
                     <?php $cust_fields_html = render_custom_fields_inputs('customer', $user_id, true); ?>
                     <?php if ($cust_fields_html): ?>
-                    <div class="mt-6 pt-6 border-t border-slate-200">
+                    <div class="portal-form-section mt-6 pt-6 border-t border-slate-200">
                         <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><?= icon('wrench','w-4 h-4 text-indigo-600') ?> فیلدهای تکمیلی</h4>
                         <div class="bg-slate-50/70 border border-slate-100 rounded-2xl p-5">
                             <?php echo $cust_fields_html; ?>
@@ -213,11 +213,11 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                     </div>
                     <?php endif; ?>
 
-                    <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
+                    <div class="portal-form-actions desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
                         <a href="index.php" class="btn btn-secondary">بازگشت</a>
                         <button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره تغییرات پروفایل</span></button>
                     </div>
-                    <div class="mobile-action-bar">
+                    <div class="portal-mobile-form-actions mobile-action-bar">
                         <a href="index.php" class="btn btn-secondary">بازگشت</a>
                         <button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره</span></button>
                     </div>

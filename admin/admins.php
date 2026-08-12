@@ -106,7 +106,7 @@ foreach ($override_q->fetchAll() as $override) {
     $user_permission_overrides[(string) $override['user_id']][(string) $override['permission']] = (bool) $override['allowed'];
 }
 
-render_admin_header('مدیریت مدیران سیستم', 'p-8 max-w-5xl w-full mx-auto space-y-6');
+render_admin_header('مدیریت مدیران سیستم', 'portal-page-main portal-admin-page p-8 max-w-5xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($msg): ?>

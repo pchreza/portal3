@@ -142,7 +142,7 @@ $login_layout = active_login_layout();
 function render_login_form(string $ctx, string $site_title, string $login_subtitle, string $error, string $success, int $otp_step): void
 {
     // هدر فرم (لوگو + عنوان)
-    echo '<div class="text-center mb-7">'
+    echo '<div class="login-brand text-center mb-7">'
         . '<div class="mx-auto mb-4 w-14 h-14 flex items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-sm">' . site_logo_html('w-14 h-14 rounded-2xl text-xl') . '</div>'
         . '<h1 class="text-xl font-bold text-slate-900 leading-tight">' . htmlspecialchars($site_title) . '</h1>'
         . '<p class="text-sm text-slate-500 mt-1.5 leading-relaxed">' . htmlspecialchars($login_subtitle) . '</p>'
@@ -271,13 +271,13 @@ render_public_header('ورود به ' . $site_title, 'bg-slate-50 text-slate-800
 <div class="absolute top-4 end-4 z-30"><?= portal_theme_toggle() ?></div>
 <?php if ($bg || $bgm): ?><style>body.login-page{<?= $login_body_style ?>}<?php if ($bgm): ?>@media(max-width:767px){body.login-page{background-image:url('<?= e(asset_url($bgm)) ?>');background-size:cover;background-position:center;}}<?php endif; ?></style><?php endif; ?>
 <?php /* منوی هدر فقط در هدر پنل‌های لاگین‌شده نمایش داده می‌شود، نه در صفحهٔ ورود عمومی */ ?>
-<main id="main-content" class="w-full min-h-screen flex">
+<main id="main-content" class="portal-login-main w-full min-h-screen flex">
 
 <?php if ($login_layout === 'split'): ?>
     <!-- ===== طرح دوطرفه — تصویر + فرم (قابل تنظیم) ===== -->
     <?php $img = $lc['split_image'] ?: 'assets/login-side.jpg'; $isFormLeft = $lc['split_side'] === 'left';
           $imgCols = max(4, min(8, (int) round($lc['split_ratio'] / 10))); $formCols = 10 - $imgCols; ?>
-    <div class="w-full grid lg:grid-cols-10">
+    <div class="login-layout-split w-full grid lg:grid-cols-10">
         <!-- سمت تصویر -->
         <div class="lg:col-span-<?= $imgCols ?> <?= $isFormLeft ? 'lg:order-2' : '' ?>">
             <div class="relative h-full min-h-[60vh] hidden lg:flex items-center justify-center overflow-hidden" style="background:linear-gradient(135deg,<?= $lc['branded_from'] ?>,<?= $lc['branded_to'] ?>)">
@@ -310,7 +310,7 @@ render_public_header('ورود به ' . $site_title, 'bg-slate-50 text-slate-800
             ?>
             <div class="flex <?= $alignCls ?> justify-center p-6 pt-24 lg:pt-6 pb-10 min-h-full">
                 <div class="w-full max-w-md">
-                    <div class="card p-7 sm:p-9 shadow-xl">
+                    <div class="login-card card p-7 sm:p-9 shadow-xl">
                         <?php render_login_form($login_ctx, $site_title, $login_subtitle, $error, $success, $otp_step); ?>
                     </div>
                     <p class="text-center text-xs text-slate-400 mt-6"><?= htmlspecialchars($footer_text) ?></p>
@@ -321,7 +321,7 @@ render_public_header('ورود به ' . $site_title, 'bg-slate-50 text-slate-800
 
 <?php elseif ($login_layout === 'branded'): ?>
     <!-- ===== طرح گرادیان برند (رنگ‌بندی قابل تنظیم) ===== -->
-    <div class="w-full relative flex items-center justify-center px-4 pt-24 pb-10 sm:pt-16 overflow-hidden"
+    <div class="login-layout-branded w-full relative flex items-center justify-center px-4 pt-24 pb-10 sm:pt-16 overflow-hidden"
          style="background:linear-gradient(135deg,<?= $lc['branded_from'] ?> 0%,<?= $lc['branded_to'] ?> 100%)">
         <?php if ($lc['branded_mobile_image']): ?><img src="<?= e(asset_url($lc['branded_mobile_image'])) ?>" alt="" class="lg:hidden absolute inset-0 w-full h-full object-cover opacity-30"><?php endif; ?>
         <div class="absolute inset-0 opacity-20" style="background-image:radial-gradient(circle at 20% 20%,#fff 0,transparent 40%),radial-gradient(circle at 80% 80%,#fff 0,transparent 40%)"></div>
@@ -335,7 +335,7 @@ render_public_header('ورود به ' . $site_title, 'bg-slate-50 text-slate-800
 
 <?php elseif ($login_layout === 'minimal'): ?>
     <!-- ===== طرح مینیمال (بدون لوگوی تکراری) ===== -->
-    <div class="w-full flex items-center justify-center px-4 pt-24 pb-10 sm:pt-16">
+    <div class="login-layout-centered w-full flex items-center justify-center px-4 pt-24 pb-10 sm:pt-16">
         <div class="w-full max-w-sm">
             <div class="bg-transparent">
                 <?php render_login_form($login_ctx, $site_title, $login_subtitle, $error, $success, $otp_step); ?>
@@ -346,9 +346,9 @@ render_public_header('ورود به ' . $site_title, 'bg-slate-50 text-slate-800
 
 <?php else: ?>
     <!-- ===== طرح کارت متمرکز (پیش‌فرض) ===== -->
-    <div class="w-full flex items-center justify-center px-4 pt-24 pb-10 sm:pt-16">
+    <div class="login-layout-centered w-full flex items-center justify-center px-4 pt-24 pb-10 sm:pt-16">
         <div class="w-full max-w-md">
-            <div class="card p-7 sm:p-9 shadow-xl">
+            <div class="login-card card p-7 sm:p-9 shadow-xl">
                 <?php render_login_form($login_ctx, $site_title, $login_subtitle, $error, $success, $otp_step); ?>
             </div>
             <p class="text-center text-xs text-slate-400 mt-6"><?= htmlspecialchars($footer_text) ?></p>

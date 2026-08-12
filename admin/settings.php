@@ -461,7 +461,7 @@ if (!array_key_exists($tab, $tab_labels)) {
     $tab = 'modules';
 }
 
-render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto space-y-6');
+render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-page p-8 max-w-4xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($success): ?>

@@ -196,12 +196,12 @@ $customer_survey_styles = '
 
 render_customer_header(
     'نظرسنجی‌های من',
-    'p-8 max-w-6xl w-full mx-auto space-y-6',
+    'portal-page-main portal-surveys-page p-8 max-w-6xl w-full mx-auto space-y-6',
     $customer_survey_styles,
     ''
 );
 ?>
-            <h2 class="text-2xl font-bold text-slate-800">نظرسنجی‌های شما</h2>
+            <h2 class="portal-page-heading text-2xl font-bold text-slate-800">نظرسنجی‌های شما</h2>
 
             <?php if ($msg): ?>
                 <div class="alert alert-success" role="status"><?= icon('check') ?><span><?= htmlspecialchars($msg) ?></span></div>
@@ -212,7 +212,7 @@ render_customer_header(
             <?php endif; ?>
 
             <?php if ($survey_context_visible): ?>
-                <aside class="alert alert-info items-center gap-3" role="note">
+                <aside class="portal-context-banner alert alert-info items-center gap-3" role="note">
                     <span class="shrink-0 mt-0.5"><?= icon('star', 'w-5 h-5') ?></span>
                     <div class="min-w-0">
                         <h3 class="font-bold text-sm"><?= $takeData ? 'با ثبت این نظرسنجی ' : 'با تکمیل هر نظرسنجی ' ?><?= e(gamification_points_label($survey_offer['points'])) ?> بگیرید</h3>
@@ -227,7 +227,7 @@ render_customer_header(
                     <?php echo csrf_input(); ?>
                     <input type="hidden" name="assignment_id" value="<?= $take ?>">
 
-                    <div class="card p-6 md:p-8 mb-4 text-center">
+                    <div class="portal-survey-intro card p-6 md:p-8 mb-4 text-center">
                         <span class="survey-tag"><?= icon('star', 'w-4 h-4') ?> نظرسنجی</span>
                         <h2 class="font-bold text-slate-900 leading-snug mt-3 mb-1"><bdi dir="auto"><?= htmlspecialchars($takeData['title']) ?></bdi></h2>
                         <p class="body-sm text-slate-600">مربوط به: <b class="text-slate-800"><bdi dir="auto"><?= htmlspecialchars($takeData['entity_title'] ?? '') ?></bdi></b></p>
@@ -275,10 +275,10 @@ render_customer_header(
                         </div>
                     <?php endforeach; ?>
 
-                    <div class="desktop-form-actions flex justify-end pt-2 mb-20 md:mb-0">
+                    <div class="portal-form-actions desktop-form-actions flex justify-end pt-2 mb-20 md:mb-0">
                         <button type="submit" class="btn btn-primary btn-lg w-full md:w-auto"><?= icon('check') ?><span>ثبت نهایی پاسخ</span></button>
                     </div>
-                    <div class="mobile-action-bar">
+                    <div class="portal-mobile-form-actions mobile-action-bar">
                         <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?><span>ثبت نهایی پاسخ</span></button>
                     </div>
                 </form>
@@ -314,9 +314,9 @@ render_customer_header(
                 <?php if (empty($items)): ?>
                     <?php echo empty_state('در حال حاضر فرم فعالی برای شما وجود ندارد', 'هنگامی که مدیر سیستم نظرسنجی‌ای به شما اختصاص دهد، اینجا نمایش داده می‌شود.', 'star'); ?>
                 <?php else: ?>
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div class="portal-card-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         <?php foreach ($items as $i): ?>
-                            <article class="card card-hover p-5 flex flex-col gap-3">
+                            <article class="portal-survey-card card card-hover p-5 flex flex-col gap-3">
                                 <div class="flex items-start justify-between gap-3">
                                     <h3 class="font-bold text-slate-900 leading-snug"><bdi dir="auto"><?= htmlspecialchars($i['title']) ?></bdi></h3>
                                     <?php if ($i['answered']): ?>
