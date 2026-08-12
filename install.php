@@ -153,10 +153,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
         }
         }
     } elseif ($step === 2) {
-        require_once 'db_config.php';
-        $pdo = new PDO("mysql:host={$db_host};dbname={$db_name};charset=utf8mb4", $db_user, $db_pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-        ]);
+        $db_config_path = __DIR__ . '/db_config.php';
+        if (!is_file($db_config_path)) {
+            $error = 'فایل تنظیمات اتصال به پایگاه داده پیدا نشد. مرحلهٔ قبل نصب را دوباره اجرا کنید.';
+        } else {
+            require_once $db_config_path;
+            $pdo = new PDO("mysql:host={$db_host};dbname={$db_name};charset=utf8mb4", $db_user, $db_pass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            ]);
 
         require_once __DIR__ . '/migrations.php';
         portal_migrations($pdo);
@@ -175,6 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
 
             header('Location: install.php?step=3');
             exit;
+        }
         }
     }
 }
