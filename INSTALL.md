@@ -1,10 +1,53 @@
-# نصب portal3 نسخه 2.0.3
+# نصب Portal3 نسخه 2.1.0
 
-1. در ریشهٔ پروژه اجرا کنید: `composer install --no-dev`.
-2. برای نصب تازه، به `install.php` بروید و مشخصات دیتابیس و حساب مدیر را وارد کنید.
-3. متغیرهای محیطی `.env.example` را در سرویس وب و cron تنظیم کنید؛ مخصوصاً `PORTAL_SMS_API_KEY`.
-4. در production مقدار `PORTAL_DEV_MODE=false` و `PORTAL_AUTO_MIGRATE=false` باشد.
-5. برای upgrade، ابتدا backup بگیرید و سپس `php bin/migrate.php` را اجرا کنید.
-6. وب‌سرور باید HTTPS، اجرای PHP و دسترسی نوشتن به `storage/` و `uploads/` را فراهم کند.
+## نیازمندی‌ها
 
-این بسته عمداً شامل `vendor/`، `node_modules/`، تست‌ها، CI، فایل‌های QA، cache، upload محیط توسعه، Git و `db_config.php` نیست.
+Portal3 با PHP خالص و بدون فریم‌ورک PHP اجرا می‌شود. روی سرور به PHP 8.1 یا بالاتر، MariaDB/MySQL، افزونه‌های `pdo_mysql`، `mbstring`، `xml` و `zip` و وب‌سرور Apache یا nginx نیاز دارد. برای قابلیت Backup/Restore فعال‌بودن `ZipArchive` الزامی است.
+
+## نصب تازه
+
+۱. فایل ZIP را در document root استخراج کنید؛ برای Laragon نمونهٔ مسیر `C:\laragon\www\portal3` است.
+
+۲. یک دیتابیس utf8mb4 و یک کاربر محدود برای همان دیتابیس بسازید.
+
+۳. اگر هاست Composer ندارد، روی کامپیوتر خود از ریشهٔ پروژه اجرا کنید:
+
+```bash
+composer install --no-dev --prefer-dist --optimize-autoloader
+```
+
+سپس پوشهٔ کامل `vendor/` را همراه پروژه آپلود کنید. روی هاست بدون Composer دیگر نیازی به اجرای Composer نیست.
+
+۴. در مرورگر به `install.php` بروید و مشخصات دیتابیس و حساب مدیر ارشد را وارد کنید.
+
+۵. پوشه‌های `storage/`، `storage/backups/` و `uploads/` باید برای PHP قابل نوشتن باشند. اجرای script در `uploads/` و دسترسی مستقیم به `storage/backups/` توسط rules امنیتی مسدود شده است.
+
+۶. برای production، `PORTAL_DEV_MODE=false` و `PORTAL_AUTO_MIGRATE=false` باشد. پس از نصب یا upgrade، migration را فقط از CLI اجرا کنید:
+
+```bash
+php bin/migrate.php
+```
+
+## ارتقا
+
+قبل از upgrade از دیتابیس و فایل‌ها backup بگیرید، فایل‌های release جدید را جایگزین کنید و سپس این دستور را اجرا کنید:
+
+```bash
+php bin/migrate.php
+```
+
+اجرای موفق باید schema را به آخرین نسخهٔ اعلام‌شده برساند. migration را از browser یا با فعال‌کردن auto-migrate دائمی اجرا نکنید.
+
+## Backup و Restore مدیریتی
+
+پس از ورود با حساب `super_admin` به `admin/settings.php?tab=backups` بروید. دکمهٔ «ساخت backup جدید» یک archive شامل dump دیتابیس، فایل‌های پروژه، assetها و uploadها ایجاد می‌کند. cache، Git و backupهای قبلی عمداً داخل archive قرار نمی‌گیرند.
+
+برای restore، یک archive تولیدشده توسط Portal3 را انتخاب کنید، عبارت `RESTORE` را وارد کنید و عملیات را تأیید کنید. سیستم پیش از جایگزینی دیتابیس و فایل‌ها، از وضعیت فعلی یک pre-restore backup خودکار می‌سازد. backupها شامل داده‌های شخصی و ممکن است شامل `db_config.php` باشند؛ آن‌ها را خارج از document root یا در فضای رمزگذاری‌شده نگه‌داری کنید.
+
+سقف پیش‌فرض archive برابر ۵۱۲ مگابایت است و با متغیر `PORTAL_BACKUP_MAX_BYTES` قابل تنظیم است. ساخت، حذف و restore در audit log ثبت می‌شود و فقط `super_admin` به این عملیات دسترسی دارد.
+
+## environment و امنیت
+
+مقادیر `.env.example` را در environment وب‌سرور و cron تنظیم کنید؛ مخصوصاً `PORTAL_SMS_API_KEY`. کلیدها و فایل `db_config.php` را در Git، ZIP عمومی، log یا screenshot قرار ندهید. HTTPS، backup منظم، permission حداقلی و کاربر محدود دیتابیس برای production الزامی است.
+
+این بسته عمداً شامل `vendor/`، `node_modules/`، تست‌ها، CI، QA، cache، upload محیط توسعه، Git، archiveهای backup و `db_config.php` نیست.
