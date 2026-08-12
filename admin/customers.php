@@ -100,7 +100,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
                 header('Location: customers.php');
                 exit;
             } catch (Exception $e) {
-                $error = 'خطا در ثبت مشتری (احتمالا نام کاربری تکراری است): ' . $e->getMessage();
+                error_log('[Admin Customer Create] ' . $e->getMessage());
+                $error = $e instanceof PDOException && $e->getCode() === '23000'
+                    ? 'نام کاربری یا شماره موبایل قبلاً ثبت شده است.'
+                    : 'ثبت مشتری انجام نشد. اطلاعات واردشده و دسترسی دیتابیس را بررسی کنید.';
             }
         } else {
             // Edit customer
@@ -122,7 +125,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
                 header('Location: customers.php');
                 exit;
             } catch (Exception $e) {
-                $error = 'خطا در ویرایش مشتری: ' . $e->getMessage();
+                error_log('[Admin Customer Update] ' . $e->getMessage());
+                $error = $e instanceof PDOException && $e->getCode() === '23000'
+                    ? 'نام کاربری یا شماره موبایل قبلاً برای مشتری دیگری ثبت شده است.'
+                    : 'ویرایش اطلاعات مشتری انجام نشد. اطلاعات واردشده را بررسی کنید.';
             }
         }
     }

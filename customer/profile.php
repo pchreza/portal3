@@ -74,7 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_activity($user_id, "بروزرسانی پروفایل شخصی");
             $success = 'پروفایل شما با موفقیت بروزرسانی شد.';
         } catch (Exception $e) {
-            $error = 'خطا در بروزرسانی پروفایل: ' . $e->getMessage();
+            error_log('[Customer Profile] ' . $e->getMessage());
+            $error = $e instanceof PDOException && $e->getCode() === '23000'
+                ? 'این شماره موبایل قبلاً برای کاربر دیگری ثبت شده است.'
+                : 'به‌روزرسانی پروفایل انجام نشد. اطلاعات واردشده را بررسی کنید.';
         }
     }
 }

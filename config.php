@@ -79,7 +79,7 @@ if ($pdo) {
 }
 
 // --- پردازش سراسری فرم گزارش خطا (دکمه شناور) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'report_error') {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'report_error') {
     require_valid_csrf();
     $ok = error_report_module_enabled() && create_error_report($_POST);
     $page = basename($_SERVER['PHP_SELF'] ?? '');

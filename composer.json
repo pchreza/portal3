@@ -1,6 +1,7 @@
 {
     "name": "portal2/portal",
     "description": "پورتال مشتریان - ابزار اکسل با PhpSpreadsheet",
+    "license": "proprietary",
     "require": {
         "php": ">=8.1",
         "phpoffice/phpspreadsheet": "^1.29",

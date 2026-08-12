@@ -24,17 +24,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') !== 'delet
     if ($error || empty($field_name) || empty($field_label)) {
         $error = 'نام سیستمی و برچسب فیلد الزامی است.';
     } else {
-        // Slugify field_name
-        $field_name = preg_replace('/[^a-z0-9_]/', '_', strtolower($field_name));
+        // Slugify field_name و جلوگیری از نام سیستمی خالی یا تکراری در همان موجودیت
+        $field_name = trim((string) preg_replace('/[^a-z0-9_]+/', '_', strtolower($field_name)), '_');
+        if ($field_name === '' || strlen($field_name) > 100) {
+            $error = 'نام سیستمی باید حداقل یک حرف یا عدد انگلیسی داشته باشد و حداکثر ۱۰۰ نویسه باشد.';
+        }
+        if (!$error) {
+            $duplicate = $pdo->prepare('SELECT id FROM custom_fields WHERE target_entity = ? AND field_name = ? LIMIT 1');
+            $duplicate->execute([$target_entity, $field_name]);
+            if ($duplicate->fetchColumn()) {
+                $error = 'این نام سیستمی برای همین نوع موجودیت قبلاً ثبت شده است.';
+            }
+        }
 
         try {
+            if ($error) {
+                throw new InvalidArgumentException($error);
+            }
             $stmt = $pdo->prepare("INSERT INTO custom_fields (target_entity, field_name, field_label, field_type, is_required, show_in_customer_panel) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([$target_entity, $field_name, $field_label, $field_type, $is_required, $show_in_customer_panel]);
             log_activity($_SESSION['user_id'], "ایجاد فیلد سفارشی جدید: {$field_label} ({$target_entity})");
             $success = 'فیلد سفارشی با موفقیت ایجاد شد.';
             $action = 'list';
+        } catch (InvalidArgumentException $e) {
+            $error = $e->getMessage();
         } catch (Exception $e) {
-            $error = 'خطا در ایجاد فیلد (احتمالا نام سیستمی تکراری است): ' . $e->getMessage();
+            error_log('[Admin Custom Field Create] ' . $e->getMessage());
+            $error = 'ایجاد فیلد سفارشی انجام نشد. اطلاعات واردشده را بررسی کنید.';
         }
     }
 }

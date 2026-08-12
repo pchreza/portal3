@@ -37,17 +37,20 @@ function render_custom_fields_inputs(string $entity_type, int $entity_id = 0, bo
         }
 
         $name     = 'custom_field_' . (int) $field['id'];
+        $inputId  = 'custom-field-' . (int) $field['id'];
+        $type     = in_array($field['field_type'], ['text', 'textarea', 'number', 'date'], true) ? $field['field_type'] : 'text';
         $required = !empty($field['is_required']) ? ' required' : '';
         $label    = e($field['field_label'] ?: $field['field_name']);
         $safe     = e($value);
+        $direction = in_array($type, ['number', 'date'], true) ? ' dir="ltr"' : '';
 
-        if ($field['field_type'] === 'textarea') {
-            $input = "<textarea name=\"{$name}\" class=\"w-full rounded-lg border border-slate-300 px-3 py-2\"{$required}>{$safe}</textarea>";
+        if ($type === 'textarea') {
+            $input = "<textarea id=\"{$inputId}\" name=\"{$name}\" class=\"w-full rounded-lg border border-slate-300 px-3 py-2\"{$required}>{$safe}</textarea>";
         } else {
-            $input = "<input type=\"" . e($field['field_type']) . "\" name=\"{$name}\" value=\"{$safe}\" class=\"w-full rounded-lg border border-slate-300 px-3 py-2\"{$required}>";
+            $input = "<input id=\"{$inputId}\" type=\"" . e($type) . "\" name=\"{$name}\" value=\"{$safe}\" class=\"w-full rounded-lg border border-slate-300 px-3 py-2\"{$direction}{$required}>";
         }
 
-        $html .= '<div><label class="block text-sm font-medium mb-1">' . $label . ($required ? ' *' : '') . '</label>' . $input . '</div>';
+        $html .= '<div><label for="' . e($inputId) . '" class="block text-sm font-medium mb-1">' . $label . ($required ? ' *' : '') . '</label>' . $input . '</div>';
     }
 
     return $html . '</div>';

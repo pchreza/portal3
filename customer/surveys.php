@@ -81,7 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assignment_id'])) {
                     : 'ثبت پاسخ انجام نشد. لطفاً دوباره تلاش کنید.';
             } catch (Exception $e) {
                 if ($pdo->inTransaction()) { $pdo->rollBack(); }
-                $err = $e->getMessage();
+                error_log('[Customer Survey] ' . $e->getMessage());
+                $err = 'ثبت پاسخ انجام نشد. لطفاً دوباره تلاش کنید.';
             }
         }
     }

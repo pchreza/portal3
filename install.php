@@ -50,13 +50,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
             ]);
             
-            // Create database if not exists
-            $test_pdo->exec("CREATE DATABASE IF NOT EXISTS `{$db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            // ساخت دیتابیس در صورت داشتن مجوز؛ در محیط‌های اشتراکی، استفاده از دیتابیس ازپیش‌ساخته نیز مجاز است.
+            try {
+                $test_pdo->exec("CREATE DATABASE IF NOT EXISTS `{$db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            } catch (PDOException $create_error) {
+                error_log('[Portal Installer] CREATE DATABASE failed: ' . $create_error->getMessage());
+                try {
+                    $test_pdo->exec("USE `{$db_name}`");
+                } catch (PDOException $use_error) {
+                    throw new RuntimeException('ساخت پایگاه داده ممکن نشد. یا نام پایگاه داده را درست وارد کنید، یا ابتدا آن را بسازید و به کاربر دیتابیس دسترسی کامل بدهید.');
+                }
+            }
             $test_pdo->exec("USE `{$db_name}`");
 
-            // Save db_config.php
+            // پیکربندی فقط پس از موفقیت ساخت schema ذخیره می‌شود تا خطای میانی، نصب را در وضعیت نیمه‌کاره نگذارد.
             $config_content = "<?php\n\$db_host = " . var_export($db_host, true) . ";\n\$db_name = " . var_export($db_name, true) . ";\n\$db_user = " . var_export($db_user, true) . ";\n\$db_pass = " . var_export($db_pass, true) . ";\n?>";
-            file_put_contents(__DIR__ . '/db_config.php', $config_content);
 
             // Create tables
             $test_pdo->exec("
@@ -131,11 +139,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
                 $stmt = $test_pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
                 $stmt->execute([$k, $v, $v]);
             }
+            if (file_put_contents(__DIR__ . '/db_config.php', $config_content, LOCK_EX) === false) {
+                throw new RuntimeException('فایل تنظیمات اتصال ذخیره نشد. دسترسی نوشتن پوشهٔ نصب را بررسی کنید.');
+            }
 
             header('Location: install.php?step=2');
             exit;
         } catch (Exception $e) {
-            $error = 'خطا در اتصال یا ایجاد پایگاه داده: ' . $e->getMessage();
+            error_log('[Portal Installer] ' . $e->getMessage());
+            $error = $e instanceof RuntimeException
+                ? $e->getMessage()
+                : 'اتصال یا آماده‌سازی پایگاه داده انجام نشد. تنظیمات اتصال و دسترسی کاربر دیتابیس را بررسی کنید.';
         }
         }
     } elseif ($step === 2) {
