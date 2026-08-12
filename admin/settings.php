@@ -5,6 +5,33 @@ if (!admin_can('settings')) { header('Location: index.php'); exit; }
 
 $success = '';
 $err = '';
+$is_super_admin = (($_SESSION['role'] ?? '') === 'super_admin');
+
+// دانلود backup فقط برای مدیر ارشد و پیش از شروع رندر HTML انجام می‌شود.
+if (($_GET['download_backup'] ?? '') !== '') {
+    if (!$is_super_admin) {
+        http_response_code(403);
+        exit('دسترسی مجاز نیست.');
+    }
+    try {
+        $downloadName = portal_backup_safe_archive_name((string) $_GET['download_backup']);
+        if ($downloadName === null || !is_file(portal_backup_path($downloadName))) {
+            http_response_code(404);
+            exit('فایل backup پیدا نشد.');
+        }
+        $downloadPath = portal_backup_path($downloadName);
+        header('Content-Type: application/zip');
+        header('Content-Length: ' . (string) filesize($downloadPath));
+        header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+        header('X-Content-Type-Options: nosniff');
+        readfile($downloadPath);
+        exit;
+    } catch (Throwable $e) {
+        error_log('[Portal Backup Download] ' . $e->getMessage());
+        http_response_code(404);
+        exit('فایل backup قابل دریافت نیست.');
+    }
+}
 
 // ---------- پردازش فرم‌ها ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -191,7 +218,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!$err) {
             $err = 'گیرنده‌ای برای ارسال انتخاب نشده یا شماره نامعتبر است.';
         }
-    } elseif ($save_type === 'sms_test') {
+    } elseif (in_array($save_type, ['create_backup', 'delete_backup', 'restore_backup'], true)) {
+        if (!$is_super_admin) {
+            http_response_code(403);
+            $err = 'فقط مدیر ارشد می‌تواند backup و restore انجام دهد.';
+        } elseif ($save_type === 'create_backup') {
+            try {
+                $created = portal_backup_create($pdo);
+                log_activity((int) $_SESSION['user_id'], 'ایجاد backup کامل سیستم: ' . $created['filename']);
+                $success = 'Backup با موفقیت ایجاد شد: ' . $created['filename'];
+            } catch (Throwable $e) {
+                error_log('[Portal Backup Create] ' . $e->getMessage());
+                $err = 'ایجاد backup انجام نشد. دسترسی storage و فعال‌بودن ZipArchive را بررسی کنید.';
+            }
+        } elseif ($save_type === 'delete_backup') {
+            try {
+                $deleteName = (string) ($_POST['backup_name'] ?? '');
+                $deletePath = portal_backup_path($deleteName);
+                if (!is_file($deletePath) || !unlink($deletePath)) {
+                    throw new RuntimeException('فایل backup حذف نشد.');
+                }
+                log_activity((int) $_SESSION['user_id'], 'حذف backup سیستم: ' . $deleteName);
+                $success = 'Backup انتخاب‌شده حذف شد.';
+            } catch (Throwable $e) {
+                error_log('[Portal Backup Delete] ' . $e->getMessage());
+                $err = 'حذف backup انجام نشد.';
+            }
+        } elseif ($save_type === 'restore_backup') {
+            $confirm = trim((string) ($_POST['restore_confirmation'] ?? ''));
+            $uploaded = $_FILES['backup_file'] ?? null;
+            $temporaryPath = null;
+            try {
+                if ($confirm !== 'RESTORE') {
+                    throw new RuntimeException('برای restore باید عبارت RESTORE را دقیق وارد کنید.');
+                }
+                if (!is_array($uploaded) || ($uploaded['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                    throw new RuntimeException('یک فایل backup معتبر انتخاب کنید.');
+                }
+                $uploadSize = (int) ($uploaded['size'] ?? 0);
+                if ($uploadSize <= 0 || $uploadSize > portal_backup_max_bytes()) {
+                    throw new RuntimeException('حجم فایل backup از سقف مجاز بیشتر است.');
+                }
+                $backupDir = portal_backup_ensure_dir();
+                $temporaryPath = tempnam($backupDir, '.upload-');
+                if ($temporaryPath === false || !move_uploaded_file((string) ($uploaded['tmp_name'] ?? ''), $temporaryPath)) {
+                    throw new RuntimeException('فایل backup در مسیر امن ذخیره نشد.');
+                }
+                $check = portal_backup_open_and_validate($temporaryPath);
+                $check['zip']->close();
+                $restored = portal_backup_restore($pdo, $temporaryPath);
+                log_activity((int) $_SESSION['user_id'], 'restore کامل سیستم انجام شد؛ backup قبل از restore: ' . $restored['pre_restore']);
+                $success = 'Restore با موفقیت انجام شد. backup خودکار قبل از restore با نام ' . $restored['pre_restore'] . ' ذخیره شد.';
+            } catch (Throwable $e) {
+                error_log('[Portal Backup Restore] ' . $e->getMessage());
+                $err = 'Restore انجام نشد: ' . $e->getMessage();
+            } finally {
+                if ($temporaryPath !== null && is_file($temporaryPath)) {
+                    @unlink($temporaryPath);
+                }
+            }
+        }
+    } elseif ($save_type === 'modules') {
         // --- ارسال پیامک تست ---
         $test_mobile = trim($_POST['test_mobile'] ?? '');
         if ($test_mobile === '') {
@@ -364,6 +451,9 @@ $tab_labels = [
     'login_sms'  => ['ورود و پیامک', 'روش ورود و تنظیمات سرویس پیامک', 'phone'],
     'general'    => ['عمومی', 'عنوان و متن‌های عمومی سیستم', 'globe'],
 ];
+if ($is_super_admin) {
+    $tab_labels['backups'] = ['پشتیبان‌گیری و بازیابی', 'ساخت، دانلود و restore امن backup کامل سیستم', 'layers'];
+}
 
 // اعتبارسنجی تب فعال بر اساس کلیدهای واقعی تب‌ها — هر تب جدید خودکار مجاز است
 if (!array_key_exists($tab, $tab_labels)) {
@@ -459,6 +549,90 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                         <input type="hidden" name="save_type" value="flush_cache">
                         <button class="btn btn-secondary"><?= icon('trash') ?><span>پاک‌سازی کش</span></button>
                     </form>
+
+                <?php elseif ($tab === 'backups'): ?>
+                    <!-- ===== تب پشتیبان‌گیری و بازیابی ===== -->
+                    <?php $backups = portal_backup_list(); ?>
+                    <div class="space-y-6">
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0"><?= icon('alert', 'w-5 h-5') ?></div>
+                                <div>
+                                    <h4 class="font-bold text-amber-900">دسترسی حساس مدیر ارشد</h4>
+                                    <p class="text-sm text-amber-800 mt-1 leading-relaxed">Backup شامل دیتابیس و فایل‌های پروژه است و ممکن است اطلاعات شخصی و credential اتصال دیتابیس را در خود داشته باشد. فایل‌ها را فقط در محل امن نگه‌داری کنید. Restore ابتدا یک backup خودکار از وضعیت فعلی می‌سازد.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                            <div class="card p-5 space-y-4">
+                                <div>
+                                    <h4 class="font-bold text-slate-800">ایجاد backup کامل</h4>
+                                    <p class="text-sm text-slate-500 mt-1 leading-relaxed">شامل جداول و داده‌های دیتابیس، فایل‌های PHP، assetها، uploadها و تنظیمات پروژه است. پوشهٔ backupهای قبلی داخل archive قرار نمی‌گیرد.</p>
+                                </div>
+                                <form method="post" data-confirm-msg="یک backup کامل از وضعیت فعلی ساخته شود؟">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="save_type" value="create_backup">
+                                    <button type="submit" class="btn btn-primary w-full"><?= icon('file-plus') ?><span>ساخت backup جدید</span></button>
+                                </form>
+                            </div>
+
+                            <div class="card p-5 space-y-4">
+                                <div>
+                                    <h4 class="font-bold text-slate-800">Restore از فایل backup</h4>
+                                    <p class="text-sm text-slate-500 mt-1 leading-relaxed">این عملیات دیتابیس و فایل‌های پروژه را جایگزین می‌کند. فقط backup تولیدشده توسط Portal3 را انتخاب کنید.</p>
+                                </div>
+                                <form method="post" enctype="multipart/form-data" class="space-y-4" data-confirm-msg="این عملیات دیتابیس و فایل‌های پروژه را restore می‌کند. ادامه می‌دهید؟">
+                                    <?= csrf_input() ?>
+                                    <input type="hidden" name="save_type" value="restore_backup">
+                                    <div>
+                                        <label class="label" for="backup_file">فایل backup با پسوند ZIP</label>
+                                        <input type="file" name="backup_file" id="backup_file" accept=".zip,application/zip" required class="input" dir="ltr">
+                                        <p class="text-xs text-slate-400 mt-1">سقف پیش‌فرض فایل: ۵۱۲ مگابایت. سقف با `PORTAL_BACKUP_MAX_BYTES` قابل تنظیم است.</p>
+                                    </div>
+                                    <div>
+                                        <label class="label" for="restore_confirmation">برای تأیید عبارت RESTORE را وارد کنید</label>
+                                        <input type="text" name="restore_confirmation" id="restore_confirmation" required pattern="RESTORE" autocomplete="off" class="input" dir="ltr">
+                                    </div>
+                                    <button type="submit" class="btn btn-danger w-full"><?= icon('refresh') ?><span>Restore و جایگزینی سیستم</span></button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card overflow-hidden">
+                            <div class="p-5 border-b border-slate-100">
+                                <h4 class="font-bold text-slate-800">Backupهای ذخیره‌شده</h4>
+                                <p class="text-sm text-slate-500 mt-1">برای هر فایل checksum محاسبه می‌شود. backupهای قدیمی را فقط پس از اطمینان از وجود نسخهٔ سالم حذف کنید.</p>
+                            </div>
+                            <?php if (!$backups): ?>
+                                <p class="p-5 text-sm text-slate-500">هنوز backupای در storage/backups ثبت نشده است.</p>
+                            <?php else: ?>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead><tr class="bg-slate-50 text-slate-500"><th class="text-start p-4">فایل</th><th class="text-start p-4">حجم</th><th class="text-start p-4">تاریخ</th><th class="text-start p-4">عملیات</th></tr></thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                        <?php foreach ($backups as $backup): ?>
+                                            <tr>
+                                                <td class="p-4 min-w-[260px]"><code dir="ltr" class="text-xs break-all"><?= htmlspecialchars($backup['filename']) ?></code><span class="block text-[11px] text-slate-400 mt-1 break-all" dir="ltr">SHA-256: <?= htmlspecialchars($backup['sha256']) ?></span></td>
+                                                <td class="p-4 whitespace-nowrap"><?= htmlspecialchars(number_format($backup['size'] / 1048576, 2)) ?> MB</td>
+                                                <td class="p-4 whitespace-nowrap" dir="ltr"><?= htmlspecialchars(date('Y-m-d H:i', $backup['modified'])) ?></td>
+                                                <td class="p-4"><div class="flex flex-wrap gap-2">
+                                                    <a class="btn btn-secondary btn-sm" href="settings.php?tab=backups&amp;download_backup=<?= rawurlencode($backup['filename']) ?>"><?= icon('file', 'w-4 h-4') ?><span>دانلود</span></a>
+                                                    <form method="post" data-confirm-msg="این backup حذف شود؟">
+                                                        <?= csrf_input() ?>
+                                                        <input type="hidden" name="save_type" value="delete_backup">
+                                                        <input type="hidden" name="backup_name" value="<?= htmlspecialchars($backup['filename']) ?>">
+                                                        <button type="submit" class="btn btn-danger btn-sm"><?= icon('trash', 'w-4 h-4') ?><span>حذف</span></button>
+                                                    </form>
+                                                </div></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
 
                 <?php elseif ($tab === 'fields'): ?>
                     <!-- ===== تب فیلدهای اجباری ===== -->

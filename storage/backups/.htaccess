@@ -1,0 +1,3 @@
+# Backup archives contain database data and credentials; never serve them from Apache.
+Require all denied
+Options -Indexes

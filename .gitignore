@@ -16,5 +16,7 @@ Thumbs.db
 # runtime cache
 /storage/cache/*.cache
 
-# runtime cache
-/storage/cache/*.cache
+# sensitive backup archives
+/storage/backups/*.zip
+/storage/backups/.*
+!/storage/backups/.htaccess

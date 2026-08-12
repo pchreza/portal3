@@ -84,6 +84,7 @@ require_once __DIR__ . '/includes/functions/activity.php';
 require_once __DIR__ . '/includes/functions/notifications.php';
 require_once __DIR__ . '/includes/functions/sms_triggers.php';
 require_once __DIR__ . '/includes/functions/excel.php';
+require_once __DIR__ . '/includes/functions/backup.php';
 
 // --- Content Security Policy ---
 $script_nonce = portal_csp_nonce();

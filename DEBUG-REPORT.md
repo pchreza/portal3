@@ -211,3 +211,26 @@ Smoke report کامل در `http-smoke-report.txt` ذخیره شد.
 | اصلاح | تابع `portal_column_data_type()` اضافه شد. پاک‌سازی و تبدیل مقدار فقط زمانی انجام می‌شود که ستون واقعاً از نوع string قدیمی باشد؛ مقدارهای خالی نیز پیش از `ALTER TABLE` به `NULL` تبدیل می‌شوند. روی ستون‌های `DATE` و `DECIMAL` نصب تازه دیگر query مقایسه با `''` اجرا نمی‌شود. |
 | آزمون | PASS: سناریوی fresh با schema فعلی و SQL strict تا `schema version=28` اجرا شد؛ سناریوی legacy با ستون‌های VARCHAR، مقدار خالی و SQL strict نیز تا `schema version=28` اجرا شد و type نهایی تاریخ/مبلغ صحیح بود. |
 | وضعیت | رفع شد؛ در patch v2.0.3 منتشر می‌شود. |
+
+
+## BACKUP-001 — خطای lifecycle در restore اولیه
+
+| فیلد | شرح |
+|---|---|
+| شدت | متوسط؛ restore کامل در اولین E2E بعد از اجرای عملیات دیتابیس با خطای `Invalid or uninitialized Zip object` متوقف می‌شد. |
+| علت ریشه‌ای | کد در `finally` پس از `ZipArchive::close()` دوباره property وضعیت همان object را می‌خواند. |
+| اصلاح | وضعیت بسته‌شدن با flag مستقل کنترل شد و `close()` فقط زمانی اجرا می‌شود که archive هنوز باز باشد. |
+| آزمون | PASS؛ E2E کامل restore شامل جایگزینی دیتابیس، فایل marker و ایجاد pre-restore backup با موفقیت اجرا شد. |
+| وضعیت | رفع شد و پیش از release نهایی ثبت می‌شود. |
+
+
+## FEATURE-001 — ماژول Backup و Restore مدیریتی
+
+| موضوع | پیاده‌سازی و وضعیت |
+|---|---|
+| دسترسی | تب Backup فقط برای `super_admin` نمایش داده می‌شود؛ POST و download نیز server-side محدود شده‌اند. |
+| محتوای backup | dump دیتابیس، فایل‌های پروژه، assetها و uploadها؛ `.git`، cacheها و backupهای قبلی عمداً حذف می‌شوند. |
+| امنیت archive | نام فایل strict، manifest اختصاصی Portal3، سقف حجم، ZipArchive، بررسی مسیرهای traversal و deny مستقیم Apache در `storage/backups/.htaccess`. |
+| Restore | عبارت تأیید `RESTORE`، CSRF، ساخت pre-restore backup خودکار، سپس restore دیتابیس و فایل‌ها. |
+| Audit | ایجاد، حذف و restore در `activity_logs` ثبت می‌شود. |
+| آزمون | UI smoke در پنل مدیر، E2E ساخت/اعتبارسنجی archive، E2E restore دیتابیس و فایل، PHPUnit security tests، PHPStan و lint؛ همه PASS. |
