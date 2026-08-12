@@ -141,6 +141,16 @@ function gamification_award_points(
         $ledger->execute([$customerId, $points, $newBalance, $eventKey, $referenceType, $referenceId, $idempotencyKey, $description !== '' ? $description : (gamification_event_catalog()[$eventKey]['title'] ?? $eventKey)]);
         $walletUpdate = $pdo->prepare('UPDATE customer_point_wallets SET balance = ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP WHERE customer_id = ?');
         $walletUpdate->execute([$newBalance, $points, $customerId]);
+
+        // اعلان پایدار باید در مسیر مرکزی award ساخته شود تا هیچ event موفقی جا نماند.
+        if (function_exists('send_notification')) {
+            $eventTitle = gamification_event_catalog()[$eventKey]['title'] ?? $eventKey;
+            $awardMessage = 'برای «' . $eventTitle . '» ' . gamification_points_label($points) . ' گرفتید.';
+            if (send_notification('امتیاز جدید دریافت کردید', $awardMessage, 'success', 'custom', '', [$customerId], null) === false) {
+                error_log('[Gamification Award] notification delivery failed for customer ' . $customerId . ' / ' . $eventKey);
+            }
+        }
+
         if ($ownTransaction) $pdo->commit();
         return $points;
     } catch (Throwable $e) {
@@ -247,9 +257,6 @@ function gamification_award_feedback(int $customerId, string $eventKey, int $poi
     $eventTitle = gamification_event_catalog()[$eventKey]['title'];
     $message = 'برای «' . $eventTitle . '» ' . gamification_points_label($points) . ' گرفتید.';
     $_SESSION['gamification_award_flash'] = ['message' => $message, 'event_key' => $eventKey, 'points' => $points];
-    if (function_exists('send_notification')) {
-        send_notification('امتیاز جدید دریافت کردید', $message, 'success', 'custom', '', [$customerId], null);
-    }
 }
 
 function gamification_bonus_feedback(int $customerId, int $points): void

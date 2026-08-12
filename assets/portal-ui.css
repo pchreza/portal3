@@ -443,10 +443,10 @@ html.dark .jdp-container {
    قدیمی روی تمام صفحات مشترک اعمال شوند.
    ========================================================================== */
 :root {
-  --portal-primary: #5f4afe;
-  --portal-primary-strong: #4935d8;
-  --portal-primary-soft: rgba(95, 74, 254, .10);
-  --portal-accent: #f79009;
+  --portal-primary: var(--tp-primary, #5f4afe);
+  --portal-primary-strong: var(--tp-primary-dark, #4935d8);
+  --portal-primary-soft: color-mix(in srgb, var(--tp-primary, #5f4afe) 10%, transparent);
+  --portal-accent: var(--tp-accent, #f79009);
   --portal-bg: #f4f4f7;
   --portal-surface: #ffffff;
   --portal-surface-muted: #f6f6f9;
@@ -458,8 +458,12 @@ html.dark .jdp-container {
   --portal-header-height: 60px;
   --portal-radius-card: 12px;
   --portal-radius-control: 8px;
+  --portal-radius: var(--portal-radius-card);
+  --portal-radius-sm: var(--portal-radius-control);
   --portal-shadow-card: 0 2px 8px rgba(25, 24, 34, .06), 0 1px 2px rgba(25, 24, 34, .04);
-  --portal-shadow-nav: 0 3px 10px rgba(95, 74, 254, .20);
+  --portal-shadow: var(--portal-shadow-card);
+  --portal-shadow-soft: 0 2px 8px color-mix(in srgb, var(--portal-text) 8%, transparent);
+  --portal-shadow-nav: 0 3px 10px color-mix(in srgb, var(--portal-primary) 20%, transparent);
   --sidebar-bg: var(--portal-surface);
   --sidebar-hover: var(--portal-surface-muted);
   --sidebar-border: var(--portal-border);
@@ -475,7 +479,7 @@ html.dark {
   --portal-text-muted: #bdbdc1;
   --portal-text-soft: #a6a5b2;
   --portal-border: rgba(255, 255, 255, .11);
-  --portal-primary-soft: rgba(95, 74, 254, .18);
+  --portal-primary-soft: color-mix(in srgb, var(--tp-primary, #5f4afe) 18%, transparent);
   --sidebar-bg: #1f1f21;
   --sidebar-hover: #29292b;
   --sidebar-border: rgba(255, 255, 255, .10);
@@ -572,7 +576,7 @@ html.dark .portal-shell .portal-sidebar form .nav-item.text-red-400 { color: #ff
 }
 .portal-shell .card-hover:hover { border-color: transparent; box-shadow: 0 10px 22px rgba(25, 24, 34, .10); transform: translateY(-2px); }
 .portal-shell .btn { border-radius: var(--portal-radius-control); min-height: 40px; height: 40px; font-weight: 600; }
-.portal-shell .btn-primary { background: var(--portal-primary); box-shadow: 0 2px 6px rgba(95, 74, 254, .22); }
+.portal-shell .btn-primary { background: var(--portal-primary);   box-shadow: 0 2px 6px color-mix(in srgb, var(--portal-primary) 22%, transparent); }
 .portal-shell .btn-primary:hover:not(:disabled) { background: var(--portal-primary-strong); filter: none; }
 .portal-shell .btn-secondary { background: var(--portal-surface-muted); color: var(--portal-text); border-color: var(--portal-border); }
 .portal-shell .btn-secondary:hover:not(:disabled) { background: var(--portal-primary-soft); color: var(--portal-primary); border-color: color-mix(in srgb, var(--portal-primary) 20%, var(--portal-border)); }
@@ -585,7 +589,7 @@ html.dark .portal-shell .portal-sidebar form .nav-item.text-red-400 { color: #ff
   border-color: var(--portal-border);
   border-radius: var(--portal-radius-control);
 }
-.portal-shell .input:focus { border-color: var(--portal-primary); box-shadow: 0 0 0 3px rgba(95, 74, 254, .14); }
+  .portal-shell .input:focus { border-color: var(--portal-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--portal-primary) 14%, transparent); }
 .portal-shell .label { color: var(--portal-text); font-size: .82rem; }
 .portal-shell .helper { color: var(--portal-text-soft); }
 .portal-shell .table-wrap,
@@ -607,10 +611,10 @@ html.dark .portal-shell .portal-sidebar form .nav-item.text-red-400 { color: #ff
 .portal-hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--portal-primary) 0%, #844afe 100%);
+  background: linear-gradient(135deg, var(--portal-primary) 0%, var(--portal-accent) 100%);
   color: #fff;
   border-radius: var(--portal-radius-card);
-  box-shadow: 0 8px 22px rgba(95, 74, 254, .22);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--portal-primary) 22%, transparent);
 }
 .portal-hero::after { content: ''; position: absolute; width: 240px; height: 240px; border-radius: 50%; inset-inline-end: -100px; inset-block-start: -110px; background: rgba(255,255,255,.10); pointer-events: none; }
 .portal-stat-card { position: relative; min-height: 142px; padding: 20px; background: var(--portal-surface); border-radius: var(--portal-radius-card); box-shadow: var(--portal-shadow-card); overflow: hidden; }
@@ -690,7 +694,7 @@ html.dark .login-page .login-brand p { color: #bdbdc1 !important; }
 .portal-page-main .table-scroll > .table:first-child { border-radius: var(--portal-radius); }
 .portal-page-main .table-wrap { box-shadow: var(--portal-shadow-soft); }
 .portal-form-card { position: relative; overflow: hidden; }
-.portal-form-card::before { content: ""; position: absolute; inset-block-start: 0; inset-inline: 0; height: 3px; background: linear-gradient(90deg, var(--portal-primary), #8b5cf6); }
+.portal-form-card::before { content: ""; position: absolute; inset-block-start: 0; inset-inline: 0; height: 3px;   background: linear-gradient(90deg, var(--portal-primary), var(--portal-accent)); }
 .portal-form-card .portal-section-heading { display: block; }
 .portal-form-grid > div { min-width: 0; }
 .portal-form-section > h4 { color: var(--portal-text); }

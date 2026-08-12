@@ -703,21 +703,22 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                             <p class="text-xs text-slate-400 mb-3">روی پالت دلخواه کلیک کنید — انتخاب شما بلافاصله با تیک و حاشیه رنگی مشخص می‌شود (پس از ذخیره اعمال می‌شود).</p>
                             <style>
                                 .theme-option { position: relative; }
+                                .theme-option { --theme-primary: var(--tp-primary); --theme-light: var(--tp-primary-light); }
                                 .theme-option:has(input[type="radio"]:checked) {
-                                    border-color: #6366f1 !important;
-                                    background: #eef2ff !important;
-                                    box-shadow: 0 0 0 3px rgba(99,102,241,.18);
+                                    border-color: var(--theme-primary) !important;
+                                    background: color-mix(in srgb, var(--theme-light) 72%, var(--surface, #fff)) !important;
+                                    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 18%, transparent);
                                 }
-                                .theme-option .theme-check { display: none; }
+                                .theme-option .theme-check { display: none; background: var(--theme-primary); }
                                 .theme-option:has(input:checked) .theme-check { display: inline-flex; }
                             </style>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 <?php foreach (theme_palettes() as $pkey => $p): ?>
-                                    <label class="theme-option flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition <?= $current_theme === $pkey ? 'border-indigo-500 ring-2 ring-indigo-100 bg-indigo-50/40' : 'border-slate-200 hover:border-slate-300' ?>">
+                                    <label class="theme-option flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition <?= $current_theme === $pkey ? 'border-indigo-500 ring-2 ring-indigo-100 bg-indigo-50/40' : 'border-slate-200 hover:border-slate-300' ?>" style="--theme-primary: <?= e($p['primary']) ?>; --theme-light: <?= e($p['primary_light']) ?>;">
                                         <input type="radio" name="site_theme" value="<?= $pkey ?>" <?= $current_theme === $pkey ? 'checked' : '' ?> class="sr-only">
                                         <span class="w-9 h-9 rounded-lg flex-shrink-0 border border-black/5" style="background:linear-gradient(135deg, <?= $p['primary'] ?>, <?= $p['accent'] ?>)"></span>
                                         <span class="text-sm font-medium text-slate-700 flex-1"><?= $p['label'] ?></span>
-                                        <span class="theme-check w-5 h-5 rounded-full bg-indigo-600 text-white items-center justify-center flex-shrink-0"><?= icon('check','w-3 h-3') ?></span>
+                                        <span class="theme-check w-5 h-5 rounded-full text-white items-center justify-center flex-shrink-0"><?= icon('check','w-3 h-3') ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>

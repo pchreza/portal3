@@ -141,7 +141,10 @@ function send_notification(string $title, string $body, string $ntype = 'info', 
         $target_type = 'all';
     }
 
-    $pdo->beginTransaction();
+    $ownTransaction = !$pdo->inTransaction();
+    if ($ownTransaction) {
+        $pdo->beginTransaction();
+    }
     try {
         // تاریخ انقضا: اگر شمسی وارد شده باشد به میلادی تبدیل کن (دیت پیکر شمسی است)
         $expires_clean = $expires_at ?: null;
@@ -170,10 +173,12 @@ function send_notification(string $title, string $body, string $ntype = 'info', 
             }
         }
 
-        $pdo->commit();
+        if ($ownTransaction) {
+            $pdo->commit();
+        }
         return $nid;
     } catch (Throwable $e) {
-        if ($pdo->inTransaction()) {
+        if ($ownTransaction && $pdo->inTransaction()) {
             $pdo->rollBack();
         }
         error_log('[Notifications] ' . $e->getMessage());

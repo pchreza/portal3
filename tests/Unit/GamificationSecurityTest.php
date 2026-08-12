@@ -66,4 +66,23 @@ final class GamificationSecurityTest extends TestCase
             $_SESSION = $previousSession;
         }
     }
+
+    public function testPersistentAwardNotificationIsCentralizedAndNotDuplicatedByFeedback(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/includes/functions/gamification.php');
+        self::assertIsString($source);
+        $awardStart = strpos($source, 'function gamification_award_points(');
+        $profileStart = strpos($source, 'function gamification_profile_is_complete(');
+        $feedbackStart = strpos($source, 'function gamification_award_feedback(');
+        $bonusStart = strpos($source, 'function gamification_bonus_feedback(');
+        self::assertIsInt($awardStart);
+        self::assertIsInt($profileStart);
+        self::assertIsInt($feedbackStart);
+        self::assertIsInt($bonusStart);
+
+        $awardBody = substr($source, $awardStart, $profileStart - $awardStart);
+        $feedbackBody = substr($source, $feedbackStart, $bonusStart - $feedbackStart);
+        self::assertStringContainsString("send_notification('امتیاز جدید دریافت کردید'", $awardBody);
+        self::assertStringNotContainsString('send_notification(', $feedbackBody);
+    }
 }

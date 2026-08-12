@@ -527,23 +527,46 @@ function theme_styles(): string
 .shadow-indigo-200 { --tw-shadow-color: var(--tp-primary-soft); }
 .shadow-indigo-600\/30 { --tw-shadow-color: var(--tp-primary); }
 .from-indigo-600 { --tw-gradient-from: var(--tp-primary); }
-.from-indigo-950 { --tw-gradient-from: #312e81; }
-.via-indigo-950 { --tw-gradient-stops: var(--tw-gradient-from), #312e81, var(--tw-gradient-to); }
-.bg-indigo-600\/20 { background-color: color-mix(in srgb, ' . $primary . ' 20%, transparent); }
-.bg-indigo-600\/30 { background-color: color-mix(in srgb, ' . $primary . ' 30%, transparent); }
-.bg-indigo-50\/50, .hover\:bg-indigo-50\/50:hover { background-color: color-mix(in srgb, ' . $light . ' 50%, white); }
-.bg-indigo-50\/40 { background-color: color-mix(in srgb, ' . $light . ' 40%, white); }
-.bg-indigo-50\/30 { background-color: color-mix(in srgb, ' . $light . ' 30%, white); }
-.from-indigo-600, .to-violet-600 { background-image: linear-gradient(to left, var(--tp-primary), var(--tp-accent)); }
-.group:hover .group-hover\:text-indigo-600 { color: var(--tp-primary); }
-.group:hover .group-hover\:border-indigo-500 { border-color: var(--tp-primary); }
+	.from-indigo-950, .via-indigo-950 { --tw-gradient-from: var(--tp-primary-dark); --tw-gradient-stops: var(--tw-gradient-from), var(--tp-primary-dark), var(--tw-gradient-to); }
+	.bg-indigo-600\/20 { background-color: color-mix(in srgb, ' . $primary . ' 20%, transparent); }
+	.bg-indigo-600\/30 { background-color: color-mix(in srgb, ' . $primary . ' 30%, transparent); }
+	.bg-indigo-50\/30 { background-color: color-mix(in srgb, ' . $light . ' 30%, white); }
+	.bg-indigo-50\/40, .hover\:bg-indigo-50\/40:hover { background-color: color-mix(in srgb, ' . $light . ' 40%, white); }
+	.bg-indigo-50\/50, .hover\:bg-indigo-50\/50:hover { background-color: color-mix(in srgb, ' . $light . ' 50%, white); }
+	.bg-indigo-50\/60 { background-color: color-mix(in srgb, ' . $light . ' 60%, white); }
+	.bg-violet-100 { background-color: var(--tp-primary-soft); }
+	.bg-violet-600 { background-color: var(--tp-accent); }
+	.bg-violet-50, .hover\:bg-violet-50:hover { background-color: var(--tp-primary-light); }
+	.hover\:bg-violet-700:hover { background-color: var(--tp-primary-dark); }
+	.text-violet-600, .hover\:text-violet-600:hover { color: var(--tp-accent); }
+	.text-violet-700, .hover\:text-violet-700:hover { color: var(--tp-primary-dark); }
+	.border-violet-200, .hover\:border-violet-500:hover { border-color: var(--tp-primary-soft); }
+	.from-violet-600 { --tw-gradient-from: var(--tp-accent); }
+	.to-violet-600 { --tw-gradient-to: var(--tp-accent); }
+	.hover\:bg-indigo-100:hover { background-color: var(--tp-primary-soft); }
+	.hover\:bg-indigo-700:hover { background-color: var(--tp-primary-dark); }
+	.hover\:border-indigo-300:hover, .hover\:border-indigo-400:hover, .hover\:border-indigo-500:hover { border-color: var(--tp-primary); }
+	.hover\:text-indigo-600:hover, .hover\:text-indigo-700:hover, .hover\:text-indigo-800:hover { color: var(--tp-primary-dark); }
+	.border-indigo-300, .border-indigo-500, .border-indigo-600 { border-color: var(--tp-primary); }
+	.border-indigo-100 { border-color: var(--tp-primary-light); }
+	.ring-indigo-100 { --tw-ring-color: var(--tp-primary-light); }
+	.ring-indigo-500 { --tw-ring-color: var(--tp-primary); }
+	.shadow-indigo-600, .shadow-indigo-600\/30 { --tw-shadow-color: var(--tp-primary); }
+	.shadow-indigo-200 { --tw-shadow-color: var(--tp-primary-soft); }
+	.text-indigo-100 { color: var(--tp-primary-light); }
+	.text-indigo-900 { color: var(--tp-primary-dark); }
+	.group:hover .group-hover\:text-indigo-600, .group:hover .group-hover\:text-indigo-700 { color: var(--tp-primary); }
+	.group:hover .group-hover\:border-indigo-500 { border-color: var(--tp-primary); }
+	.file\:bg-indigo-50::file-selector-button { background-color: var(--tp-primary-light); }
+	.file\:text-indigo-700::file-selector-button { color: var(--tp-primary-dark); }
 /* ---- سایدبار و بخش‌های تیره — هماهنگ با پالت رنگی ---- */
 .bg-slate-900 { background: var(--tp-sidebar); }
 .bg-slate-800, .hover\:bg-slate-800\/80:hover { background-color: var(--tp-sidebar-hover); }
 .border-slate-800 { border-color: var(--tp-sidebar-border); }
 .hover\:bg-slate-800\/80:hover { background-color: var(--tp-sidebar-hover); }
 /* رادیو/چک‌باکس‌ها */
-.accent-indigo-600, .text-indigo-600 { color: var(--tp-primary); }
+	.accent-indigo-600 { accent-color: var(--tp-primary); }
+	.text-indigo-600 { color: var(--tp-primary); }
 /* اعداد و شمارنده‌ها در کارت‌ها */
 .bg-indigo-600\/20, .bg-indigo-600\/30 { background-color: color-mix(in srgb, ' . $primary . ' 20%, transparent); }
 /* لینک‌های فعال در سایدبار و هایلایت منو */
@@ -604,9 +627,10 @@ function site_favicon_html(): string
         }
         return '<link rel="icon" href="' . e($logo_url) . '">' . "\n";
     }
-    // آیکن پیش‌فرض: حرف «پ» روی پس‌زمینه بنفش (SVG اینلاین)
+    // آیکن پیش‌فرض: حرف «پ» با primary پالت فعال (SVG اینلاین)
+    $p = active_theme_palette();
     $svg = 'data:image/svg+xml,' . rawurlencode(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#4f46e5"/><text x="32" y="46" font-family="Tahoma,Arial,sans-serif" font-size="36" font-weight="bold" fill="#ffffff" text-anchor="middle">پ</text></svg>'
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="' . $p['primary'] . '"/><text x="32" y="46" font-family="Tahoma,Arial,sans-serif" font-size="36" font-weight="bold" fill="#ffffff" text-anchor="middle">پ</text></svg>'
     );
     return '<link rel="icon" type="image/svg+xml" href="' . $svg . '">' . "\n";
 }
