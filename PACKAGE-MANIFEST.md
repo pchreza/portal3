@@ -1,14 +1,14 @@
-# Runtime Package Manifest — Portal3 v2.1.1
+# Runtime Package Manifest — Portal3 v2.2.0
 
-این archive فقط فایل‌های لازم برای اجرای Portal3، نصب، migration، مستندات و قابلیت Backup/Restore را شامل می‌شود.
+این archive فقط فایل‌های لازم برای اجرای Portal3، نصب، migration، مستندات، Backup/Restore و باشگاه امتیاز و پاداش را شامل می‌شود.
 
 ## Included
 
-`admin/`، `customer/`، `includes/`، `assets/`، `bin/`، فایل‌های PHP ریشه، `config.php`، `install.php`، `schema.sql`، `migrations.php`، `composer.json`، `composer.lock`، `.env.example`، `README.md`، `INSTALL.md`، `VERSION`، `storage/.htaccess`، `storage/cache/.htaccess`، `storage/backups/.htaccess` و `uploads/.htaccess`.
+`admin/`، `customer/`، `includes/`، `assets/`، `bin/`، فایل‌های PHP ریشه، `config.php`، `install.php`، `schema.sql`، `migrations.php`، `composer.json`، `composer.lock`، `.env.example`، `README.md`، `INSTALL.md`، `VERSION`، `storage/.htaccess`، `storage/cache/.htaccess`، `storage/backups/.htaccess` و `uploads/.htaccess`. هستهٔ Gamification در `includes/functions/gamification.php`، پنل مدیر در `admin/gamification.php` و صفحهٔ مشتری در `customer/gamification.php` قرار دارد.
 
-## Backup/Restore files
+## Backup/Restore و Gamification files
 
-کتابخانهٔ `includes/functions/backup.php` ساخت، فهرست، download، validation و restore archiveهای کامل Portal3 را فراهم می‌کند. archive واقعی backup داخل بستهٔ release قرار نمی‌گیرد. `storage/backups/.htaccess` دسترسی مستقیم وب به backupها را مسدود می‌کند.
+کتابخانهٔ `includes/functions/backup.php` ساخت، فهرست، download، validation و restore archiveهای کامل Portal3 را فراهم می‌کند. کتابخانهٔ `includes/functions/gamification.php` wallet، ledger، کد هدیه، reward و manual redirect را فراهم می‌کند. archive واقعی backup و کدهای coupon واقعی داخل بستهٔ release قرار نمی‌گیرند. `storage/backups/.htaccess` دسترسی مستقیم وب به backupها را مسدود می‌کند.
 
 ## Excluded intentionally
 

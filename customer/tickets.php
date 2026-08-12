@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'customer', ?)");
             $stmt->execute([$ticket_id, $user_id, $message]);
             $pdo->commit();
+            gamification_award_points($user_id, 'ticket_created', 'ticket_created:' . $ticket_id, 'امتیاز ثبت تیکت جدید', 'ticket', (string) $ticket_id);
 
             log_activity($user_id, "ثبت تیکت پشتیبانی جدید: {$subject}");
             $_SESSION['flash'] = 'تیکت پشتیبانی شما با موفقیت ثبت شد.';
@@ -61,11 +62,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $pdo->beginTransaction();
             $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'customer', ?)");
             $stmt->execute([$ticket_id, $user_id, $message]);
+            $reply_message_id = (int) $pdo->lastInsertId();
 
             // Update status back to open so admin sees it needs attention
             $stmt = $pdo->prepare("UPDATE tickets SET status = 'open' WHERE id = ?");
             $stmt->execute([$ticket_id]);
             $pdo->commit();
+            gamification_award_points($user_id, 'ticket_customer_reply', 'ticket_customer_reply:' . $reply_message_id, 'امتیاز پاسخ به تیکت', 'ticket_message', (string) $reply_message_id);
 
             log_activity($user_id, "ارسال پاسخ به تیکت ID: {$ticket_id}");
             $_SESSION['flash'] = 'پاسخ شما با موفقیت ارسال شد.';

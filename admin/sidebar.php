@@ -70,6 +70,10 @@ $site_title_short = get_setting('site_title', 'پورتال مشتریان');
             <a href="error-reports.php" class="nav-item <?php echo $current_page === 'error-reports.php' ? 'active' : ''; ?>"><?= icon('alert') ?><span>گزارش‌های خطا</span></a>
             <?php endif; ?>
 
+            <?php if (($is_super || admin_can('gamification')) && is_module_enabled('gamification')): ?>
+            <a href="gamification.php" class="nav-item <?php echo $current_page === 'gamification.php' ? 'active' : ''; ?>"><?= icon('star') ?><span>باشگاه امتیاز و پاداش</span></a>
+            <?php endif; ?>
+
             <?php if ($is_super || admin_can('settings')): ?>
             <a href="settings.php" class="nav-item <?php echo $current_page === 'settings.php' ? 'active' : ''; ?>"><?= icon('settings') ?><span>تنظیمات سیستم</span></a>
             <?php endif; ?>

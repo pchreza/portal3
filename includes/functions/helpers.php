@@ -642,6 +642,7 @@ function admin_permissions_list(): array
         'settings'           => 'تنظیمات سیستم',
         'logs'               => 'گزارش فعالیت‌ها',
         'error_reports'      => 'گزارش‌های خطا',
+        'gamification'       => 'باشگاه امتیاز و پاداش',
         'admins'             => 'مدیریت مدیران',
         'profile'            => 'پروفایل مدیر',
     ];

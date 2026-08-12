@@ -78,6 +78,7 @@ if (is_module_enabled('surveys')) {
 // اعلانات
 $notif_unread = unread_notifications_count($user_id);
 $recent_notifications = get_user_notifications($user_id, 5);
+$gamification_summary = gamification_enabled() ? gamification_customer_summary((int) $user_id) : null;
 
 // --- کنترل ویجت‌های داشبورد توسط ادمین (از تنظیمات) ---
 // توجه: یک ویجت فقط وقتی نمایش داده می‌شود که هم ماژولش فعال باشد و هم در تنظیمات داشبورد روشن باشد.
@@ -102,6 +103,9 @@ if (is_module_enabled('tickets') && dash_widget_enabled('dash_tickets')) {
 }
 if (is_module_enabled('surveys') && dash_widget_enabled('dash_surveys')) {
     $stat_widgets[] = ['link' => 'surveys.php', 'label' => 'نظرسنجی‌های در انتظار', 'count' => $pending_surveys, 'color' => 'violet', ];
+}
+if (gamification_enabled()) {
+    $stat_widgets[] = ['link' => 'gamification.php', 'label' => 'موجودی امتیاز من', 'count' => $gamification_summary['wallet']['balance'], 'color' => 'indigo', ];
 }
 if (dash_widget_enabled('dash_notifications')) {
     $stat_widgets[] = ['link' => 'notifications.php', 'label' => 'اعلانات من', 'count' => $notif_unread, 'color' => 'rose', ];
@@ -210,7 +214,7 @@ $widget_colors = [
                 <?php
                     $wicon = [
                         'projects.php' => 'folder', 'products.php' => 'box', 'invoices.php' => 'card',
-                        'tickets.php' => 'ticket', 'surveys.php' => 'star', 'notifications.php' => 'bell',
+                        'tickets.php' => 'ticket', 'surveys.php' => 'star', 'notifications.php' => 'bell', 'gamification.php' => 'gift',
                         'profile.php' => 'user', 'index.php' => 'dashboard',
                     ];
                     foreach ($stat_widgets as $w):

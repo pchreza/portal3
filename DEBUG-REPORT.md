@@ -245,3 +245,36 @@ Smoke report کامل در `http-smoke-report.txt` ذخیره شد.
 | اصلاح | modal اکنون `data-confirm-title`، `data-confirm-ok-label` و `data-confirm-tone` را از فرم می‌خواند. ایجاد backup دکمهٔ «ایجاد backup»، restore دکمهٔ «بازیابی» و حذف backup دکمهٔ «حذف backup» دارد. برای حفظ validation بومی فرم، از `requestSubmit()` با bypass کنترل‌شده استفاده می‌شود. |
 | آزمون | PASS؛ regression تست metadata، PHPUnit با ۹ تست و ۲۹ assertion، PHPStan، lint و diff check موفق شدند. |
 | وضعیت | رفع شد و در patch v2.1.1 منتشر می‌شود. |
+
+
+## FEATURE-001 — ماژول Gamification و باشگاه امتیاز و پاداش
+
+**نسخه:** 2.2.0
+
+**وضعیت:** پیاده‌سازی‌شده و آمادهٔ release پس از final gate
+
+### دامنهٔ قابلیت
+
+ماژول Gamification به‌صورت مستقل و قابل‌فعال‌سازی/غیرفعال‌سازی پیاده‌سازی شد. هنگام خاموش‌بودن، endpointها، navigation و کارت‌های مشتری در سمت سرور و UI غیرفعال هستند و داده‌های قبلی حذف نمی‌شوند.
+
+### امتیازدهی و رویدادها
+
+رویدادهای `profile_completed`، `survey_submitted`، `ticket_created`، `ticket_customer_reply` و `bonus_code_redeemed` به event registry اضافه شدند. مقدار امتیاز فقط server-side محاسبه می‌شود و ruleها دارای فعال‌بودن، daily cap و cooldown هستند. wallet و ledger با transaction و idempotency key به‌روزرسانی می‌شوند.
+
+### پاداش و فروشگاه
+
+مدیر می‌تواند سایت فروش HTTPS، reward catalog، هزینهٔ امتیاز، سقف مشتری و مدت اعتبار را تنظیم کند. حالت امن pool کدهای یکتا هنگام redeem با row lock رزرو می‌شود؛ حالت fixed نیز برای کمپین‌های عمومی با هشدار کنترل مصرف در سایت مقصد وجود دارد. provider فعلی `manual_redirect` است و adapter API آینده بدون تغییر wallet/ledger قابل اضافه‌شدن خواهد بود.
+
+### کنترل‌های امنیتی
+
+کدهای کمپین با SHA-256 hash ذخیره می‌شوند؛ کد خام در log یا دیتابیس نگه‌داری نمی‌شود. URL فروش فقط HTTPS است مگر در development صریح. CSRF مرکزی، RBAC، query پارامتری، ledger immutable، idempotency، جلوگیری از موجودی منفی، سقف مصرف، اعتبار و جلوگیری از نمایش coupon pool کامل اعمال شده است.
+
+### آزمون‌ها
+
+- PHPUnit: ۱۲ تست و ۴۱ assertion موفق.
+- PHPStan: ۵۰ فایل بدون خطا.
+- PHP lint و `git diff --check`: موفق.
+- Core E2E روی دیتابیس ایزوله: migration 29، award idempotency، bonus code، wallet و coupon pool موفق.
+- Upgrade E2E از schema 28 به 29: موفق.
+- Regression امنیتی کد و URL: موفق.
+- بررسی iconهای UI و تعادل فرم‌های مدیر/مشتری: موفق.

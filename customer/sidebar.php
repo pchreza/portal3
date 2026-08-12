@@ -35,6 +35,9 @@ $site_title_short = get_setting('site_title', 'پورتال مشتریان');
             <?php if (is_module_enabled('surveys')): ?>
             <a href="surveys.php" class="nav-item <?php echo $current_page === 'surveys.php' ? 'active' : ''; ?>"><?= icon('star') ?><span>نظرسنجی‌ها</span></a>
             <?php endif; ?>
+            <?php if (gamification_enabled()): ?>
+            <a href="gamification.php" class="nav-item <?php echo $current_page === 'gamification.php' ? 'active' : ''; ?>"><?= icon('star') ?><span>امتیازها و پاداش‌ها</span></a>
+            <?php endif; ?>
             <a href="notifications.php" class="nav-item <?php echo $current_page === 'notifications.php' ? 'active' : ''; ?>"><?= icon('bell') ?><span>اعلانات من</span></a>
             <a href="profile.php" class="nav-item <?php echo $current_page === 'profile.php' ? 'active' : ''; ?>"><?= icon('user') ?><span>پروفایل و اطلاعات شخصی</span></a>
         </nav>

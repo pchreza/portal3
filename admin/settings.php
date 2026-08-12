@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $save_type = $_POST['save_type'] ?? '';
 
     if ($save_type === 'modules') {
-        $modules = ['projects', 'products', 'invoices', 'tickets', 'surveys', 'custom_fields', 'notifications', 'logs', 'error_reports'];
+        $modules = ['projects', 'products', 'invoices', 'tickets', 'surveys', 'custom_fields', 'notifications', 'logs', 'error_reports', 'gamification'];
         foreach ($modules as $mod) {
             set_setting('module_' . $mod, isset($_POST['module_' . $mod]) ? '1' : '0');
         }
@@ -424,6 +424,7 @@ $modules_config = [
     'notifications' => ['اعلانات و اطلاع‌رسانی', icon('bell')],
     'logs'          => ['گزارش فعالیت‌ها', icon('file')],
     'error_reports' => ['گزارش خطا', icon('alert')],
+    'gamification'  => ['باشگاه امتیاز و پاداش', icon('star')],
 ];
 
 $dash_widgets_config = [

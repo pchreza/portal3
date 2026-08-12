@@ -71,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['last_name'] = $last_name;
             // ذخیره فیلدهای سفارشی (اگر ماژول فعال باشد)
             save_custom_fields_values('customer', $user_id);
+            gamification_award_profile_completion((int) $user_id);
             log_activity($user_id, "بروزرسانی پروفایل شخصی");
             $success = 'پروفایل شما با موفقیت بروزرسانی شد.';
         } catch (Exception $e) {

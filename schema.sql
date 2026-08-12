@@ -287,3 +287,160 @@
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+
+            CREATE TABLE IF NOT EXISTS `gamification_rules` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `event_key` VARCHAR(60) NOT NULL UNIQUE,
+                `points` INT NOT NULL DEFAULT 0,
+                `daily_cap` INT NOT NULL DEFAULT 0,
+                `cooldown_seconds` INT NOT NULL DEFAULT 0,
+                `is_active` TINYINT(1) NOT NULL DEFAULT 0,
+                `description` VARCHAR(255) DEFAULT '',
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                CONSTRAINT chk_gam_rule_points CHECK (`points` >= 0 AND `points` <= 100000),
+                CONSTRAINT chk_gam_rule_caps CHECK (`daily_cap` >= 0 AND `cooldown_seconds` >= 0)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `customer_point_wallets` (
+                `customer_id` INT PRIMARY KEY,
+                `balance` INT NOT NULL DEFAULT 0,
+                `total_earned` INT NOT NULL DEFAULT 0,
+                `total_spent` INT NOT NULL DEFAULT 0,
+                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                CONSTRAINT chk_gam_wallet_nonnegative CHECK (`balance` >= 0 AND `total_earned` >= 0 AND `total_spent` >= 0),
+                FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `customer_point_ledger` (
+                `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+                `customer_id` INT NOT NULL,
+                `delta` INT NOT NULL,
+                `balance_after` INT NOT NULL,
+                `event_key` VARCHAR(60) NOT NULL,
+                `reference_type` VARCHAR(60) DEFAULT '',
+                `reference_id` VARCHAR(100) DEFAULT '',
+                `idempotency_key` VARCHAR(160) NOT NULL UNIQUE,
+                `description` VARCHAR(255) DEFAULT '',
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_gam_ledger_customer_time` (`customer_id`, `created_at`),
+                INDEX `idx_gam_ledger_event_time` (`event_key`, `created_at`),
+                FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `bonus_code_campaigns` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `name` VARCHAR(150) NOT NULL,
+                `code_hash` CHAR(64) NOT NULL UNIQUE,
+                `points` INT NOT NULL DEFAULT 0,
+                `starts_at` DATETIME NULL,
+                `expires_at` DATETIME NULL,
+                `max_redemptions` INT NOT NULL DEFAULT 0,
+                `max_per_customer` INT NOT NULL DEFAULT 1,
+                `redemptions_count` INT NOT NULL DEFAULT 0,
+                `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                `created_by` INT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_gam_bonus_active_expiry` (`is_active`, `expires_at`),
+                CONSTRAINT chk_gam_bonus_points CHECK (`points` > 0 AND `points` <= 1000000),
+                CONSTRAINT chk_gam_bonus_caps CHECK (`max_redemptions` >= 0 AND `max_per_customer` > 0),
+                FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `bonus_code_redemptions` (
+                `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+                `campaign_id` INT NOT NULL,
+                `customer_id` INT NOT NULL,
+                `ledger_id` BIGINT NOT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY `uniq_gam_bonus_customer` (`campaign_id`, `customer_id`),
+                FOREIGN KEY (`campaign_id`) REFERENCES `bonus_code_campaigns`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`ledger_id`) REFERENCES `customer_point_ledger`(`id`) ON DELETE RESTRICT
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `reward_sites` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `name` VARCHAR(150) NOT NULL,
+                `base_url` VARCHAR(500) NOT NULL,
+                `provider` VARCHAR(40) NOT NULL DEFAULT 'manual_redirect',
+                `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                `created_by` INT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX `idx_gam_site_active` (`is_active`),
+                FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `reward_catalog` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `site_id` INT NOT NULL,
+                `title` VARCHAR(180) NOT NULL,
+                `description` VARCHAR(500) DEFAULT '',
+                `points_cost` INT NOT NULL,
+                `coupon_mode` ENUM('pool', 'fixed') NOT NULL DEFAULT 'pool',
+                `fixed_coupon_code` VARCHAR(255) DEFAULT '',
+                `valid_days` INT NOT NULL DEFAULT 30,
+                `max_per_customer` INT NOT NULL DEFAULT 1,
+                `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                `created_by` INT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX `idx_gam_reward_active` (`is_active`, `points_cost`),
+                CONSTRAINT chk_gam_reward_cost CHECK (`points_cost` > 0 AND `points_cost` <= 100000000),
+                CONSTRAINT chk_gam_reward_days CHECK (`valid_days` >= 0 AND `valid_days` <= 3650),
+                CONSTRAINT chk_gam_reward_customer_cap CHECK (`max_per_customer` > 0),
+                FOREIGN KEY (`site_id`) REFERENCES `reward_sites`(`id`) ON DELETE RESTRICT,
+                FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `reward_coupon_pool` (
+                `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+                `reward_id` INT NOT NULL,
+                `coupon_code` VARCHAR(255) NOT NULL,
+                `coupon_hash` CHAR(64) NOT NULL,
+                `status` ENUM('available', 'issued', 'disabled') NOT NULL DEFAULT 'available',
+                `expires_at` DATETIME NULL,
+                `assigned_customer_id` INT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `issued_at` DATETIME NULL,
+                UNIQUE KEY `uniq_gam_coupon_hash` (`coupon_hash`),
+                INDEX `idx_gam_coupon_available` (`reward_id`, `status`, `expires_at`),
+                FOREIGN KEY (`reward_id`) REFERENCES `reward_catalog`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`assigned_customer_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS `reward_redemptions` (
+                `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+                `reward_id` INT NOT NULL,
+                `customer_id` INT NOT NULL,
+                `coupon_id` BIGINT NULL,
+                `coupon_code_snapshot` VARCHAR(255) DEFAULT '',
+                `points_cost` INT NOT NULL,
+                `site_id` INT NOT NULL,
+                `redirect_url_snapshot` VARCHAR(500) NOT NULL,
+                `status` ENUM('issued', 'cancelled') NOT NULL DEFAULT 'issued',
+                `idempotency_key` VARCHAR(160) NOT NULL UNIQUE,
+                `expires_at` DATETIME NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_gam_redemption_customer` (`customer_id`, `created_at`),
+                INDEX `idx_gam_redemption_reward` (`reward_id`, `customer_id`, `status`),
+                FOREIGN KEY (`reward_id`) REFERENCES `reward_catalog`(`id`) ON DELETE RESTRICT,
+                FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`coupon_id`) REFERENCES `reward_coupon_pool`(`id`) ON DELETE SET NULL,
+                FOREIGN KEY (`site_id`) REFERENCES `reward_sites`(`id`) ON DELETE RESTRICT
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            INSERT IGNORE INTO `settings` (`setting_key`, `setting_value`) VALUES
+                ('module_gamification', '0'),
+                ('gamification_store_message', 'کد تخفیف را هنگام خرید در سایت مقصد وارد کنید.');
+
+            INSERT IGNORE INTO `admin_permissions` (`role`, `permission`) VALUES ('admin', 'gamification');
+
+            INSERT IGNORE INTO `gamification_rules` (`event_key`, `points`, `daily_cap`, `cooldown_seconds`, `is_active`, `description`) VALUES
+                ('profile_completed', 100, 0, 0, 0, 'امتیاز یک‌باره برای تکمیل همهٔ فیلدهای اجباری پروفایل'),
+                ('survey_submitted', 50, 0, 0, 0, 'امتیاز برای تکمیل موفق هر نظرسنجی'),
+                ('ticket_created', 10, 30, 3600, 0, 'امتیاز ثبت تیکت جدید با سقف ضداسپم'),
+                ('ticket_customer_reply', 5, 20, 1800, 0, 'امتیاز پاسخ مشتری به تیکت با cooldown'),
+                ('bonus_code_redeemed', 0, 0, 0, 0, 'امتیاز campaignهای کد هدیه به‌صورت اختصاصی campaign تعیین می‌شود');
