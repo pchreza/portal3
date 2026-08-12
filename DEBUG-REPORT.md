@@ -173,4 +173,16 @@ Smoke report کامل در `http-smoke-report.txt` ذخیره شد.
 | Excel | PASS؛ download XLSX (ساختار ZIP معتبر) و round-trip XLSX/CSV با RTL |
 | cron CLI | PASS؛ بدون warning؛ با reminder غیرفعال هیچ پیامک یا cleanup recordی ایجاد/حذف نشد |
 
-> نتیجه: پنج ایراد تأییدشده رفع شدند و آزمون‌های رگرسیون مرتبط با موفقیت تکرار شدند. بستهٔ نصب نسخه‌بندی‌شده پس از کنترل محتوا ساخته می‌شود.
+> نتیجه: شش ایراد تأییدشده رفع شدند و آزمون‌های رگرسیون مرتبط با موفقیت تکرار شدند. برای BUG-006 یک release patch سازگار با MariaDB تولید می‌شود.
+
+
+## BUG-006 — خطای MariaDB 1093 در migration 21 روی surveys
+
+| فیلد | شرح |
+|---|---|
+| شدت | بحرانی برای upgrade؛ سرویس پس از overwrite تا اجرای migration در دسترس نبود. |
+| بازتولید | روی MariaDB با `schema_versions` تا نسخهٔ 20 و یک survey یتیم، migration 21 query مستقیم `DELETE FROM surveys ... NOT IN (SELECT id FROM surveys)` را اجرا می‌کرد. MariaDB آن را با `SQLSTATE[HY000]: General error: 1093` رد می‌کرد. |
+| علت ریشه‌ای | حذف از یک جدول با subquery خواندن همان جدول در همان statement؛ محدودیت شناخته‌شدهٔ MariaDB/MySQL برای target table در subquery. |
+| اصلاح | query به `DELETE child FROM surveys child LEFT JOIN surveys parent ...` تبدیل شد؛ رفتار حذف orphan حفظ شده و با foreign key self-reference سازگار است. |
+| آزمون | PASS: fresh schema + orphan fixture + schema version 20؛ خروجی `MIGRATION_1093_E2E_PASS version=28 orphan=0`. |
+| وضعیت | رفع شد؛ باید در release patch بعدی منتشر شود. |

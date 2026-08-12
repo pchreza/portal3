@@ -247,7 +247,8 @@ function portal_migrations(PDO $pdo): void {
                 $db->exec("DELETE FROM ticket_messages WHERE sender_id NOT IN (SELECT id FROM users)");
                 if(!portal_index_exists($db,'ticket_messages','idx_ticket_messages_sender'))$db->exec("CREATE INDEX idx_ticket_messages_sender ON ticket_messages (sender_id)");
                 if(!portal_fk_exists($db,'ticket_messages','fk_tm_sender'))$db->exec("ALTER TABLE ticket_messages ADD CONSTRAINT fk_tm_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE");
-                $db->exec("DELETE FROM surveys WHERE parent_survey_id IS NOT NULL AND parent_survey_id NOT IN (SELECT id FROM surveys)");
+                // MariaDB خطای 1093 را برای DELETE از همان جدول با subquery مستقیم می‌دهد؛ DELETE JOIN امن است.
+                $db->exec("DELETE child FROM surveys child LEFT JOIN surveys parent ON parent.id = child.parent_survey_id WHERE child.parent_survey_id IS NOT NULL AND parent.id IS NULL");
                 if(!portal_index_exists($db,'surveys','idx_surveys_parent'))$db->exec("CREATE INDEX idx_surveys_parent ON surveys (parent_survey_id)");
                 if(!portal_fk_exists($db,'surveys','fk_surveys_parent'))$db->exec("ALTER TABLE surveys ADD CONSTRAINT fk_surveys_parent FOREIGN KEY (parent_survey_id) REFERENCES surveys(id) ON DELETE SET NULL");
             },
