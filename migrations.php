@@ -17,6 +17,13 @@ function portal_column_exists(PDO $db, string $table, string $column): bool {
 function portal_index_exists(PDO $db, string $table, string $index): bool {
     $q=$db->prepare("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND INDEX_NAME=?");$q->execute([$table,$index]);return (bool)$q->fetchColumn();
 }
+function portal_column_data_type(PDO $db, string $table, string $column): ?string
+{
+    $q = $db->prepare('SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    $q->execute([$table, $column]);
+    $type = $q->fetchColumn();
+    return $type === false ? null : strtolower((string) $type);
+}
 function portal_fk_exists(PDO $db, string $table, string $fk): bool {
     $q=$db->prepare("SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME=? AND CONSTRAINT_NAME=? AND CONSTRAINT_TYPE='FOREIGN KEY'");$q->execute([$table,$fk]);return (bool)$q->fetchColumn();
 }
@@ -339,7 +346,14 @@ function portal_migrations(PDO $pdo): void {
                     ['products', 'purchase_date'],
                     ['invoices', 'due_date'],
                 ];
+                $legacy_string_types = ['char', 'varchar', 'tinytext', 'text', 'mediumtext', 'longtext'];
                 foreach ($date_specs as [$table, $column]) {
+                    // نصب تازه از schema.sql ستون را DATE می‌گیرد؛ فقط نصب‌های قدیمی
+                    // که هنوز VARCHAR دارند به تبدیل و پاک‌سازی مقدار خالی نیاز دارند.
+                    $data_type = portal_column_data_type($db, $table, $column);
+                    if (!in_array($data_type, $legacy_string_types, true)) {
+                        continue;
+                    }
                     $rows = $db->query("SELECT id, {$column} FROM {$table} WHERE {$column} IS NOT NULL AND TRIM({$column}) <> ''")->fetchAll();
                     $update = $db->prepare("UPDATE {$table} SET {$column} = ? WHERE id = ?");
                     foreach ($rows as $row) {
@@ -350,7 +364,9 @@ function portal_migrations(PDO $pdo): void {
                         }
                         $update->execute([$converted, (int) $row['id']]);
                     }
-                    $db->exec("UPDATE {$table} SET {$column} = NULL WHERE {$column} = ''");
+                    // این update پیش از ALTER انجام می‌شود تا strict SQL mode
+                    // مقدار خالی را هنگام تبدیل VARCHAR به DATE رد نکند.
+                    $db->exec("UPDATE {$table} SET {$column} = NULL WHERE TRIM({$column}) = ''");
                 }
 
                 $money_specs = [
@@ -358,6 +374,10 @@ function portal_migrations(PDO $pdo): void {
                     ['invoices', 'amount'],
                 ];
                 foreach ($money_specs as [$table, $column]) {
+                    $data_type = portal_column_data_type($db, $table, $column);
+                    if (!in_array($data_type, $legacy_string_types, true)) {
+                        continue;
+                    }
                     $rows = $db->query("SELECT id, {$column} FROM {$table} WHERE {$column} IS NOT NULL AND TRIM({$column}) <> ''")->fetchAll();
                     $update = $db->prepare("UPDATE {$table} SET {$column} = ? WHERE id = ?");
                     foreach ($rows as $row) {
@@ -367,7 +387,7 @@ function portal_migrations(PDO $pdo): void {
                         }
                         $update->execute([$normalized === '' ? null : $normalized, (int) $row['id']]);
                     }
-                    $db->exec("UPDATE {$table} SET {$column} = NULL WHERE {$column} = ''");
+                    $db->exec("UPDATE {$table} SET {$column} = NULL WHERE TRIM({$column}) = ''");
                 }
 
                 $db->exec("ALTER TABLE projects MODIFY deadline DATE NULL DEFAULT NULL");

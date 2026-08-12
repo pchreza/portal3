@@ -199,3 +199,15 @@ Smoke report کامل در `http-smoke-report.txt` ذخیره شد.
 | ملاحظهٔ داده | حذف assignment orphan از نظر business state قابل نگه‌داری نیست، چون parent survey وجود ندارد؛ برای روابط `SET NULL` رکورد اصلی نگه داشته می‌شود و فقط اشارهٔ نامعتبر پاک می‌شود. قبل از migration همچنان backup دیتابیس توصیه می‌شود. |
 | آزمون | PASS: fixture ایزوله با orphan survey assignment؛ cleanup یک رکورد را حذف کرد، migration تا version 28 رسید، orphanها صفر شدند و `fk_sa_survey` و `fk_sa_customer` ساخته شدند. PHPUnit، PHPStan و lint نیز PASS شدند. |
 | وضعیت | اصلاح شد؛ در patch بعدی منتشر می‌شود. |
+
+
+## BUG-008 — خطای MariaDB/MySQL 1292 در migration 26 هنگام نصب تازه
+
+| فیلد | شرح |
+|---|---|
+| شدت | زیاد برای نصب تازه؛ مرحلهٔ دوم ویزارد قبل از ایجاد حساب مدیر با Fatal error متوقف می‌شد. |
+| بازتولید | اجرای `install.php` روی schema تازه و اجرای `portal_migrations()` با SQL strict؛ migration 26 پس از اینکه ستون‌های تاریخ در `schema.sql` از ابتدا `DATE` هستند، عبارت `UPDATE invoices SET due_date = NULL WHERE due_date = ''` را اجرا می‌کرد و MariaDB/MySQL آن را با `SQLSTATE[22007] / 1292` رد می‌کرد. |
+| علت ریشه‌ای | migration 26 فرض می‌کرد ستون‌ها هنوز رشته‌ای هستند. در schema فعلی، ستون‌های تاریخ و مبلغ از ابتدا `DATE` و `DECIMAL` هستند؛ مقایسهٔ آن‌ها با رشتهٔ خالی در strict SQL mode تبدیل ضمنی نامعتبر ایجاد می‌کند. |
+| اصلاح | تابع `portal_column_data_type()` اضافه شد. پاک‌سازی و تبدیل مقدار فقط زمانی انجام می‌شود که ستون واقعاً از نوع string قدیمی باشد؛ مقدارهای خالی نیز پیش از `ALTER TABLE` به `NULL` تبدیل می‌شوند. روی ستون‌های `DATE` و `DECIMAL` نصب تازه دیگر query مقایسه با `''` اجرا نمی‌شود. |
+| آزمون | PASS: سناریوی fresh با schema فعلی و SQL strict تا `schema version=28` اجرا شد؛ سناریوی legacy با ستون‌های VARCHAR، مقدار خالی و SQL strict نیز تا `schema version=28` اجرا شد و type نهایی تاریخ/مبلغ صحیح بود. |
+| وضعیت | رفع شد؛ در patch v2.0.3 منتشر می‌شود. |
