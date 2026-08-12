@@ -1903,7 +1903,7 @@ function portal_darkmode_script(): string
 // مودال تأیید اکشن مخرب (جایگزین confirm() بومی — دسترس‌پذیر)
 // ---------------------------------------------------------------------------
 
-/** مارک‌آپ مودال تأیید حذف — باید قبل از </body> رندر شود */
+/** مارک‌آپ مودال تأیید اکشن — باید قبل از </body> رندر شود */
 function portal_confirm_modal(): string
 {
     return '<div id="portal-confirm" role="dialog" aria-modal="true" aria-labelledby="portal-confirm-title" aria-describedby="portal-confirm-msg" class="hidden fixed inset-0 z-[2000] items-center justify-center p-4">'
@@ -1928,13 +1928,13 @@ function portal_confirm_script(): string
         . 'document.addEventListener("DOMContentLoaded",function(){'
         . 'var m=document.getElementById("portal-confirm");if(!m)return;'
         . 'var ok=m.querySelector("[data-confirm-ok]"),pending=null;'
-        . 'function open(msg,f){document.getElementById("portal-confirm-msg").textContent=msg;pending=f;m.classList.remove("hidden");m.classList.add("flex");var b=m.querySelector("button");if(b)b.focus();}'
+        . 'function open(msg,f){document.getElementById("portal-confirm-title").textContent=f.getAttribute("data-confirm-title")||"تأیید حذف";document.getElementById("portal-confirm-msg").textContent=msg;ok.textContent=f.getAttribute("data-confirm-ok-label")||"حذف";ok.className="btn "+((f.getAttribute("data-confirm-tone")||"danger")==="primary"?"btn-primary":"btn-danger");pending=f;m.classList.remove("hidden");m.classList.add("flex");ok.focus();}'
         . 'function close(){m.classList.add("hidden");m.classList.remove("flex");pending=null;}'
         . 'm.querySelectorAll("[data-confirm-close]").forEach(function(e){e.addEventListener("click",close);});'
-        . 'ok.addEventListener("click",function(){if(pending){pending.submit();}close();});'
+        . 'ok.addEventListener("click",function(){if(!pending)return;var f=pending;pending=null;close();f.dataset.confirmed="1";if(typeof f.requestSubmit==="function"){f.requestSubmit();}else{f.submit();}delete f.dataset.confirmed;});'
         . 'document.addEventListener("keydown",function(e){if(e.key==="Escape")close();});'
         . 'document.querySelectorAll("form[data-confirm-msg]").forEach(function(f){'
-        . 'f.addEventListener("submit",function(e){e.preventDefault();open(f.getAttribute("data-confirm-msg")||"آیا از انجام این عملیات اطمینان دارید؟",f);});});});'
+        . 'f.addEventListener("submit",function(e){if(f.dataset.confirmed==="1"){delete f.dataset.confirmed;return;}e.preventDefault();open(f.getAttribute("data-confirm-msg")||"آیا از انجام این عملیات اطمینان دارید؟",f);});});});'
         . "\n" . '</script>' . "\n";
 }
 

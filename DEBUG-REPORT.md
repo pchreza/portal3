@@ -234,3 +234,14 @@ Smoke report کامل در `http-smoke-report.txt` ذخیره شد.
 | Restore | عبارت تأیید `RESTORE`، CSRF، ساخت pre-restore backup خودکار، سپس restore دیتابیس و فایل‌ها. |
 | Audit | ایجاد، حذف و restore در `activity_logs` ثبت می‌شود. |
 | آزمون | UI smoke در پنل مدیر، E2E ساخت/اعتبارسنجی archive، E2E restore دیتابیس و فایل، PHPUnit security tests، PHPStan و lint؛ همه PASS. |
+
+
+## BUG-009 — نمایش دکمهٔ «حذف» هنگام ایجاد backup
+
+| فیلد | شرح |
+|---|---|
+| شدت | متوسط؛ عملیات ایجاد backup از نظر فنی درست بود، اما modal عمومی دکمهٔ تأیید را به‌صورت ثابت «حذف» نمایش می‌داد و UX گمراه‌کننده ایجاد می‌کرد. |
+| علت ریشه‌ای | `portal_confirm_modal()` برای همهٔ فرم‌های `data-confirm-msg` عنوان «تأیید حذف» و دکمهٔ «حذف» داشت و فرم‌ها نوع عملیات خود را به modal اعلام نمی‌کردند. |
+| اصلاح | modal اکنون `data-confirm-title`، `data-confirm-ok-label` و `data-confirm-tone` را از فرم می‌خواند. ایجاد backup دکمهٔ «ایجاد backup»، restore دکمهٔ «بازیابی» و حذف backup دکمهٔ «حذف backup» دارد. برای حفظ validation بومی فرم، از `requestSubmit()` با bypass کنترل‌شده استفاده می‌شود. |
+| آزمون | PASS؛ regression تست metadata، PHPUnit با ۹ تست و ۲۹ assertion، PHPStan، lint و diff check موفق شدند. |
+| وضعیت | رفع شد و در patch v2.1.1 منتشر می‌شود. |

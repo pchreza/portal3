@@ -570,7 +570,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                     <h4 class="font-bold text-slate-800">ایجاد backup کامل</h4>
                                     <p class="text-sm text-slate-500 mt-1 leading-relaxed">شامل جداول و داده‌های دیتابیس، فایل‌های PHP، assetها، uploadها و تنظیمات پروژه است. پوشهٔ backupهای قبلی داخل archive قرار نمی‌گیرد.</p>
                                 </div>
-                                <form method="post" data-confirm-msg="یک backup کامل از وضعیت فعلی ساخته شود؟">
+                                <form method="post" data-confirm-msg="یک backup کامل از وضعیت فعلی ساخته شود؟" data-confirm-title="تأیید ایجاد backup" data-confirm-ok-label="ایجاد backup" data-confirm-tone="primary">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="save_type" value="create_backup">
                                     <button type="submit" class="btn btn-primary w-full"><?= icon('file-plus') ?><span>ساخت backup جدید</span></button>
@@ -582,7 +582,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                     <h4 class="font-bold text-slate-800">Restore از فایل backup</h4>
                                     <p class="text-sm text-slate-500 mt-1 leading-relaxed">این عملیات دیتابیس و فایل‌های پروژه را جایگزین می‌کند. فقط backup تولیدشده توسط Portal3 را انتخاب کنید.</p>
                                 </div>
-                                <form method="post" enctype="multipart/form-data" class="space-y-4" data-confirm-msg="این عملیات دیتابیس و فایل‌های پروژه را restore می‌کند. ادامه می‌دهید؟">
+                                <form method="post" enctype="multipart/form-data" class="space-y-4" data-confirm-msg="این عملیات دیتابیس و فایل‌های پروژه را restore می‌کند. ادامه می‌دهید؟" data-confirm-title="تأیید بازیابی سیستم" data-confirm-ok-label="بازیابی" data-confirm-tone="danger">
                                     <?= csrf_input() ?>
                                     <input type="hidden" name="save_type" value="restore_backup">
                                     <div>
@@ -618,7 +618,7 @@ render_admin_header('تنظیمات سیستم', 'p-8 max-w-4xl w-full mx-auto s
                                                 <td class="p-4 whitespace-nowrap" dir="ltr"><?= htmlspecialchars(date('Y-m-d H:i', $backup['modified'])) ?></td>
                                                 <td class="p-4"><div class="flex flex-wrap gap-2">
                                                     <a class="btn btn-secondary btn-sm" href="settings.php?tab=backups&amp;download_backup=<?= rawurlencode($backup['filename']) ?>"><?= icon('file', 'w-4 h-4') ?><span>دانلود</span></a>
-                                                    <form method="post" data-confirm-msg="این backup حذف شود؟">
+                                                    <form method="post" data-confirm-msg="این backup حذف شود؟" data-confirm-title="تأیید حذف backup" data-confirm-ok-label="حذف backup" data-confirm-tone="danger">
                                                         <?= csrf_input() ?>
                                                         <input type="hidden" name="save_type" value="delete_backup">
                                                         <input type="hidden" name="backup_name" value="<?= htmlspecialchars($backup['filename']) ?>">

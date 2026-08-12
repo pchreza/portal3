@@ -1,6 +1,6 @@
 # پورتال مشتریان Portal3
 
-**نسخهٔ فعلی:** `2.1.0`
+**نسخهٔ فعلی:** `2.1.1`
 **نوع سیستم:** پورتال مشتریان تحت وب با PHP و MariaDB/MySQL
 **زبان رابط کاربری:** فارسی و راست‌به‌چپ (RTL)
 **مخزن رسمی:** [github.com/pchreza/portal3](https://github.com/pchreza/portal3)
@@ -106,7 +106,7 @@ XAMPP:   C:\xampp\htdocs\portal3
 
 ```bash
 cd /c/laragon/www
-unzip /مسیر/portal3-v2.1.0-clean-20260812.zip
+unzip /مسیر/portal3-v2.1.1-clean-20260812.zip
 cd portal3
 ```
 
@@ -217,7 +217,7 @@ Migration موفق بود؛ schema version=28.
 
 Migrationها نسخه‌بندی‌شده و idempotent طراحی شده‌اند؛ migrationهای ثبت‌شده دوباره اجرا نمی‌شوند. با این حال، backup دیتابیس قبل از هر upgrade الزامی است.
 
-### ارتقای نسخهٔ v2.1.0 یا بالاتر از نسخه‌های قبلی
+### ارتقای نسخهٔ v2.1.1 یا بالاتر از نسخه‌های قبلی
 
 در برخی دیتابیس‌های قدیمی ممکن است رکوردهای orphan وجود داشته باشد. نسخهٔ فعلی پیش از ایجاد foreign keyهای جدید، این موارد را کنترل می‌کند:
 
@@ -469,7 +469,7 @@ find . -path './vendor' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
 SELECT COALESCE(MAX(version), 0) AS schema_version FROM schema_versions;
 ```
 
-در نسخهٔ `2.1.0` مقدار مورد انتظار `28` است.
+در نسخهٔ `2.1.1` مقدار مورد انتظار `28` است.
 
 ## رفع خطاهای رایج
 
