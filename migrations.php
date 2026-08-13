@@ -8,7 +8,7 @@
 
 /** آخرین نسخه اسکیمای دیتابیس — هنگام افزودن مهاجرت جدید، این عدد را یک واحد زیاد کنید. */
 if (!defined('PORTAL_SCHEMA_VERSION')) {
-    define('PORTAL_SCHEMA_VERSION', 31);
+    define('PORTAL_SCHEMA_VERSION', 32);
 }
 
 function portal_column_exists(PDO $db, string $table, string $column): bool {
@@ -606,6 +606,10 @@ function portal_migrations(PDO $pdo): void {
             31=>function($db){
                 // قرارداد جدید تنظیمات: امتیاز مثبت یعنی فعال؛ صفر یعنی خاموش.
                 $db->exec("UPDATE gamification_rules SET is_active = IF(points > 0, 1, 0)");
+            },
+            32=>function($db){
+                // پشتیبانی از مقیاس رضایت توصیفی پنج‌گزینه‌ای در نصب‌های موجود.
+                $db->exec("ALTER TABLE survey_questions MODIFY question_type ENUM('rating_1_10','yes_no','star_rating','satisfaction_5') NOT NULL");
             }
         ];
         // گارد: مطمئن شو ثابت نسخه با بالاترین مهاجرت هماهنگ است

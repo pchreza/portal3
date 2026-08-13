@@ -176,20 +176,20 @@ $projects = $pdo->query("
 
             <?php if ($action === 'add' || $action === 'edit'): ?>
                 <!-- فرم پروژه — طراحی جدید -->
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="portal-form-card card overflow-hidden">
                     <!-- هدر فرم -->
-                    <div class="bg-gradient-to-l from-indigo-600 to-violet-600 px-6 py-5 flex items-center justify-between">
+                    <div class="portal-form-header flex items-center justify-between gap-4">
                         <div class="flex items-center gap-3 text-white">
-                            <span class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><?= icon('folder','w-5 h-5') ?></span>
+                            <span class="portal-form-icon"><?= icon('folder','w-5 h-5') ?></span>
                             <div>
                                 <h3 class="font-bold text-lg"><?php echo $action === 'edit' ? 'ویرایش پروژه' : 'تعریف پروژه جدید'; ?></h3>
-                                <p class="text-indigo-100 text-xs mt-0.5"><?php echo $action === 'edit' ? 'اطلاعات پروژه را به‌روزرسانی کنید' : 'پروژه را ثبت و به مشتری منتسب کنید'; ?></p>
+                                <p class="portal-form-subtitle"><?php echo $action === 'edit' ? 'اطلاعات پروژه را به‌روزرسانی کنید' : 'پروژه را ثبت و به مشتری منتسب کنید'; ?></p>
                             </div>
                         </div>
-                        <a href="projects.php" class="text-xs bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition cursor-pointer">← بازگشت به لیست</a>
+                            <a href="projects.php" class="btn btn-sm portal-form-back">← بازگشت به لیست</a>
                     </div>
 
-                    <form method="POST" class="p-6 md:p-8" enctype="multipart/form-data" novalidate>
+                    <form method="POST" class="portal-form-body" enctype="multipart/form-data" novalidate>
 <div class="form-error-summary" style="display:none" role="alert"></div>
                         <?php echo csrf_input(); ?>
                         <?php if ($edit_project): ?>
@@ -199,14 +199,15 @@ $projects = $pdo->query("
                         <!-- بخش ۱: انتصاب و اطلاعات پایه -->
                         <div class="mb-8">
                             <div class="flex items-center gap-2 mb-4">
-                                <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">۱</span>
-                                <h4 class="font-bold text-slate-800">اطلاعات پایه و انتصاب</h4>
+                                <span class="portal-form-step">۱</span>
+                                <h4 class="portal-form-section-title">اطلاعات پایه و انتصاب</h4>
                             </div>
-                            <div class="bg-slate-50/70 border border-slate-100 rounded-2xl p-5 space-y-5">
+                            <div class="portal-form-section-panel space-y-5">
                                 <div>
-                                    <label class="label">انتصاب به مشتری<span class="required-star" aria-hidden="true">*</span></label>
-                                    <input type="search" id="customer_search" autocomplete="off" placeholder="جستجو: نام، نام کاربری، شرکت یا موبایل..." class="w-full px-4 py-3 mb-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
-                                    <select name="customer_id" id="customer_id" required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                                    <label class="label" for="customer_id">انتصاب به مشتری<span class="required-star" aria-hidden="true">*</span></label>
+                                    <label class="helper portal-search-label" for="customer_search">جستجوی مشتری بر اساس نام، نام کاربری یا شرکت</label>
+                                    <input type="search" id="customer_search" autocomplete="off" placeholder="جستجو: نام، نام کاربری، شرکت یا موبایل..." class="input portal-form-control mb-2">
+                                    <select name="customer_id" id="customer_id" required class="input portal-form-control">
                                         <option value="">انتخاب مشتری...</option>
                                         <?php foreach ($customers as $c): ?>
                                             <option value="<?php echo $c['id']; ?>" <?php echo (($edit_project['customer_id'] ?? '') == $c['id']) ? 'selected' : ''; ?>>
@@ -217,12 +218,12 @@ $projects = $pdo->query("
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">📝 عنوان پروژه <span class="text-red-500">*</span></label>
-                                    <input type="text" name="title" value="<?php echo htmlspecialchars($edit_project['title'] ?? ''); ?>" required placeholder="مثلا: طراحی سایت فروشگاهی" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                                    <label class="label" for="project_title">عنوان پروژه <span class="required-star" aria-hidden="true">*</span></label>
+                                    <input type="text" id="project_title" name="title" value="<?php echo htmlspecialchars($edit_project['title'] ?? ''); ?>" required placeholder="مثلاً: طراحی سایت فروشگاهی" class="input portal-form-control">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">📄 توضیحات پروژه</label>
-                                    <textarea name="description" rows="4" placeholder="شرح مختصری از پروژه بنویسید..." class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"><?php echo htmlspecialchars($edit_project['description'] ?? ''); ?></textarea>
+                                    <label class="label" for="project_description">توضیحات پروژه</label>
+                                    <textarea id="project_description" name="description" rows="4" placeholder="شرح مختصری از پروژه بنویسید..." class="input portal-form-control"><?php echo htmlspecialchars($edit_project['description'] ?? ''); ?></textarea>
                                 </div>
                             </div>
                         </div>
@@ -230,23 +231,23 @@ $projects = $pdo->query("
                         <!-- بخش ۲: وضعیت و تاریخ -->
                         <div class="mb-8">
                             <div class="flex items-center gap-2 mb-4">
-                                <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold">۲</span>
-                                <h4 class="font-bold text-slate-800">وضعیت و زمان‌بندی</h4>
+                                <span class="portal-form-step portal-form-step-success">۲</span>
+                                <h4 class="portal-form-section-title">وضعیت و زمان‌بندی</h4>
                             </div>
-                            <div class="bg-slate-50/70 border border-slate-100 rounded-2xl p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="portal-form-section-panel grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">📌 وضعیت پروژه</label>
-                                    <select name="status" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                                    <label class="label" for="project_status">وضعیت پروژه</label>
+                                    <select name="status" id="project_status" class="input portal-form-control">
                                         <option value="pending" <?php echo (($edit_project['status'] ?? '') === 'pending') ? 'selected' : ''; ?>>در انتظار شروع</option>
                                         <option value="in_progress" <?php echo (($edit_project['status'] ?? 'in_progress') === 'in_progress') ? 'selected' : ''; ?>>در حال انجام</option>
                                         <option value="completed" <?php echo (($edit_project['status'] ?? '') === 'completed') ? 'selected' : ''; ?>>تکمیل شده</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1.5">🗓️ تاریخ تکمیل پروژه</label>
+                                    <label class="label" for="deadline">تاریخ تکمیل پروژه</label>
                                     <div class="flex flex-wrap sm:flex-nowrap gap-2 items-stretch">
-                                        <input type="text" name="deadline" id="deadline" data-jdp data-jdp-min-date="today" readonly dir="ltr" value="<?php echo htmlspecialchars(portal_date_to_display((string) ($edit_project['deadline'] ?? ''))); ?>" class="value-ltr flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white cursor-pointer" placeholder="انتخاب تاریخ شمسی">
-                                        <button type="button" class="jdp-trigger shrink-0 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-2 rounded-xl transition cursor-pointer" aria-label="انتخاب تاریخ" data-target="deadline"><?= icon('calendar') ?></button>
+                                        <input type="text" name="deadline" id="deadline" data-jdp data-jdp-min-date="today" readonly dir="ltr" value="<?php echo htmlspecialchars(portal_date_to_display((string) ($edit_project['deadline'] ?? ''))); ?>" class="input portal-form-control value-ltr flex-1 min-w-0 cursor-pointer" placeholder="انتخاب تاریخ شمسی">
+                                        <button type="button" class="jdp-trigger btn btn-secondary btn-icon shrink-0" aria-label="انتخاب تاریخ" data-target="deadline"><?= icon('calendar') ?></button>
                                     </div>
                                 </div>
                             </div>
@@ -255,12 +256,12 @@ $projects = $pdo->query("
                         <!-- بخش ۳: تصویر -->
                         <div class="mb-8">
                             <div class="flex items-center gap-2 mb-4">
-                                <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm font-bold">۳</span>
-                                <h4 class="font-bold text-slate-800">تصویر پروژه</h4>
+                                <span class="portal-form-step portal-form-step-accent">۳</span>
+                                <h4 class="portal-form-section-title">تصویر پروژه</h4>
                             </div>
-                            <div class="bg-slate-50/70 border border-slate-100 rounded-2xl p-5">
-                                <div class="flex items-center gap-5">
-                                    <div class="w-28 h-28 rounded-xl border-2 border-dashed border-slate-300 bg-white overflow-hidden flex-shrink-0 flex items-center justify-center">
+                            <div class="portal-form-section-panel">
+                                <div class="portal-upload-layout">
+                                    <div class="portal-image-preview">
                                         <?php if (!empty($edit_project['image'])): ?>
                                             <img src="<?= htmlspecialchars(asset_url($edit_project['image'])) ?>" class="w-full h-full object-cover" alt="عکس پروژه">
                                         <?php else: ?>
@@ -268,9 +269,9 @@ $projects = $pdo->query("
                                         <?php endif; ?>
                                     </div>
                                     <div class="space-y-3 flex-1">
-                                        <label class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-medium cursor-pointer hover:bg-indigo-100 transition">
+                                        <label class="btn btn-secondary portal-upload-trigger" for="project_image">
                                             <?= icon('folder') ?><span>انتخاب فایل</span>
-                                            <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif,.svg" class="hidden">
+                                            <input type="file" id="project_image" name="image" accept=".png,.jpg,.jpeg,.webp,.gif,.svg" aria-label="تصویر پروژه" class="hidden">
                                         </label>
                                         <input type="hidden" name="current_image" value="<?= htmlspecialchars($edit_project['image'] ?? '') ?>">
                                         <p class="text-xs text-slate-400">فرمت‌های مجاز: png / jpg / webp / svg — حداکثر ۴MB</p>
@@ -289,17 +290,17 @@ $projects = $pdo->query("
                         <?php if ($custom_fields_html): ?>
                         <div class="mb-8">
                             <div class="flex items-center gap-2 mb-4">
-                                <span class="w-7 h-7 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-bold">۴</span>
-                                <h4 class="font-bold text-slate-800">فیلدهای تکمیلی</h4>
+                                <span class="portal-form-step portal-form-step-muted">۴</span>
+                                <h4 class="portal-form-section-title">فیلدهای تکمیلی</h4>
                             </div>
-                            <div class="bg-slate-50/70 border border-slate-100 rounded-2xl p-5">
+                            <div class="portal-form-section-panel">
                                 <?php echo $custom_fields_html; ?>
                             </div>
                         </div>
                         <?php endif; ?>
 
                         <!-- دکمه‌ها -->
-                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-slate-100">
+                        <div class="portal-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                             <a href="projects.php" class="btn btn-secondary">انصراف</a>
                             <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره پروژه</span></button>
                         </div>

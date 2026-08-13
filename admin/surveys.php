@@ -81,8 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = 'فرم با موفقیت ویرایش شد.';
         }
     } elseif ($a === 'question') {
-        $allowed_qtypes = ['rating_1_10', 'yes_no', 'star_rating'];
-        $qtype = in_array($_POST['question_type'] ?? '', $allowed_qtypes, true) ? $_POST['question_type'] : 'yes_no';
+        $allowed_qtypes = array_keys(survey_question_types());
+        $qtype = in_array($_POST['question_type'] ?? '', $allowed_qtypes, true) ? (string) $_POST['question_type'] : 'yes_no';
         $q = $pdo->prepare("INSERT INTO survey_questions (survey_id, question_text, question_type) VALUES (?, ?, ?)");
         $q->execute([(int) ($_POST['survey_id'] ?? 0), trim($_POST['question_text'] ?? ''), $qtype]);
         $msg = 'سؤال اضافه شد.';
@@ -98,8 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($a === 'update_question') {
         $qid = (int) ($_POST['question_id'] ?? 0);
         $qtext = trim($_POST['question_text'] ?? '');
-        $allowed_qtypes = ['rating_1_10', 'yes_no', 'star_rating'];
-        $qtype = in_array($_POST['question_type'] ?? '', $allowed_qtypes, true) ? $_POST['question_type'] : 'yes_no';
+        $allowed_qtypes = array_keys(survey_question_types());
+        $qtype = in_array($_POST['question_type'] ?? '', $allowed_qtypes, true) ? (string) $_POST['question_type'] : 'yes_no';
         if ($qid > 0 && $qtext !== '') {
             $pdo->prepare('UPDATE survey_questions SET question_text = ?, question_type = ? WHERE id = ?')->execute([$qtext, $qtype, $qid]);
             $msg = 'سؤال ویرایش شد.';
@@ -195,10 +195,13 @@ if ($result_id) {
             foreach ($stats_rows as $row) {
                 $k = $row['id'];
                 if (!isset($stats[$k])) {
-                    $stats[$k] = ['text' => $row['question_text'], 'type' => $row['question_type'], 'sum' => 0, 'count' => 0, 'yes' => 0, 'no' => 0];
+                    $stats[$k] = ['text' => $row['question_text'], 'type' => $row['question_type'], 'sum' => 0, 'count' => 0, 'yes' => 0, 'no' => 0, 'distribution' => []];
                 }
                 if ($row['question_type'] === 'yes_no') {
                     if ($row['answer_value'] === 'بله') { $stats[$k]['yes']++; } else { $stats[$k]['no']++; }
+                } elseif ($row['question_type'] === 'satisfaction_5') {
+                    $answerKey = (string) $row['answer_value'];
+                    $stats[$k]['distribution'][$answerKey] = ($stats[$k]['distribution'][$answerKey] ?? 0) + 1;
                 } else {
                     $stats[$k]['sum'] += (float) $row['answer_value'];
                     $stats[$k]['count']++;
@@ -208,11 +211,10 @@ if ($result_id) {
     }
 }
 
-$question_type_labels = [
-    'rating_1_10' => 'امتیاز ۱ تا ۱۰',
-    'yes_no'      => 'بله / خیر',
-    'star_rating' => 'ستاره‌ای',
-];
+$question_type_labels = array_map(
+    static fn (array $type): string => $type['label'],
+    survey_question_types()
+);
 
 render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admin-page portal-surveys-page p-8 max-w-7xl w-full mx-auto space-y-6');
 ?>
@@ -228,11 +230,11 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                 <!-- ===== گزارش پاسخ‌ها ===== -->
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-bold text-slate-800">گزارش پاسخ‌ها: <bdi dir="auto"><?= htmlspecialchars($form['title']) ?></bdi></h3>
-                    <a href="surveys.php" class="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg font-medium">بازگشت به لیست</a>
+                    <a href="surveys.php" class="btn btn-sm btn-secondary">بازگشت به لیست</a>
                 </div>
 
                 <!-- فیلتر -->
-                <form method="get" class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-wrap items-end gap-3">
+                <form method="get" class="portal-survey-filter card p-5 flex flex-wrap items-end gap-3">
                     <input type="hidden" name="results" value="<?= $result_id ?>">
                     <div>
                         <label class="block text-xs text-slate-500 mb-1" for="survey_filter_customer">شناسه مشتری</label>
@@ -269,6 +271,12 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                                     <span class="text-slate-500 font-medium">
                                         <?php if ($st['type'] === 'yes_no'): ?>
                                             بله: <b class="text-emerald-600 value-ltr" dir="ltr"><?= $st['yes'] ?></b> | خیر: <b class="text-red-500 value-ltr" dir="ltr"><?= $st['no'] ?></b>
+                                        <?php elseif ($st['type'] === 'satisfaction_5'): ?>
+                                            <span class="survey-stats-distribution">
+                                                <?php foreach (survey_satisfaction_options() as $answerKey => $answerLabel): ?>
+                                                    <span class="survey-stats-chip"><span><?= e($answerLabel) ?></span><b class="value-ltr" dir="ltr"><?= (int) ($st['distribution'][$answerKey] ?? 0) ?></b></span>
+                                                <?php endforeach; ?>
+                                            </span>
                                         <?php else: ?>
                                             میانگین: <b class="text-indigo-700 value-ltr" dir="ltr"><?= number_format($st['count'] ? $st['sum'] / $st['count'] : 0, 2) ?></b> از <span class="value-ltr" dir="ltr"><?= $st['type'] === 'rating_1_10' ? 10 : 5 ?></span>
                                         <?php endif; ?>
@@ -288,13 +296,13 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                         <p class="text-xs text-slate-500 mb-3">مربوط به: <b class="text-slate-700"><bdi dir="auto"><?= htmlspecialchars($r['entity_title'] ?? 'حذف‌شده') ?></bdi></b></p>
                         <div class="space-y-2">
                             <?php
-                            $aa = $pdo->prepare("SELECT q.question_text, a.answer_value FROM survey_answers a JOIN survey_questions q ON q.id = a.question_id WHERE a.response_id = ? ORDER BY q.id");
+                            $aa = $pdo->prepare("SELECT q.question_text, q.question_type, a.answer_value FROM survey_answers a JOIN survey_questions q ON q.id = a.question_id WHERE a.response_id = ? ORDER BY q.id");
                             $aa->execute([$r['id']]);
                             foreach ($aa->fetchAll() as $ans):
                             ?>
                                 <div class="bg-slate-50 rounded-lg p-3 text-sm flex items-center justify-between">
                                     <span class="text-slate-600"><bdi dir="auto"><?= htmlspecialchars($ans['question_text']) ?></bdi></span>
-                                    <span class="text-indigo-700 font-medium"><bdi dir="auto"><?= htmlspecialchars($ans['answer_value']) ?></bdi></span>
+                                    <span class="text-indigo-700 font-medium"><bdi dir="auto"><?= htmlspecialchars(survey_answer_label((string) ($ans['question_type'] ?? ''), (string) $ans['answer_value'])) ?></bdi></span>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -307,7 +315,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
 
             <?php elseif ($edit && $form): ?>
                 <!-- ===== مدیریت سؤال‌های فرم ===== -->
-                <div class="flex items-center justify-between">
+                <div class="portal-survey-page-header flex items-center justify-between gap-4">
                     <h3 class="text-lg font-bold text-slate-800">سؤالات: <bdi dir="auto"><?= htmlspecialchars($form['title']) ?></bdi></h3>
                     <div class="flex flex-wrap gap-2">
                         <a href="surveys.php?edit=<?= $edit ?>" class="btn btn-sm btn-secondary"><?= icon('edit') ?><span>ویرایش فرم</span></a>
@@ -316,22 +324,28 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <h4 class="font-bold text-slate-800 mb-4">افزودن سؤال جدید</h4>
+                <div class="portal-survey-author-card card p-6 shadow-sm">
+                    <div class="portal-panel-heading">
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-1">افزودن سؤال جدید</h4>
+                            <p class="helper">نوع نمایش پاسخ را متناسب با هدف سؤال انتخاب کنید.</p>
+                        </div>
+                    </div>
                     <form method="post" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                         <?php echo csrf_input(); ?>
                         <input type="hidden" name="action" value="question">
                         <input type="hidden" name="survey_id" value="<?= $edit ?>">
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-slate-700 mb-1" for="survey_question_new">متن سؤال *</label>
-                            <textarea id="survey_question_new" name="question_text" required dir="auto" placeholder="متن سؤال" rows="2" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"></textarea>
+                            <textarea id="survey_question_new" name="question_text" required dir="auto" placeholder="متن سؤال" rows="2" class="input portal-form-control"></textarea>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1" for="survey_question_type_new">نوع سؤال</label>
-                            <select id="survey_question_type_new" name="question_type" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                            <select id="survey_question_type_new" name="question_type" class="input portal-form-control">
                                 <option value="rating_1_10">امتیاز ۱ تا ۱۰</option>
                                 <option value="yes_no">بله / خیر</option>
-                                <option value="star_rating">ستاره‌ای</option>
+                                <option value="star_rating">امتیاز ستاره‌ای ۱ تا ۵</option>
+                                <option value="satisfaction_5">رضایت‌سنجی: عالی تا بد</option>
                             </select>
                         </div>
                         <div class="md:col-span-3 flex justify-end">
@@ -340,13 +354,13 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                     </form>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="portal-question-list card shadow-sm overflow-hidden">
                     <?php if (empty($questions)): ?>
                         <p class="p-8 text-center text-slate-400 text-sm">هنوز سؤالی برای این فرم ثبت نشده است.</p>
                     <?php else: ?>
                         <div class="divide-y divide-slate-100">
                             <?php foreach ($questions as $i => $item): ?>
-                                <div class="px-6 py-4" data-question-item="<?= $item['id'] ?>">
+                                <div class="portal-question-item px-6 py-4" data-question-item="<?= $item['id'] ?>">
                                     <div class="flex items-center justify-between gap-3">
                                         <div>
                                             <div class="font-medium text-slate-800 text-sm"><span class="value-ltr" dir="ltr"><?= $i + 1 ?>.</span> <bdi dir="auto"><?= htmlspecialchars($item['question_text']) ?></bdi></div>
@@ -363,21 +377,22 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                                         </div>
                                     </div>
                                     <!-- فرم ویرایش سؤال -->
-                                    <div id="qedit-<?= $item['id'] ?>" class="hidden mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                    <div id="qedit-<?= $item['id'] ?>" class="portal-question-edit hidden mt-3 p-4 rounded-xl border">
                                         <form method="post" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                                             <?php echo csrf_input(); ?>
                                             <input type="hidden" name="action" value="update_question">
                                             <input type="hidden" name="question_id" value="<?= $item['id'] ?>">
                                             <div class="md:col-span-2">
                                                 <label class="block text-sm font-medium text-slate-700 mb-1" for="survey_question_<?= $item['id'] ?>">متن سؤال</label>
-                                                <textarea id="survey_question_<?= $item['id'] ?>" name="question_text" required dir="auto" rows="2" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"><?= htmlspecialchars($item['question_text']) ?></textarea>
+                                                <textarea id="survey_question_<?= $item['id'] ?>" name="question_text" required dir="auto" rows="2" class="input portal-form-control"><?= htmlspecialchars($item['question_text']) ?></textarea>
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-slate-700 mb-1" for="survey_question_type_<?= $item['id'] ?>">نوع سؤال</label>
-                                                <select id="survey_question_type_<?= $item['id'] ?>" name="question_type" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                                                <select id="survey_question_type_<?= $item['id'] ?>" name="question_type" class="input portal-form-control">
                                                     <option value="rating_1_10" <?= $item['question_type'] === 'rating_1_10' ? 'selected' : '' ?>>امتیاز ۱ تا ۱۰</option>
                                                     <option value="yes_no" <?= $item['question_type'] === 'yes_no' ? 'selected' : '' ?>>بله / خیر</option>
-                                                    <option value="star_rating" <?= $item['question_type'] === 'star_rating' ? 'selected' : '' ?>>ستاره‌ای</option>
+                                                    <option value="star_rating" <?= $item['question_type'] === 'star_rating' ? 'selected' : '' ?>>امتیاز ستاره‌ای ۱ تا ۵</option>
+                                                    <option value="satisfaction_5" <?= $item['question_type'] === 'satisfaction_5' ? 'selected' : '' ?>>رضایت‌سنجی: عالی تا بد</option>
                                                 </select>
                                             </div>
                                             <div class="md:col-span-3 flex justify-end gap-2">
@@ -394,15 +409,15 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
 
             <?php elseif ($edit_survey && $form): ?>
                 <!-- ===== ویرایش فرم (اطلاعات اصلی) ===== -->
-                <div class="flex items-center justify-between">
+                <div class="portal-survey-page-header flex items-center justify-between gap-4">
                     <h3 class="text-lg font-bold text-slate-800">ویرایش فرم نظرسنجی</h3>
                     <div class="flex gap-2">
-                        <a href="surveys.php?questions=<?= $edit_survey ?>" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-lg transition">ویرایش سؤال‌ها</a>
-                        <a href="surveys.php" class="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg font-medium">بازگشت به لیست</a>
+                        <a href="surveys.php?questions=<?= $edit_survey ?>" class="btn btn-sm btn-secondary">ویرایش سؤال‌ها</a>
+                        <a href="surveys.php" class="btn btn-sm btn-secondary">بازگشت به لیست</a>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm max-w-3xl">
+                <div class="portal-survey-form-card card p-6 md:p-8 shadow-sm max-w-3xl">
                     <form method="post" class="space-y-6">
                         <?php echo csrf_input(); ?>
                         <input type="hidden" name="action" value="update">
@@ -410,17 +425,17 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1.5" for="survey_title">عنوان فرم *</label>
-                            <input type="text" id="survey_title" name="title" required dir="auto" value="<?= htmlspecialchars($form['title']) ?>" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                            <input type="text" id="survey_title" name="title" required dir="auto" value="<?= htmlspecialchars($form['title']) ?>" class="input portal-form-control">
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1.5" for="survey_description">توضیحات</label>
-                            <textarea id="survey_description" name="description" rows="3" dir="auto" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="توضیح کوتاه درباره هدف این نظرسنجی"><?= htmlspecialchars($form['description']) ?></textarea>
+                            <textarea id="survey_description" name="description" rows="3" dir="auto" class="input portal-form-control" placeholder="توضیح کوتاه درباره هدف این نظرسنجی"><?= htmlspecialchars($form['description']) ?></textarea>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1.5">نوع فرم</label>
-                            <div class="px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-500 flex items-center gap-2">
+                            <div class="portal-survey-type-summary flex items-center gap-2">
                                 <?php if ($form['target_entity'] === 'product'): ?>
                                     <span class="bg-amber-50 text-amber-700 text-xs px-2.5 py-0.5 rounded-full font-medium">محصول</span>
                                 <?php else: ?>
@@ -430,15 +445,15 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                             </div>
                         </div>
 
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" id="survey_periodic" name="is_periodic" value="1" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" <?= $form['is_periodic'] ? 'checked' : '' ?> data-periodic-toggle>
+                        <label class="portal-checkbox-row flex items-center gap-3 cursor-pointer" for="survey_periodic">
+                            <input type="checkbox" id="survey_periodic" name="is_periodic" value="1" class="accent-indigo-600 w-4 h-4 rounded border-slate-300" <?= $form['is_periodic'] ? 'checked' : '' ?> data-periodic-toggle>
                             <span class="text-sm font-medium text-slate-700">فرم دوره‌ای (بعد از تکمیل فرم اولیه، دوباره فعال می‌شود)</span>
                         </label>
 
-                        <div id="period" <?= $form['is_periodic'] ? '' : 'hidden' ?> class="bg-slate-50 rounded-xl p-5 space-y-4 border border-slate-200">
+                        <div id="period" <?= $form['is_periodic'] ? '' : 'hidden' ?> class="portal-survey-period-panel space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5" for="survey_parent">فرم اولیه مرتبط</label>
-                                <select id="survey_parent" name="parent_survey_id" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                                <select id="survey_parent" name="parent_survey_id" class="input portal-form-control">
                                     <option value="0">انتخاب کنید</option>
                                     <?php foreach ($parents as $p): ?>
                                         <option value="<?= $p['id'] ?>" <?= ((int) $form['parent_survey_id'] === (int) $p['id']) ? 'selected' : '' ?>>
@@ -449,7 +464,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5" for="survey_delay_days">تعداد روز پس از تکمیل فرم اولیه</label>
-                                <input type="number" id="survey_delay_days" name="delay_days" min="1" value="<?= (int) $form['delay_days'] ?>" dir="ltr" class="value-ltr w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                                <input type="number" id="survey_delay_days" name="delay_days" min="1" value="<?= (int) $form['delay_days'] ?>" dir="ltr" class="input portal-form-control value-ltr">
                             </div>
                         </div>
 
@@ -462,43 +477,43 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
 
             <?php elseif ($show_create): ?>
                 <!-- ===== ساخت فرم جدید ===== -->
-                <div class="flex items-center justify-between">
+                <div class="portal-survey-page-header flex items-center justify-between gap-4">
                     <h3 class="text-lg font-bold text-slate-800">ساخت فرم نظرسنجی جدید</h3>
-                    <a href="surveys.php" class="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg font-medium">بازگشت به لیست</a>
+                    <a href="surveys.php" class="btn btn-sm btn-secondary">بازگشت به لیست</a>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm max-w-3xl">
+                <div class="portal-survey-form-card card p-6 md:p-8 shadow-sm max-w-3xl">
                     <form method="post" class="space-y-6">
                         <?php echo csrf_input(); ?>
                         <input type="hidden" name="action" value="create">
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1.5" for="survey_title">عنوان فرم *</label>
-                            <input type="text" id="survey_title" name="title" required dir="auto" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="مثلا: نظرسنجی رضایت از پروژه">
+                            <input type="text" id="survey_title" name="title" required dir="auto" class="input portal-form-control" placeholder="مثلا: نظرسنجی رضایت از پروژه">
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1.5" for="survey_description">توضیحات</label>
-                            <textarea id="survey_description" name="description" rows="3" dir="auto" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="توضیح کوتاه درباره هدف این نظرسنجی"></textarea>
+                            <textarea id="survey_description" name="description" rows="3" dir="auto" class="input portal-form-control" placeholder="توضیح کوتاه درباره هدف این نظرسنجی"></textarea>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1.5" for="survey_target_entity">نوع فرم</label>
-                            <select id="survey_target_entity" name="target_entity" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                            <select id="survey_target_entity" name="target_entity" class="input portal-form-control">
                                 <option value="project">فرم پروژه</option>
                                 <option value="product">فرم محصول</option>
                             </select>
                         </div>
 
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" id="survey_periodic" name="is_periodic" value="1" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" data-periodic-toggle>
+                        <label class="portal-checkbox-row flex items-center gap-3 cursor-pointer" for="survey_periodic">
+                            <input type="checkbox" id="survey_periodic" name="is_periodic" value="1" class="accent-indigo-600 w-4 h-4 rounded border-slate-300" data-periodic-toggle>
                             <span class="text-sm font-medium text-slate-700">فرم دوره‌ای (بعد از تکمیل فرم اولیه، دوباره فعال می‌شود)</span>
                         </label>
 
-                        <div id="period" hidden class="bg-slate-50 rounded-xl p-5 space-y-4 border border-slate-200">
+                        <div id="period" hidden class="portal-survey-period-panel space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5" for="survey_parent">فرم اولیه مرتبط</label>
-                                <select id="survey_parent" name="parent_survey_id" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                                <select id="survey_parent" name="parent_survey_id" class="input portal-form-control">
                                     <option value="0">انتخاب کنید</option>
                                     <?php foreach ($parents as $p): ?>
                                         <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['title']) ?> (<?= $p['target_entity'] === 'product' ? 'محصول' : 'پروژه' ?>)</option>
@@ -507,7 +522,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5" for="survey_delay_days">تعداد روز پس از تکمیل فرم اولیه</label>
-                                <input type="number" id="survey_delay_days" name="delay_days" min="1" value="30" dir="ltr" class="value-ltr w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                                <input type="number" id="survey_delay_days" name="delay_days" min="1" value="30" dir="ltr" class="input portal-form-control value-ltr">
                             </div>
                         </div>
 

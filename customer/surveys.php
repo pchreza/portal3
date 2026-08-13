@@ -58,14 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assignment_id'])) {
                     }
                     $value = trim((string) $_POST[$key]);
 
-                    if ($q['question_type'] === 'yes_no' && !in_array($value, ['بله', 'خیر'], true)) {
-                        throw new Exception('پاسخ بله یا خیر نامعتبر است.');
-                    }
-                    if ($q['question_type'] === 'rating_1_10' && (!ctype_digit($value) || (int) $value < 1 || (int) $value > 10)) {
-                        throw new Exception('امتیاز باید بین ۱ تا ۱۰ باشد.');
-                    }
-                    if ($q['question_type'] === 'star_rating' && (!ctype_digit($value) || (int) $value < 1 || (int) $value > 5)) {
-                        throw new Exception('امتیاز ستاره‌ای باید بین ۱ تا ۵ باشد.');
+                    if (!survey_answer_is_valid((string) $q['question_type'], $value)) {
+                        throw new Exception('پاسخ سؤال «' . survey_question_type_label((string) $q['question_type']) . '» معتبر نیست.');
                     }
 
                     $ins->execute([$rid, $q['id'], $value]);
@@ -263,6 +257,15 @@ render_customer_header(
                                     </div>
                                     <div class="survey-hint"><span>۱ — کمترین امتیاز</span><span>۵ — بیشترین امتیاز</span></div>
                                 </div>
+
+                            <?php elseif ($q['question_type'] === 'satisfaction_5'): ?>
+                                <div class="satisfaction-scale" role="radiogroup" aria-label="<?= e($q['question_text']) ?>">
+                                    <?php foreach (survey_satisfaction_options() as $answerKey => $answerLabel): ?>
+                                        <input type="radio" id="q<?= $q['id'] ?>_<?= e($answerKey) ?>" name="<?= $fieldName ?>" value="<?= e($answerKey) ?>" aria-label="<?= e($answerLabel) ?>" required>
+                                        <label class="satisfaction-<?= e($answerKey) ?>" for="q<?= $q['id'] ?>_<?= e($answerKey) ?>"><?= icon($answerKey === 'excellent' ? 'star' : ($answerKey === 'bad' ? 'alert' : 'check'), 'w-4 h-4') ?><span><?= e($answerLabel) ?></span></label>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="survey-hint"><span>بد</span><span>عالی</span></div>
 
                             <?php else: ?>
                                 <div class="rating-scale" role="radiogroup" aria-label="<?= e($q['question_text']) ?>">

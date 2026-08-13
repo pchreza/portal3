@@ -178,7 +178,7 @@
                 `id` INT AUTO_INCREMENT PRIMARY KEY,
                 `survey_id` INT NOT NULL,
                 `question_text` TEXT NOT NULL,
-                `question_type` ENUM('rating_1_10', 'yes_no', 'star_rating') NOT NULL,
+                `question_type` ENUM('rating_1_10', 'yes_no', 'star_rating', 'satisfaction_5') NOT NULL,
                 `sort_order` INT DEFAULT 0,
                 FOREIGN KEY (`survey_id`) REFERENCES `surveys`(`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

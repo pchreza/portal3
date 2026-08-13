@@ -106,3 +106,64 @@ function ensure_survey_assignments(int $customer_id): void
         }
     }
 }
+
+
+/** فهرست متمرکز انواع سؤال و metadata قابل‌استفاده در admin/customer/public */
+function survey_question_types(): array
+{
+    return [
+        'rating_1_10' => [
+            'label' => 'امتیاز ۱ تا ۱۰',
+            'kind' => 'numeric',
+        ],
+        'yes_no' => [
+            'label' => 'بله / خیر',
+            'kind' => 'binary',
+        ],
+        'star_rating' => [
+            'label' => 'امتیاز ستاره‌ای ۱ تا ۵',
+            'kind' => 'stars',
+        ],
+        'satisfaction_5' => [
+            'label' => 'رضایت‌سنجی: عالی تا بد',
+            'kind' => 'satisfaction',
+        ],
+    ];
+}
+
+/** @return array<string,string> */
+function survey_satisfaction_options(): array
+{
+    return [
+        'excellent' => 'عالی',
+        'good' => 'خوب',
+        'average' => 'متوسط',
+        'weak' => 'ضعیف',
+        'bad' => 'بد',
+    ];
+}
+
+function survey_question_type_label(string $type): string
+{
+    return survey_question_types()[$type]['label'] ?? 'نوع سؤال نامشخص';
+}
+
+function survey_answer_is_valid(string $type, string $value): bool
+{
+    $value = trim($value);
+    return match ($type) {
+        'yes_no' => in_array($value, ['بله', 'خیر'], true),
+        'rating_1_10' => ctype_digit($value) && (int) $value >= 1 && (int) $value <= 10,
+        'star_rating' => ctype_digit($value) && (int) $value >= 1 && (int) $value <= 5,
+        'satisfaction_5' => array_key_exists($value, survey_satisfaction_options()),
+        default => false,
+    };
+}
+
+function survey_answer_label(string $type, string $value): string
+{
+    if ($type === 'satisfaction_5') {
+        return survey_satisfaction_options()[$value] ?? $value;
+    }
+    return $value;
+}
