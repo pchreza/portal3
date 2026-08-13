@@ -106,7 +106,7 @@ foreach ($override_q->fetchAll() as $override) {
     $user_permission_overrides[(string) $override['user_id']][(string) $override['permission']] = (bool) $override['allowed'];
 }
 
-render_admin_header('مدیریت مدیران سیستم', 'portal-page-main portal-admin-page p-8 max-w-5xl w-full mx-auto space-y-6');
+render_admin_header('مدیریت مدیران سیستم', 'portal-page-main portal-admin-page portal-admins-page p-8 max-w-5xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($msg): ?>
@@ -117,8 +117,8 @@ render_admin_header('مدیریت مدیران سیستم', 'portal-page-main po
             <?php endif; ?>
 
             <!-- افزودن مدیر جدید -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><?= icon('plus','w-5 h-5 text-indigo-600') ?> افزودن مدیر جدید</h3>
+            <div class="card portal-form-card portal-admin-create-card p-6">
+                <div class="portal-section-heading"><h3><?= icon('plus','w-5 h-5 text-indigo-600') ?> افزودن مدیر جدید</h3></div>
                 <form method="post" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <?php echo csrf_input(); ?>
                     <input type="hidden" name="action" value="add">
@@ -149,7 +149,7 @@ render_admin_header('مدیریت مدیران سیستم', 'portal-page-main po
             </div>
 
             <!-- لیست مدیران -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="card portal-list-card overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="table table-card-mobile">
                         <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">
@@ -206,8 +206,8 @@ render_admin_header('مدیریت مدیران سیستم', 'portal-page-main po
             </div>
 
             <!-- تنظیم دسترسی‌های اختصاصی مدیر منتخب -->
-            <section id="perm-box" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6" role="region" aria-labelledby="perm-heading" tabindex="-1">
-                <div class="mb-4 pb-3 border-b border-slate-100 flex items-center justify-between">
+            <section id="perm-box" class="portal-permission-panel hidden card p-6" role="region" aria-labelledby="perm-heading" tabindex="-1">
+                <div class="mb-4 pb-3 border-b border-slate-100 flex items-center justify-between portal-panel-heading">
                     <h3 id="perm-heading" class="text-lg font-bold text-slate-800 flex items-center gap-2"><?= icon('lock','w-5 h-5 text-indigo-600') ?> دسترسی‌های مدیر منتخب</h3>
                     <div class="flex items-center gap-2"><span class="text-xs text-slate-500">برای: <b id="perm-admin-name" class="text-slate-700">—</b></span><button type="button" data-perm-close class="btn btn-icon btn-ghost !w-8 !h-8" aria-label="بستن تنظیمات دسترسی"><?= icon('x','w-4 h-4') ?></button></div>
                 </div>
@@ -219,7 +219,7 @@ render_admin_header('مدیریت مدیران سیستم', 'portal-page-main po
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         <?php foreach (admin_permissions_list() as $pkey => $plabel): ?>
                             <?php if ($pkey === 'admins') continue; ?>
-                            <label class="flex items-center gap-2 p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:border-indigo-300 transition <?= in_array($pkey, $current_perms, true) ? 'bg-indigo-50/40' : '' ?>">
+                            <label class="portal-permission-option flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition <?= in_array($pkey, $current_perms, true) ? 'bg-indigo-50/40' : '' ?>">
                                 <input type="checkbox" data-perm-checkbox data-permission="<?= e($pkey) ?>" name="perms[]" value="<?= e($pkey) ?>" <?= in_array($pkey, $current_perms, true) ? 'checked' : '' ?> class="w-4 h-4 text-indigo-600 rounded border-slate-300">
                                 <span class="text-sm text-slate-700"><?= $plabel ?></span>
                             </label>

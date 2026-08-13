@@ -14,19 +14,17 @@ $logs = $pdo->query("
     LIMIT " . (int) $pi['per_page'] . " OFFSET " . (int) $pi['offset'] . "
 ")->fetchAll();
 ?>
-<?php render_admin_header(
-    'گزارش فعالیت‌ها و تاریخچه سیستم',
-    'portal-page-main portal-admin-page p-8 max-w-7xl w-full mx-auto space-y-6',
+<?php render_admin_header('گزارش فعالیت‌های سیستم', 'portal-page-main portal-admin-page portal-logs-page p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     ''
 ); ?>
 
 
-            <div class="flex items-center justify-between">
+            <div class="portal-list-toolbar flex items-center justify-between gap-4">
                 <h3 class="text-lg font-bold text-slate-800">۱۰۰ فعالیت اخیر سیستم (Audit Trail)</h3>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="card portal-list-card overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="table table-card-mobile">
                         <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">
@@ -52,10 +50,10 @@ $logs = $pdo->query("
                                         <td class="p-4">
                                             <?php 
                                                 $role = $log['role'] ?? 'system';
-                                                if ($role === 'super_admin') echo '<span class="bg-purple-50 text-purple-700 text-xs px-2 py-0.5 rounded font-medium">مدیر ارشد</span>';
-                                                elseif ($role === 'admin') echo '<span class="bg-purple-50 text-purple-700 text-xs px-2 py-0.5 rounded font-medium">ادمین</span>';
-                                                elseif ($role === 'customer') echo '<span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded font-medium">مشتری</span>';
-                                                else echo '<span class="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded">سیستم</span>';
+                                                if ($role === 'super_admin') echo '<span class="badge badge-brand">مدیر ارشد</span>';
+                                                elseif ($role === 'admin') echo '<span class="badge badge-brand">ادمین</span>';
+                                                elseif ($role === 'customer') echo '<span class="badge badge-info">مشتری</span>';
+                                                else echo '<span class="badge badge-muted">سیستم</span>';
                                             ?>
                                         </td>
                                         <td class="p-4 text-slate-700"><?php echo htmlspecialchars($log['action']); ?></td>

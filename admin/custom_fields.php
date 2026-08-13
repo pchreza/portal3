@@ -72,7 +72,7 @@ $fields = $pdo->query("SELECT * FROM custom_fields ORDER BY id DESC")->fetchAll(
 ?>
 <?php render_admin_header(
     'فیلدهای سفارشی پویا (Custom Fields Builder)',
-    'portal-page-main portal-admin-page p-8 max-w-7xl w-full mx-auto space-y-6',
+    'portal-page-main portal-admin-page portal-custom-fields-page p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     ''
 ); ?>
@@ -91,16 +91,19 @@ $fields = $pdo->query("SELECT * FROM custom_fields ORDER BY id DESC")->fetchAll(
             <?php endif; ?>
 
             <?php if ($action === 'add'): ?>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-2xl mx-auto">
-                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
-                        <h3 class="text-lg font-bold text-slate-800">تعریف فیلد سفارشی جدید</h3>
-                        <a href="custom_fields.php" class="text-sm text-slate-500 hover:text-slate-700">بازگشت</a>
+                <div class="card portal-form-card portal-custom-field-form max-w-2xl mx-auto">
+                    <div class="portal-form-header flex items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold">تعریف فیلد سفارشی جدید</h3>
+                            <p class="portal-form-subtitle">فیلد را برای مشتری، پروژه یا محصول تعریف کنید.</p>
+                        </div>
+                        <a href="custom_fields.php" class="btn btn-secondary portal-form-back">بازگشت</a>
                     </div>
 
-                    <form method="POST" class="space-y-6"><?php echo csrf_input(); ?>
+                    <form method="POST" class="portal-form-body space-y-6"><?php echo csrf_input(); ?>
                         <div>
                             <label for="cf-target-entity" class="block text-sm font-medium text-slate-700 mb-1.5">موجودیت هدف *</label>
-                            <select id="cf-target-entity" name="target_entity" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                            <select id="cf-target-entity" name="target_entity" required class="input portal-form-control">
                                 <option value="customer">مشتری (کاربر)</option>
                                 <option value="project">پروژه</option>
                                 <option value="product">محصول</option>
@@ -108,15 +111,15 @@ $fields = $pdo->query("SELECT * FROM custom_fields ORDER BY id DESC")->fetchAll(
                         </div>
                         <div>
                             <label for="cf-field-label" class="block text-sm font-medium text-slate-700 mb-1.5">برچسب نمایشی فیلد (Label) *</label>
-                            <input id="cf-field-label" type="text" name="field_label" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="مثلا: کد ملی یا آدرس دقیق">
+                            <input id="cf-field-label" type="text" name="field_label" required class="input portal-form-control" placeholder="مثلا: کد ملی یا آدرس دقیق">
                         </div>
                         <div>
                             <label for="cf-field-name" class="block text-sm font-medium text-slate-700 mb-1.5">نام سیستمی (انگلیسی، بدون فاصله) *</label>
-                            <input id="cf-field-name" type="text" name="field_name" required dir="ltr" autocomplete="off" spellcheck="false" class="value-ltr w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm font-mono" placeholder="national_code">
+                            <input id="cf-field-name" type="text" name="field_name" required dir="ltr" autocomplete="off" spellcheck="false" class="input portal-form-control value-ltr font-mono" placeholder="national_code">
                         </div>
                         <div>
                             <label for="cf-field-type" class="block text-sm font-medium text-slate-700 mb-1.5">نوع فیلد</label>
-                            <select id="cf-field-type" name="field_type" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                            <select id="cf-field-type" name="field_type" class="input portal-form-control">
                                 <option value="text">متن کوتاه (Text)</option>
                                 <option value="textarea">متن طولانی (Textarea)</option>
                                 <option value="number">عدد (Number)</option>
@@ -124,17 +127,17 @@ $fields = $pdo->query("SELECT * FROM custom_fields ORDER BY id DESC")->fetchAll(
                             </select>
                         </div>
                         <div class="space-y-3 pt-2">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" name="is_required" value="1" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                            <label class="portal-checkbox-row flex items-center gap-3 cursor-pointer" for="cf-is-required">
+                                <input type="checkbox" id="cf-is-required" name="is_required" value="1" class="accent-indigo-600 w-4 h-4 rounded border-slate-300">
                                 <span class="text-sm font-medium text-slate-700">فیلد اجباری باشد؟</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" name="show_in_customer_panel" value="1" checked class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                            <label class="portal-checkbox-row flex items-center gap-3 cursor-pointer" for="cf-show-customer">
+                                <input type="checkbox" id="cf-show-customer" name="show_in_customer_panel" value="1" checked class="accent-indigo-600 w-4 h-4 rounded border-slate-300">
                                 <span class="text-sm font-medium text-slate-700">در پنل مشتری نمایش داده شود؟</span>
                             </label>
                         </div>
 
-                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-200">
+                        <div class="portal-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                             <a href="custom_fields.php" class="btn btn-secondary">انصراف</a>
                             <button type="submit" class="btn btn-primary">ذخیره فیلد سفارشی</button>
                         </div>
@@ -142,14 +145,14 @@ $fields = $pdo->query("SELECT * FROM custom_fields ORDER BY id DESC")->fetchAll(
                 </div>
 
             <?php else: ?>
-                <div class="flex items-center justify-between">
+                <div class="portal-list-toolbar flex items-center justify-between gap-4">
                     <h3 class="text-lg font-bold text-slate-800">لیست فیلدهای سفارشی (<?php echo count($fields); ?>)</h3>
                     <a href="custom_fields.php?action=add" class="btn btn-primary">
                         <?= icon('plus') ?><span>تعریف فیلد جدید</span>
                     </a>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="card portal-list-card overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="table table-card-mobile">
                             <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">

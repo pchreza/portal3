@@ -72,9 +72,9 @@ render_admin_header('پروفایل مدیر سیستم', 'portal-page-main port
             <?php endif; ?>
 
             <!-- اطلاعات مدیر -->
-            <div class="card p-6 md:p-8">
-                <div class="mb-6 pb-4 border-b border-slate-200">
-                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><?= icon('user','w-5 h-5 text-indigo-600') ?> اطلاعات مدیر</h3>
+            <div class="card portal-form-card p-6 md:p-8">
+                <div class="portal-section-heading mb-6">
+                    <h3><?= icon('user','w-5 h-5 text-indigo-600') ?> اطلاعات مدیر</h3>
                     <p class="text-sm text-slate-500 mt-0.5">شماره موبایل برای ورود با کد تایید (OTP) استفاده می‌شود.</p>
                 </div>
                 <form method="post" class="space-y-6" novalidate>
@@ -84,23 +84,23 @@ render_admin_header('پروفایل مدیر سیستم', 'portal-page-main port
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="label" for="ap_username">نام کاربری</label>
-                            <input type="text" id="ap_username" value="<?= htmlspecialchars($admin['username']) ?>" disabled class="input bg-slate-100 text-slate-500 cursor-not-allowed">
+                            <input type="text" id="ap_username" value="<?= htmlspecialchars($admin['username']) ?>" disabled class="input portal-form-control portal-input-disabled cursor-not-allowed">
                         </div>
                         <div>
                             <label class="label" for="ap_role">نقش</label>
-                            <input type="text" id="ap_role" value="<?= htmlspecialchars(admin_role_label($admin['role'] ?? 'admin')) ?>" disabled class="input bg-slate-100 text-slate-500 cursor-not-allowed">
+                            <input type="text" id="ap_role" value="<?= htmlspecialchars(admin_role_label($admin['role'] ?? 'admin')) ?>" disabled class="input portal-form-control portal-input-disabled cursor-not-allowed">
                         </div>
                         <div>
                             <label class="label" for="ap_fn">نام</label>
-                            <input type="text" name="first_name" id="ap_fn" value="<?= htmlspecialchars($admin['first_name'] ?? '') ?>" class="input">
+                            <input type="text" name="first_name" id="ap_fn" value="<?= htmlspecialchars($admin['first_name'] ?? '') ?>" class="input portal-form-control">
                         </div>
                         <div>
                             <label class="label" for="ap_ln">نام خانوادگی</label>
-                            <input type="text" name="last_name" id="ap_ln" value="<?= htmlspecialchars($admin['last_name'] ?? '') ?>" class="input">
+                            <input type="text" name="last_name" id="ap_ln" value="<?= htmlspecialchars($admin['last_name'] ?? '') ?>" class="input portal-form-control">
                         </div>
                         <div class="md:col-span-2">
                             <label class="label" for="ap_mobile">شماره موبایل (برای ورود با کد تایید)</label>
-                            <input type="text" name="mobile" id="ap_mobile" dir="ltr" value="<?= htmlspecialchars($admin['mobile'] ?? '') ?>" placeholder="09123456789" class="input">
+                            <input type="text" name="mobile" id="ap_mobile" dir="ltr" value="<?= htmlspecialchars($admin['mobile'] ?? '') ?>" placeholder="09123456789" class="input portal-form-control">
                             <p class="helper">اگر روش ورود «شماره موبایل و کد تایید» فعال باشد، با این شماره وارد سیستم می‌شوید.</p>
                         </div>
                     </div>
@@ -112,25 +112,25 @@ render_admin_header('پروفایل مدیر سیستم', 'portal-page-main port
             </div>
 
             <!-- تغییر رمز عبور -->
-            <div class="card p-6 md:p-8">
-                <div class="mb-6 pb-4 border-b border-slate-200">
-                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><?= icon('lock','w-5 h-5 text-indigo-600') ?> تغییر رمز عبور</h3>
+            <div class="card portal-form-card p-6 md:p-8">
+                <div class="portal-section-heading mb-6">
+                    <h3><?= icon('lock','w-5 h-5 text-indigo-600') ?> تغییر رمز عبور</h3>
                 </div>
                 <form method="post" class="space-y-5" novalidate>
                     <?php echo csrf_input(); ?>
                     <input type="hidden" name="action" value="password">
                     <div>
                         <label class="label" for="cp_current">رمز عبور فعلی</label>
-                        <input type="password" name="current_password" id="cp_current" required class="input">
+                        <input type="password" name="current_password" id="cp_current" required class="input portal-form-control">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="label" for="cp_new">رمز عبور جدید</label>
-                            <input type="password" name="new_password" id="cp_new" required minlength="8" class="input">
+                            <input type="password" name="new_password" id="cp_new" required minlength="8" class="input portal-form-control">
                         </div>
                         <div>
                             <label class="label" for="cp_new2">تکرار رمز عبور جدید</label>
-                            <input type="password" name="new_password_confirm" id="cp_new2" required minlength="8" class="input">
+                            <input type="password" name="new_password_confirm" id="cp_new2" required minlength="8" class="input portal-form-control">
                         </div>
                     </div>
                     <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">

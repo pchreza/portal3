@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $departments = $pdo->query("SELECT d.*, (SELECT COUNT(*) FROM tickets t WHERE t.department_id = d.id) ticket_count FROM ticket_departments d ORDER BY d.sort_order ASC, d.id ASC")->fetchAll();
 
-render_admin_header('مدیریت دپارتمان‌های تیکت', 'portal-page-main portal-admin-page p-8 max-w-4xl w-full mx-auto space-y-6');
+render_admin_header('مدیریت دپارتمان‌های تیکت', 'portal-page-main portal-admin-page portal-ticket-departments-page p-8 max-w-4xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($msg): ?>
@@ -59,8 +59,10 @@ render_admin_header('مدیریت دپارتمان‌های تیکت', 'portal-p
             <?php endif; ?>
 
             <!-- فرم افزودن -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <h3 class="text-lg font-bold text-slate-800 mb-4">افزودن دپارتمان جدید</h3>
+            <div class="card portal-form-card portal-compact-form p-6">
+                <div class="portal-section-heading">
+                    <div><h3>افزودن دپارتمان جدید</h3><p>دپارتمان‌ها، ترتیب نمایش و وضعیت پاسخ‌گویی را مدیریت کنید.</p></div>
+                </div>
                 <form method="post" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                     <?php echo csrf_input(); ?>
                     <input type="hidden" name="action" value="add">
@@ -83,7 +85,7 @@ render_admin_header('مدیریت دپارتمان‌های تیکت', 'portal-p
             </div>
 
             <!-- لیست دپارتمان‌ها -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="card portal-list-card overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="table table-card-mobile">
                         <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">

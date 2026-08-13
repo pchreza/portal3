@@ -461,7 +461,7 @@ if (!array_key_exists($tab, $tab_labels)) {
     $tab = 'modules';
 }
 
-render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-page p-8 max-w-4xl w-full mx-auto space-y-6');
+render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-page portal-settings-page p-8 max-w-4xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($success): ?>
@@ -472,8 +472,8 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
             <?php endif; ?>
 
             <!-- تب‌ها -->
-            <div class="card overflow-hidden">
-                <nav class="flex flex-wrap border-b border-slate-200" aria-label="بخش‌های تنظیمات">
+            <div class="card portal-settings-shell overflow-hidden">
+                <nav class="portal-settings-tabs flex flex-wrap border-b border-slate-200" aria-label="بخش‌های تنظیمات">
                     <?php foreach ($tab_labels as $tkey => $tinfo): ?>
                         <a href="settings.php?tab=<?= $tkey ?>" class="inline-flex flex-1 sm:flex-none justify-center items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition border-b-2 <?= $tab === $tkey ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50' ?>">
                             <?= icon($tinfo[2] ?? 'settings', 'w-4 h-4') ?>
@@ -481,12 +481,12 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                         </a>
                     <?php endforeach; ?>
                 </nav>
-                <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                <div class="portal-settings-intro px-6 py-5 border-b border-slate-100 bg-slate-50/50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 leading-tight"><?= icon($tab_labels[$tab][2] ?? 'settings', 'w-5 h-5 text-indigo-600 flex-shrink-0') ?> <?= $tab_labels[$tab][0] ?></h3>
                     <p class="text-sm text-slate-500 mt-2 leading-relaxed"><?= $tab_labels[$tab][1] ?></p>
                 </div>
 
-                <div class="p-6">
+                <div class="portal-settings-content p-6">
 
                 <?php if ($tab === 'modules'): ?>
                     <!-- ===== تب ماژول‌ها ===== -->
@@ -750,6 +750,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                                     <input type="radio" name="logo_choice" value="url" id="logo_url_choice" <?= $saved_logo_choice === 'url' ? 'checked' : '' ?> class="w-4 h-4 text-indigo-600">
                                     <span class="text-sm text-slate-700">آدرس (URL) لوگو</span>
                                 </label>
+                                <label class="sr-only" for="site_logo_url">آدرس URL لوگو</label>
                                 <input type="text" name="site_logo_url" id="site_logo_url" dir="ltr" value="<?= htmlspecialchars($current_logo) ?>" placeholder="https://example.com/logo.png" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
                             </div>
                         </div>
@@ -797,7 +798,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                                                 <?php if ($cur): ?><div class="text-xs text-slate-400 font-mono truncate max-w-[150px]" dir="ltr"><?= htmlspecialchars($cur) ?></div><?php endif; ?>
                                             </div>
                                         </div>
-                                        <input type="file" name="default_<?= $etyp ?>_image" accept=".png,.jpg,.jpeg,.webp,.gif,.svg" class="text-xs text-slate-500 file:ms-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
+                                        <input type="file" id="default_<?= $etyp ?>_image" name="default_<?= $etyp ?>_image" aria-label="تصویر پیش‌فرض <?= e($info[0]) ?>" accept=".png,.jpg,.jpeg,.webp,.gif,.svg" class="text-xs text-slate-500 file:ms-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-xs file:font-medium">
                                         <?php if ($cur): ?>
                                             <label class="flex items-center gap-1.5 text-xs text-red-600 mt-2 cursor-pointer">
                                                 <input type="checkbox" name="remove_<?= $etyp ?>_default" value="1" class="w-3.5 h-3.5 text-red-600 rounded border-slate-300"> حذف تصویر پیش‌فرض

@@ -97,7 +97,7 @@ $invoices = $pdo->query("
 ?>
 <?php render_admin_header(
     'مدیریت فاکتورها و صورتحساب‌ها',
-    'portal-page-main portal-admin-page p-8 max-w-7xl w-full mx-auto space-y-6',
+    'portal-page-main portal-admin-page portal-invoices-page p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     ''
 ); ?>
@@ -116,13 +116,16 @@ $invoices = $pdo->query("
             <?php endif; ?>
 
             <?php if ($action === 'add' || $action === 'edit'): ?>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
-                        <h3 class="text-lg font-bold text-slate-800"><?php echo $action === 'edit' ? 'ویرایش فاکتور' : 'صدور فاکتور جدید'; ?></h3>
-                        <a href="invoices.php" class="text-sm text-slate-500 hover:text-slate-700">بازگشت به لیست</a>
+                <div class="card portal-form-card portal-invoice-form-card">
+                    <div class="portal-form-header flex items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold"><?php echo $action === 'edit' ? 'ویرایش فاکتور' : 'صدور فاکتور جدید'; ?></h3>
+                            <p class="portal-form-subtitle">صورتحساب را به مشتری اختصاص دهید و وضعیت پرداخت را ثبت کنید.</p>
+                        </div>
+                        <a href="invoices.php" class="btn btn-secondary portal-form-back">بازگشت به لیست</a>
                     </div>
 
-                    <form method="POST" class="space-y-6" novalidate><?php echo csrf_input(); ?>
+                    <form method="POST" class="portal-form-body space-y-6" novalidate><?php echo csrf_input(); ?>
                     <div class="form-error-summary" style="display:none" role="alert"></div>
                         <?php if ($edit_invoice): ?>
                             <input type="hidden" name="id" value="<?php echo $edit_invoice['id']; ?>">
@@ -130,8 +133,8 @@ $invoices = $pdo->query("
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">انتصاب به مشتری *</label>
-                                <select name="customer_id" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                                <label class="label" for="invoice_customer">انتصاب به مشتری *</label>
+                                <select id="invoice_customer" name="customer_id" required class="input portal-form-control">
                                     <option value="">انتخاب مشتری...</option>
                                     <?php foreach ($customers as $c): ?>
                                         <option value="<?php echo $c['id']; ?>" <?php echo (($edit_invoice['customer_id'] ?? '') == $c['id']) ? 'selected' : ''; ?>>
@@ -142,27 +145,27 @@ $invoices = $pdo->query("
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">شماره فاکتور *</label>
-                                <input type="text" name="invoice_number" value="<?php echo htmlspecialchars($edit_invoice['invoice_number'] ?? $next_invoice_suggestion); ?>" required dir="ltr" class="value-ltr w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                                <label class="label" for="invoice_number">شماره فاکتور *</label>
+                                <input id="invoice_number" type="text" name="invoice_number" value="<?php echo htmlspecialchars($edit_invoice['invoice_number'] ?? $next_invoice_suggestion); ?>" required dir="ltr" class="input portal-form-control value-ltr">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">عنوان فاکتور *</label>
-                                <input type="text" name="title" value="<?php echo htmlspecialchars($edit_invoice['title'] ?? ''); ?>" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                                <label class="label" for="invoice_title">عنوان فاکتور *</label>
+                                <input id="invoice_title" type="text" name="title" value="<?php echo htmlspecialchars($edit_invoice['title'] ?? ''); ?>" required class="input portal-form-control">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">مبلغ (تومان) *</label>
-                                <input type="text" name="amount" value="<?php echo htmlspecialchars($edit_invoice['amount'] ?? ''); ?>" required dir="ltr" class="value-ltr w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" placeholder="مثلا: ۵,۰۰۰,۰۰۰">
+                                <label class="label" for="invoice_amount">مبلغ (تومان) *</label>
+                                <input id="invoice_amount" type="text" name="amount" value="<?php echo htmlspecialchars($edit_invoice['amount'] ?? ''); ?>" required dir="ltr" class="input portal-form-control value-ltr" placeholder="مثلا: ۵,۰۰۰,۰۰۰">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">سررسید پرداخت</label>
+                                <label class="label" for="due_date">سررسید پرداخت</label>
                                 <div class="flex flex-wrap sm:flex-nowrap gap-2 items-stretch">
-                                    <input type="text" name="due_date" id="due_date" data-jdp data-jdp-min-date="today" readonly dir="ltr" value="<?php echo htmlspecialchars($edit_invoice['due_date'] ?? ''); ?>" class="value-ltr flex-1 min-w-0 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white cursor-pointer" placeholder="انتخاب تاریخ شمسی">
-                                    <button type="button" class="jdp-trigger shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-2 rounded-lg transition cursor-pointer" data-target="due_date"><?= icon('calendar') ?><span>انتخاب تاریخ</span></button>
+                                    <input type="text" name="due_date" id="due_date" data-jdp data-jdp-min-date="today" readonly dir="ltr" value="<?php echo htmlspecialchars($edit_invoice['due_date'] ?? ''); ?>" class="input portal-form-control value-ltr flex-1 min-w-0 cursor-pointer" placeholder="انتخاب تاریخ شمسی">
+                                    <button type="button" class="btn btn-secondary jdp-trigger shrink-0" data-target="due_date"><?= icon('calendar') ?><span>انتخاب تاریخ</span></button>
                                 </div>
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">وضعیت فاکتور</label>
-                                <select name="status" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                                <label class="label" for="invoice_status">وضعیت فاکتور</label>
+                                <select id="invoice_status" name="status" class="input portal-form-control">
                                     <option value="unpaid" <?php echo (($edit_invoice['status'] ?? 'unpaid') === 'unpaid') ? 'selected' : ''; ?>>پرداخت نشده</option>
                                     <option value="paid" <?php echo (($edit_invoice['status'] ?? '') === 'paid') ? 'selected' : ''; ?>>پرداخت شده</option>
                                     <option value="cancelled" <?php echo (($edit_invoice['status'] ?? '') === 'cancelled') ? 'selected' : ''; ?>>لغو شده</option>
@@ -170,7 +173,7 @@ $invoices = $pdo->query("
                             </div>
                         </div>
 
-                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                        <div class="portal-form-actions flex justify-end gap-3">
                             <a href="invoices.php" class="btn btn-secondary">انصراف</a>
                             <button type="submit" class="btn btn-primary">ذخیره فاکتور</button>
                         </div>
@@ -178,14 +181,14 @@ $invoices = $pdo->query("
                 </div>
 
             <?php else: ?>
-                <div class="flex items-center justify-between">
+                <div class="portal-list-toolbar flex items-center justify-between gap-4">
                     <h3 class="text-lg font-bold text-slate-800">لیست فاکتورها (<?php echo count($invoices); ?>)</h3>
                     <a href="invoices.php?action=add" class="btn btn-primary">
                         <?= icon('plus') ?><span>صدور فاکتور جدید</span>
                     </a>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="card portal-list-card overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="table table-card-mobile">
                             <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">

@@ -34,29 +34,29 @@ $reports = error_reports_list(200);
 $counts = ['new' => 0, 'reviewing' => 0, 'resolved' => 0];
 foreach ($reports as $r) { $counts[$r['status']] = ($counts[$r['status']] ?? 0) + 1; }
 
-render_admin_header('گزارش‌های خطا', 'portal-page-main portal-admin-page p-8 max-w-7xl w-full mx-auto space-y-6');
+render_admin_header('گزارش‌های خطا', 'portal-page-main portal-admin-page portal-error-reports-page p-8 max-w-7xl w-full mx-auto space-y-6');
 ?>
 
 <?php if ($msg): ?><div class="alert alert-success" role="status"><?= icon('check') ?><span><?= htmlspecialchars($msg) ?></span></div><?php endif; ?>
 <?php if ($err): ?><div class="alert alert-danger" role="alert"><?= icon('alert') ?><span><?= htmlspecialchars($err) ?></span></div><?php endif; ?>
 
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div class="card p-5 flex items-center justify-between">
+<div class="portal-error-report-stats grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="portal-stat-card card p-5 flex items-center justify-between">
         <div><p class="body-sm text-slate-500">جدید</p><h4 class="text-2xl font-bold text-red-600 mt-1"><?= $counts['new'] ?></h4></div>
         <div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center"><?= icon('alert','w-5 h-5') ?></div>
     </div>
-    <div class="card p-5 flex items-center justify-between">
+    <div class="portal-stat-card card p-5 flex items-center justify-between">
         <div><p class="body-sm text-slate-500">در حال بررسی</p><h4 class="text-2xl font-bold text-amber-600 mt-1"><?= $counts['reviewing'] ?></h4></div>
         <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><?= icon('eye','w-5 h-5') ?></div>
     </div>
-    <div class="card p-5 flex items-center justify-between">
+    <div class="portal-stat-card card p-5 flex items-center justify-between">
         <div><p class="body-sm text-slate-500">حل‌شده</p><h4 class="text-2xl font-bold text-emerald-600 mt-1"><?= $counts['resolved'] ?></h4></div>
         <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><?= icon('check','w-5 h-5') ?></div>
     </div>
 </div>
 
-<div class="card overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-100">
+<div class="portal-list-card card overflow-hidden">
+    <div class="portal-list-toolbar px-6 py-4 border-b border-slate-100">
         <h3 class="font-semibold text-slate-800 text-sm">گزارش‌های خطای دریافتی (<?= count($reports) ?>)</h3>
     </div>
     <?php if (empty($reports)): ?>
@@ -99,7 +99,7 @@ render_admin_header('گزارش‌های خطا', 'portal-page-main portal-admin
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="status">
                                 <input type="hidden" name="report_id" value="<?= $r['id'] ?>">
-                                <select name="status" data-auto-submit class="input !w-auto !h-9 text-xs cursor-pointer">
+                                <select name="status" data-auto-submit aria-label="تغییر وضعیت گزارش" class="input portal-form-control !w-auto !h-9 text-xs cursor-pointer">
                                     <option value="new" <?= $st === 'new' ? 'selected' : '' ?>>جدید</option>
                                     <option value="reviewing" <?= $st === 'reviewing' ? 'selected' : '' ?>>در حال بررسی</option>
                                     <option value="resolved" <?= $st === 'resolved' ? 'selected' : '' ?>>حل‌شده</option>
@@ -135,9 +135,9 @@ render_admin_header('گزارش‌های خطا', 'portal-page-main portal-admin
 }, $reports), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
 
 <!-- پاپ‌آپ جزئیات کامل گزارش خطا -->
-<div id="report-detail-modal" role="dialog" aria-modal="true" aria-labelledby="report-detail-title" class="hidden fixed inset-0 z-[2000] items-center justify-center p-4">
+<div id="report-detail-modal" role="dialog" aria-modal="true" aria-labelledby="report-detail-title" tabindex="-1" class="hidden fixed inset-0 z-[2000] items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/50" data-report-close></div>
-    <div class="relative w-full max-w-lg card !rounded-2xl p-6 shadow-2xl">
+    <div class="portal-error-detail-modal relative w-full max-w-lg card !rounded-2xl p-6 shadow-2xl">
         <div class="flex items-start justify-between mb-4">
             <div class="flex items-center gap-3">
                 <span class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center"><?= icon('alert','w-5 h-5') ?></span>
@@ -162,10 +162,12 @@ render_admin_header('گزارش‌های خطا', 'portal-page-main portal-admin
 </div>
 <script nonce="<?= e(portal_csp_nonce()) ?>">
 window.__reportData = <?= $reports_json ?>;
-function openReportDetail(id){
+var lastReportTrigger = null;
+function openReportDetail(id, trigger){
     var d = window.__reportData || [], r = null;
     for (var i = 0; i < d.length; i++) { if (d[i].id === id) { r = d[i]; break; } }
     if (!r) return;
+    lastReportTrigger = trigger || null;
     document.getElementById('rd-id').textContent      = '#' + r.id;
     document.getElementById('rd-reporter').textContent = r.reporter;
     document.getElementById('rd-role').textContent     = r.role;
@@ -174,14 +176,16 @@ function openReportDetail(id){
     document.getElementById('rd-message').textContent  = r.message;
     document.getElementById('report-detail-modal').classList.remove('hidden');
     document.getElementById('report-detail-modal').classList.add('flex');
+    document.getElementById('report-detail-modal').focus();
     document.body.style.overflow = 'hidden';
 }
 function closeReportDetail(){
     document.getElementById('report-detail-modal').classList.add('hidden');
     document.getElementById('report-detail-modal').classList.remove('flex');
     document.body.style.overflow = '';
+    if (lastReportTrigger) { lastReportTrigger.focus(); lastReportTrigger = null; }
 }
-document.querySelectorAll('[data-report-open]').forEach(function(button){button.addEventListener('click',function(){openReportDetail(Number(button.dataset.reportOpen));});});
+document.querySelectorAll('[data-report-open]').forEach(function(button){button.addEventListener('click',function(){openReportDetail(Number(button.dataset.reportOpen), button);});});
 document.querySelectorAll('[data-report-close]').forEach(function(button){button.addEventListener('click',closeReportDetail);});
 document.querySelectorAll('[data-auto-submit]').forEach(function(select){select.addEventListener('change',function(){select.form.submit();});});
 document.addEventListener('keydown', function(e){

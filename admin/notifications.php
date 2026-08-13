@@ -95,7 +95,7 @@ $notifications = $pdo->query(
 // مشتریان برای انتخاب دستی
 $customers_all = $pdo->query("SELECT id, first_name, last_name, username FROM users WHERE role = 'customer' ORDER BY first_name ASC")->fetchAll();
 
-render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'portal-page-main portal-admin-page p-8 max-w-7xl w-full mx-auto space-y-6');
+render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'portal-page-main portal-admin-page portal-notifications-page p-8 max-w-7xl w-full mx-auto space-y-6');
 ?>
 
             <?php if ($msg): ?>
@@ -112,7 +112,7 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                     <a href="notifications.php" class="text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg font-medium">بازگشت به لیست</a>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                <div class="card portal-notification-detail p-6 space-y-4">
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex items-center gap-3 flex-wrap">
                             <?= notification_type_badge($view_notification['ntype']) ?>
@@ -137,24 +137,24 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                 </div>
 
                 <!-- آمار خواندن -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="card p-5 flex items-center justify-between">
+                <div class="portal-notification-stats grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="portal-stat-card card p-5 flex items-center justify-between">
                         <div><p class="body-sm text-slate-500">کل دریافت‌کنندگان</p><h4 class="text-2xl font-bold text-slate-900 mt-1 value-ltr" dir="ltr"><?= $view_stats['total'] ?></h4></div>
                         <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><?= icon('users', 'w-5 h-5') ?></div>
                     </div>
-                    <div class="card p-5 flex items-center justify-between">
+                    <div class="portal-stat-card card p-5 flex items-center justify-between">
                         <div><p class="body-sm text-slate-500">خوانده‌شده</p><h4 class="text-2xl font-bold text-emerald-600 mt-1 value-ltr" dir="ltr"><?= $view_stats['read'] ?></h4></div>
                         <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><?= icon('check', 'w-5 h-5') ?></div>
                     </div>
-                    <div class="card p-5 flex items-center justify-between">
+                    <div class="portal-stat-card card p-5 flex items-center justify-between">
                         <div><p class="body-sm text-slate-500">نخوانده</p><h4 class="text-2xl font-bold text-amber-600 mt-1 value-ltr" dir="ltr"><?= $view_stats['unread'] ?></h4></div>
                         <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><?= icon('alert', 'w-5 h-5') ?></div>
                     </div>
                 </div>
 
                 <!-- لیست گیرندگان -->
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-slate-100">
+                <div class="card portal-list-card overflow-hidden">
+                    <div class="portal-list-toolbar p-4 border-b border-slate-100">
                         <h4 class="font-semibold text-slate-800 text-sm">گیرندگان (<?= count($view_recipients) ?>)</h4>
                     </div>
                     <div class="overflow-x-auto">
@@ -193,8 +193,8 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
 
             <?php else: ?>
                 <!-- ===== فرم ارسال اعلان جدید (بازطراحی FULLMASTER) ===== -->
-                <div class="card overflow-hidden">
-                    <div class="px-6 py-5 border-b border-slate-100">
+                <div class="card portal-notification-compose overflow-hidden">
+                    <div class="px-6 py-5 border-b border-slate-100 portal-panel-heading">
                         <h3 class="text-base font-bold text-slate-800">ارسال اعلان جدید</h3>
                         <p class="text-sm text-slate-500 mt-1.5 leading-relaxed">برای همه مشتریان یا یک گروه خاص، با فیلترهای هوشمند</p>
                     </div>
@@ -238,11 +238,11 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                         </div>
 
                         <!-- انتخاب دستی مشتریان -->
-                        <div id="custom-users-box" class="hidden bg-slate-50 rounded-xl p-5 border border-slate-200">
+                        <div id="custom-users-box" class="portal-recipient-panel hidden rounded-xl p-5 border border-slate-200">
                             <span class="block text-sm font-medium text-slate-700 mb-2">انتخاب مشتریان خاص<span class="required-star" aria-hidden="true">*</span></span>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
                                 <?php foreach ($customers_all as $c): ?>
-                                    <label class="flex items-center gap-2 text-sm text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:border-indigo-400 transition">
+                                                <label class="portal-recipient-option flex items-center gap-2 text-sm rounded-lg px-3 py-2 cursor-pointer transition">
                                         <input type="checkbox" name="custom_user_ids[]" value="<?= $c['id'] ?>" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
                                         <span class="truncate"><bdi dir="auto"><?= htmlspecialchars(trim($c['first_name'] . ' ' . $c['last_name']) ?: $c['username']) ?></bdi></span>
                                     </label>
@@ -286,7 +286,7 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                     <h3 class="text-lg font-bold text-slate-800">اعلان‌های ارسال‌شده (<?= count($notifications) ?>)</h3>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="card portal-list-card overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="table table-card-mobile">
                             <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">

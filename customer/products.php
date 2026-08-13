@@ -29,7 +29,7 @@ $full_name = trim($customer['first_name'] . ' ' . $customer['last_name']) !== ''
 ?>
 <?php render_customer_header(
     'محصولات و سرویس‌های من',
-    'portal-page-main p-8 max-w-7xl w-full mx-auto space-y-6',
+    'portal-page-main portal-customer-products-page p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     '',
     $full_name
@@ -40,7 +40,7 @@ $full_name = trim($customer['first_name'] . ' ' . $customer['last_name']) !== ''
             </div>
 
             <?php if (empty($products)): ?>
-                <div class="portal-empty-card card empty-state bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
+                <div class="portal-empty-card card empty-state p-12 text-center text-slate-400">
                     هیچ محصولی تاکنون برای شما ثبت نشده است.
                 </div>
             <?php else: ?>

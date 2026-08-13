@@ -933,3 +933,134 @@ html.dark .portal-survey-filter { box-shadow: 0 10px 30px rgba(0,0,0,.18); }
 .portal-search-label { display: block; margin: 0 0 .4rem; }
 .portal-checkbox-row { padding: .75rem .85rem; border: 1px solid var(--portal-border); border-radius: var(--portal-radius-control); background: var(--portal-surface-muted); color: var(--portal-text); }
 .portal-checkbox-row:hover { border-color: var(--portal-primary); }
+
+
+/* v2.5 settings workspace: dense admin configuration with theme-safe controls. */
+.portal-settings-page { --settings-gap: 1.25rem; }
+.portal-settings-shell { border: 1px solid var(--portal-border); }
+.portal-settings-tabs { background: var(--portal-surface); border-color: var(--portal-border) !important; overflow-x: auto; scrollbar-width: thin; }
+.portal-settings-tabs > a { flex: 0 0 auto; min-height: 3.25rem; color: var(--portal-text-muted); border-color: transparent; }
+.portal-settings-tabs > a:hover { color: var(--portal-primary); background: var(--portal-primary-soft); }
+.portal-settings-tabs > a.border-indigo-600,
+.portal-settings-tabs > a[class*="border-indigo-600"] { color: var(--portal-primary) !important; border-color: var(--portal-primary) !important; background: var(--portal-primary-soft) !important; }
+.portal-settings-intro { background: var(--portal-surface-muted) !important; border-color: var(--portal-border) !important; }
+.portal-settings-intro h3 { color: var(--portal-text) !important; }
+.portal-settings-intro p { color: var(--portal-text-muted) !important; }
+.portal-settings-content { background: var(--portal-surface); }
+.portal-settings-page .portal-settings-content > form,
+.portal-settings-page .portal-settings-content > .card,
+.portal-settings-page .portal-settings-content > div { min-width: 0; }
+.portal-settings-page .portal-settings-content .bg-white,
+.portal-settings-page .portal-settings-content .bg-white\/80 { background: var(--portal-surface) !important; }
+.portal-settings-page .portal-settings-content .bg-slate-50,
+.portal-settings-page .portal-settings-content .bg-slate-50\/40,
+.portal-settings-page .portal-settings-content .bg-slate-50\/50,
+.portal-settings-page .portal-settings-content .bg-slate-50\/60 { background: var(--portal-surface-muted) !important; }
+.portal-settings-page .portal-settings-content .border-slate-100,
+.portal-settings-page .portal-settings-content .border-slate-200,
+.portal-settings-page .portal-settings-content .border-slate-300 { border-color: var(--portal-border) !important; }
+.portal-settings-page .portal-settings-content .text-slate-900,
+.portal-settings-page .portal-settings-content .text-slate-800,
+.portal-settings-page .portal-settings-content .text-slate-700 { color: var(--portal-text) !important; }
+.portal-settings-page .portal-settings-content .text-slate-600,
+.portal-settings-page .portal-settings-content .text-slate-500 { color: var(--portal-text-muted) !important; }
+.portal-settings-page .portal-settings-content .text-slate-400 { color: var(--portal-text-soft) !important; }
+.portal-settings-page .portal-settings-content .text-indigo-600,
+.portal-settings-page .portal-settings-content .text-indigo-700 { color: var(--portal-primary) !important; }
+.portal-settings-page .portal-settings-content .bg-indigo-50,
+.portal-settings-page .portal-settings-content .bg-indigo-50\/40,
+.portal-settings-page .portal-settings-content .bg-indigo-50\/50,
+.portal-settings-page .portal-settings-content .bg-indigo-50\/60 { background: var(--portal-primary-soft) !important; }
+.portal-settings-page .portal-settings-content .border-indigo-200,
+.portal-settings-page .portal-settings-content .border-indigo-500 { border-color: color-mix(in srgb, var(--portal-primary) 45%, var(--portal-border)) !important; }
+.portal-settings-page .portal-settings-content .ring-indigo-100 { --tw-ring-color: color-mix(in srgb, var(--portal-primary) 22%, transparent) !important; }
+.portal-settings-page .portal-settings-content input:not([type="hidden"]),
+.portal-settings-page .portal-settings-content select,
+.portal-settings-page .portal-settings-content textarea { color: var(--portal-text); background: var(--portal-surface); border-color: var(--portal-border); }
+.portal-settings-page .portal-settings-content input:focus,
+.portal-settings-page .portal-settings-content select:focus,
+.portal-settings-page .portal-settings-content textarea:focus { border-color: var(--portal-primary); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--portal-primary) 15%, transparent); }
+.portal-settings-page .portal-settings-content input[type="radio"],
+.portal-settings-page .portal-settings-content input[type="checkbox"] { accent-color: var(--portal-primary); }
+.portal-settings-page .portal-settings-content input[type="file"]::file-selector-button { color: var(--portal-primary); background: var(--portal-primary-soft); border-color: var(--portal-border); }
+.portal-settings-page .portal-settings-content .sms-event-card { border-color: var(--portal-border) !important; background: var(--portal-surface); }
+.portal-settings-page .portal-settings-content .sms-event-head { background: var(--portal-surface-muted) !important; color: var(--portal-text); }
+.portal-settings-page .portal-settings-content .sms-event-head:hover,
+.portal-settings-page .portal-settings-content .sms-event-head:focus-visible { background: var(--portal-primary-soft) !important; }
+.portal-settings-page .portal-settings-content .sms-event-card [class*="border-indigo"] { border-color: var(--portal-primary) !important; }
+.portal-settings-page .portal-settings-content .sms-event-card [class*="bg-indigo"] { background: var(--portal-primary-soft) !important; }
+.portal-settings-page .portal-settings-content .portal-settings-notice,
+.portal-settings-page .portal-settings-content .bg-amber-50 { background: color-mix(in srgb, #f59e0b 10%, var(--portal-surface)) !important; border-color: color-mix(in srgb, #f59e0b 35%, var(--portal-border)) !important; }
+.portal-settings-page .portal-settings-content .portal-settings-notice code,
+.portal-settings-page .portal-settings-content code { color: var(--portal-text); }
+.portal-settings-page .portal-settings-content table thead { background: var(--portal-surface-muted) !important; color: var(--portal-text-muted) !important; }
+.portal-settings-page .portal-settings-content table tbody tr { border-color: var(--portal-border) !important; }
+.portal-settings-page .portal-settings-content table tbody tr:hover { background: var(--portal-primary-soft) !important; }
+.portal-settings-page .portal-settings-content .login-layout-card:has(input:checked) { border-color: var(--portal-primary) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--portal-primary) 18%, transparent) !important; }
+.portal-settings-page .portal-settings-content .login-layout-card .layout-check-dot { background: var(--portal-primary); border-color: var(--portal-primary); }
+@media (max-width: 767px) {
+  .portal-settings-page { padding: 1rem !important; }
+  .portal-settings-intro, .portal-settings-content { padding: 1rem !important; }
+  .portal-settings-tabs > a { flex: 1 0 auto; min-width: 8.5rem; }
+  .portal-settings-page .portal-settings-content .flex.justify-end { align-items: stretch; flex-direction: column; }
+  .portal-settings-page .portal-settings-content .flex.justify-end > .btn { width: 100%; }
+}
+
+html.dark .portal-settings-page .text-amber-900 { color: #fde68a !important; }
+html.dark .portal-settings-page .text-amber-800 { color: #fcd34d !important; }
+html.dark .portal-settings-page .text-amber-700,
+html.dark .portal-settings-page .text-amber-600 { color: #fbbf24 !important; }
+html.dark .portal-settings-page .text-emerald-700,
+html.dark .portal-settings-page .text-emerald-600 { color: #6ee7b7 !important; }
+html.dark .portal-settings-page .text-red-600 { color: #fca5a5 !important; }
+.portal-compact-form .portal-section-heading { margin-bottom: 1rem; }
+.portal-compact-form .portal-section-heading h3 { color: var(--portal-text); font-size: 1rem; }
+
+.portal-notification-compose > form { padding: 1.5rem; }
+.portal-notification-compose .portal-panel-heading { margin: 0; padding: 1.25rem 1.5rem; border-color: var(--portal-border); }
+.portal-notifications-page .portal-recipient-panel { background: var(--portal-surface-muted); border-color: var(--portal-border); }
+.portal-notifications-page .portal-recipient-option { background: var(--portal-surface); border: 1px solid var(--portal-border); color: var(--portal-text); }
+.portal-notifications-page .portal-recipient-option:hover,
+.portal-notifications-page .portal-recipient-option:focus-within { border-color: var(--portal-primary); background: var(--portal-primary-soft); }
+.portal-notifications-page .portal-recipient-option input { accent-color: var(--portal-primary); }
+.portal-notifications-page .portal-list-card table a:hover { color: var(--portal-primary) !important; }
+
+.portal-admin-create-card .portal-section-heading { margin-bottom: 1rem; }
+.portal-permission-panel { border: 1px solid var(--portal-border); }
+.portal-permission-option { background: var(--portal-surface); border-color: var(--portal-border); color: var(--portal-text); }
+.portal-permission-option:hover,
+.portal-permission-option:focus-within { border-color: var(--portal-primary); background: var(--portal-primary-soft); }
+.portal-permission-option input { accent-color: var(--portal-primary); }
+html.dark .portal-admins-page .bg-purple-50 { background: color-mix(in srgb, var(--portal-primary) 18%, var(--portal-surface)) !important; }
+html.dark .portal-admins-page .text-purple-700 { color: #c4b5fd !important; }
+
+.portal-form-control.portal-input-disabled:disabled,
+.portal-form-control[readonly] { background: var(--portal-surface-muted); border-color: var(--portal-border); color: var(--portal-text-muted); opacity: 1; }
+.portal-profile-page .portal-section-heading h3 { color: var(--portal-text); }
+
+.portal-error-report-stats .portal-stat-card { min-height: 6.25rem; }
+.portal-error-reports-page .portal-list-toolbar { background: var(--portal-surface); border-color: var(--portal-border); }
+.portal-error-detail-modal { background: var(--portal-surface); border: 1px solid var(--portal-border); color: var(--portal-text); }
+.portal-error-detail-modal .border-slate-100 { border-color: var(--portal-border) !important; }
+html.dark .portal-error-reports-page .bg-red-50,
+html.dark .portal-error-detail-modal .bg-red-50 { background: color-mix(in srgb, #ef4444 16%, var(--portal-surface)) !important; }
+html.dark .portal-error-reports-page .bg-amber-50 { background: color-mix(in srgb, #f59e0b 16%, var(--portal-surface)) !important; }
+html.dark .portal-error-reports-page .bg-emerald-50 { background: color-mix(in srgb, #10b981 16%, var(--portal-surface)) !important; }
+html.dark .portal-error-reports-page .text-red-600,
+html.dark .portal-error-detail-modal .text-red-600 { color: #fca5a5 !important; }
+html.dark .portal-error-reports-page .text-amber-600 { color: #fcd34d !important; }
+html.dark .portal-error-reports-page .text-emerald-600 { color: #6ee7b7 !important; }
+html.dark .portal-error-detail-modal .text-slate-900,
+html.dark .portal-error-detail-modal .text-slate-800 { color: var(--portal-text) !important; }
+html.dark .portal-error-detail-modal .text-slate-500 { color: var(--portal-text-muted) !important; }
+
+.portal-notification-detail { border: 1px solid var(--portal-border); }
+.portal-notification-detail .border-slate-100,
+.portal-notifications-page .portal-list-toolbar { border-color: var(--portal-border) !important; }
+html.dark .portal-notifications-page .bg-indigo-50 { background: var(--portal-primary-soft) !important; }
+html.dark .portal-notifications-page .text-indigo-600 { color: var(--portal-primary) !important; }
+html.dark .portal-notifications-page .bg-emerald-50 { background: color-mix(in srgb, #10b981 16%, var(--portal-surface)) !important; }
+html.dark .portal-notifications-page .text-emerald-700,
+html.dark .portal-notifications-page .text-emerald-600 { color: #6ee7b7 !important; }
+html.dark .portal-notifications-page .bg-amber-50 { background: color-mix(in srgb, #f59e0b 16%, var(--portal-surface)) !important; }
+html.dark .portal-notifications-page .text-amber-600 { color: #fcd34d !important; }

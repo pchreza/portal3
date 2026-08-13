@@ -12,7 +12,7 @@ $invoices = $stmt->fetchAll();
 ?>
 <?php render_customer_header(
     'فاکتورها و صورتحساب‌ها',
-    'portal-page-main p-8 max-w-7xl w-full mx-auto space-y-6',
+    'portal-page-main portal-customer-invoices-page p-8 max-w-7xl w-full mx-auto space-y-6',
     '',
     '',
     '',
@@ -24,7 +24,7 @@ $invoices = $stmt->fetchAll();
                 <h3 class="text-lg font-bold text-slate-800">فاکتورهای صادرشده (<?php echo count($invoices); ?>)</h3>
             </div>
 
-            <div class="portal-list-card card bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="portal-list-card card overflow-hidden">
                 <div class="table-scroll overflow-x-auto">
                     <table class="table table-card-mobile">
                         <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">
