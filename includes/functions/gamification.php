@@ -19,6 +19,18 @@ function gamification_enabled(): bool
     return is_module_enabled('gamification');
 }
 
+/** مسیر داخلی مشتری برای ادامهٔ عمل مرتبط با رویداد امتیاز. */
+function gamification_event_action_url(string $eventKey): string
+{
+    return match ($eventKey) {
+        'profile_completed' => 'profile.php',
+        'survey_submitted' => 'surveys.php',
+        'ticket_created', 'ticket_customer_reply' => 'tickets.php',
+        'bonus_code_redeemed' => 'gamification.php',
+        default => 'gamification.php',
+    };
+}
+
 function gamification_require_enabled(): void
 {
     if (!gamification_enabled()) {
@@ -146,7 +158,7 @@ function gamification_award_points(
         if (function_exists('send_notification')) {
             $eventTitle = gamification_event_catalog()[$eventKey]['title'] ?? $eventKey;
             $awardMessage = 'برای «' . $eventTitle . '» ' . gamification_points_label($points) . ' گرفتید.';
-            if (send_notification('امتیاز جدید دریافت کردید', $awardMessage, 'success', 'custom', '', [$customerId], null) === false) {
+            if (send_notification('امتیاز جدید دریافت کردید', $awardMessage, 'success', 'custom', '', [$customerId], null, null, gamification_event_action_url($eventKey)) === false) {
                 error_log('[Gamification Award] notification delivery failed for customer ' . $customerId . ' / ' . $eventKey);
             }
         }
@@ -267,7 +279,7 @@ function gamification_bonus_feedback(int $customerId, int $points): void
     $message = 'کد هدیه پذیرفته شد و ' . gamification_points_label($points) . ' به موجودی شما اضافه شد.';
     $_SESSION['gamification_award_flash'] = ['message' => $message, 'event_key' => 'bonus_code_redeemed', 'points' => $points];
     if (function_exists('send_notification')) {
-        send_notification('امتیاز هدیه دریافت کردید', $message, 'success', 'custom', '', [$customerId], null);
+        send_notification('امتیاز هدیه دریافت کردید', $message, 'success', 'custom', '', [$customerId], null, null, gamification_event_action_url('bonus_code_redeemed'));
     }
 }
 

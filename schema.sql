@@ -66,6 +66,7 @@
                 `budget` VARCHAR(100) DEFAULT '',
                 `deadline` DATE DEFAULT NULL,
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_projects_customer_status_id` (`customer_id`, `status`, `id`),
                 FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -80,6 +81,7 @@
                 `license_key` VARCHAR(255) DEFAULT '',
                 `purchase_date` DATE DEFAULT NULL,
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_products_customer_status_id` (`customer_id`, `product_status`, `id`),
                 FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -209,6 +211,7 @@
                 `id` INT AUTO_INCREMENT PRIMARY KEY,
                 `title` VARCHAR(255) NOT NULL,
                 `body` TEXT,
+                `action_url` VARCHAR(500) NULL,
                 `ntype` VARCHAR(30) NOT NULL DEFAULT 'info',
                 `target_type` VARCHAR(30) NOT NULL DEFAULT 'all',
                 `target_filter` VARCHAR(255) DEFAULT '',
@@ -327,6 +330,7 @@
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX `idx_gam_ledger_customer_time` (`customer_id`, `created_at`),
                 INDEX `idx_gam_ledger_event_time` (`event_key`, `created_at`),
+                INDEX `idx_gam_ledger_customer_event_id` (`customer_id`, `event_key`, `id`),
                 FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

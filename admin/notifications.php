@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $body   = trim($_POST['body'] ?? '');
         $ntype  = $_POST['ntype'] ?? 'info';
         $target = $_POST['target_type'] ?? 'all';
+        $action_url_raw = trim((string) ($_POST['action_url'] ?? ''));
+        $action_url = notification_internal_action_url($action_url_raw);
         $expires_at = trim($_POST['expires_at'] ?? '');
         // دیت پیکر شمسی است؛ تاریخ شمسی به میلادی تبدیل شود تا مقایسه با NOW() درست باشد
         if ($expires_at !== '') {
@@ -35,8 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($title === '') {
             $err = 'عنوان اعلان الزامی است.';
+        } elseif ($action_url_raw !== '' && $action_url === null) {
+            $err = 'لینک اقدام باید یک مسیر داخلی معتبر مانند tickets.php?action=new باشد.';
         } else {
-            $nid = send_notification($title, $body, $ntype, $target, '', $custom_ids, $_SESSION['user_id'], $expires_at ?: null);
+            $nid = send_notification($title, $body, $ntype, $target, '', $custom_ids, $_SESSION['user_id'], $expires_at ?: null, $action_url);
             if ($nid) {
                 $count = count(notification_recipient_ids($target, '', $custom_ids));
                 log_activity($_SESSION['user_id'], "ارسال اعلان: {$title} به {$count} مشتری");
@@ -129,6 +133,9 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                     </div>
                     <div class="text-xs text-slate-500 space-y-1 border-t border-slate-100 pt-3">
                         <div>هدف ارسال: <b><bdi dir="auto"><?= htmlspecialchars(notification_target_label($view_notification['target_type'])) ?></bdi></b></div>
+                        <?php if (!empty($view_notification['action_url'])): ?>
+                            <div>لینک اقدام مشتری: <code class="value-ltr" dir="ltr"><?= e($view_notification['action_url']) ?></code></div>
+                        <?php endif; ?>
                         <?php if ($view_notification['expires_at']): ?>
                             <div>تاریخ انقضا: <b class="value-ltr whitespace-nowrap" dir="ltr"><?= htmlspecialchars(fa_datetime($view_notification['expires_at'])) ?></b></div>
                         <?php endif; ?>
@@ -234,6 +241,11 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                                     <input type="text" name="expires_at" id="expires_at" data-jdp readonly dir="ltr" class="value-ltr flex-1 min-w-0 input cursor-pointer" placeholder="پس از این تاریخ نمایش داده نشود">
                                     <button type="button" class="jdp-trigger btn btn-secondary shrink-0" aria-label="انتخاب تاریخ" data-target="expires_at"><?= icon('calendar') ?></button>
                                 </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="label" for="notification_action_url">لینک اقدام (اختیاری)</label>
+                                <input type="text" name="action_url" id="notification_action_url" dir="ltr" class="input portal-form-control value-ltr" placeholder="مثال: tickets.php?action=new یا gamification.php">
+                                <p class="helper mt-1">فقط مسیر داخلی پنل مشتری پذیرفته می‌شود؛ URL خارجی و لینک کامل قابل ثبت نیست.</p>
                             </div>
                         </div>
 

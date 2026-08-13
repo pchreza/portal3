@@ -134,15 +134,40 @@ if ($action === 'edit' && isset($_GET['id'])) {
 // Fetch all customers for dropdown
 $customers = $pdo->query("SELECT id, first_name, last_name, username, company_name, mobile FROM users WHERE role = 'customer' ORDER BY first_name ASC")->fetchAll();
 
-// Fetch all projects with customer details (با صفحه‌بندی)
-$projects_total = (int) $pdo->query("SELECT COUNT(*) FROM projects")->fetchColumn();
+// فیلترهای فهرست پروژه — queryهای prepared و قابل‌اشتراک با pagination.
+$project_search = trim((string) ($_GET['q'] ?? ''));
+$project_customer_filter = max(0, (int) ($_GET['customer_id'] ?? 0));
+$project_status_filter = (string) ($_GET['status'] ?? '');
+$project_statuses = ['pending' => 'در انتظار شروع', 'in_progress' => 'در حال انجام', 'completed' => 'تکمیل شده'];
+if (!array_key_exists($project_status_filter, $project_statuses)) {
+    $project_status_filter = '';
+}
+$project_where = [];
+$project_params = [];
+if ($project_search !== '') {
+    $project_where[] = '(p.title LIKE ? OR p.description LIKE ? OR u.username LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ? OR u.company_name LIKE ?)';
+    $project_like = '%' . $project_search . '%';
+    $project_params = array_fill(0, 6, $project_like);
+}
+if ($project_customer_filter > 0) {
+    $project_where[] = 'p.customer_id = ?';
+    $project_params[] = $project_customer_filter;
+}
+if ($project_status_filter !== '') {
+    $project_where[] = 'p.status = ?';
+    $project_params[] = $project_status_filter;
+}
+$project_where_sql = $project_where ? ' WHERE ' . implode(' AND ', $project_where) : '';
+$project_count = $pdo->prepare('SELECT COUNT(*) FROM projects p JOIN users u ON p.customer_id = u.id' . $project_where_sql);
+$project_count->execute($project_params);
+$projects_total = (int) $project_count->fetchColumn();
 $pi = pagination_info($projects_total, 15);
-$projects = $pdo->query("
-    SELECT p.*, u.first_name, u.last_name, u.username, u.company_name 
-    FROM projects p 
-    JOIN users u ON p.customer_id = u.id 
-    ORDER BY p.id DESC LIMIT " . (int) $pi['per_page'] . " OFFSET " . (int) $pi['offset'] . "
-")->fetchAll();
+$project_list = $pdo->prepare("SELECT p.*, u.first_name, u.last_name, u.username, u.company_name
+    FROM projects p
+    JOIN users u ON p.customer_id = u.id{$project_where_sql}
+    ORDER BY p.id DESC LIMIT " . (int) $pi['per_page'] . " OFFSET " . (int) $pi['offset']);
+$project_list->execute($project_params);
+$projects = $project_list->fetchAll();
 ?>
 <?php render_admin_header(
     'مدیریت پروژه‌ها',
@@ -308,14 +333,44 @@ $projects = $pdo->query("
                 </div>
 
             <?php else: ?>
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-slate-800">لیست پروژه‌ها (<?php echo count($projects); ?>)</h3>
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="text-lg font-bold text-slate-800">پروژه‌ها (<?= number_format($projects_total) ?>)</h3>
                     <a href="projects.php?action=add" class="btn btn-primary">
                         <?= icon('plus') ?><span>تعریف پروژه جدید</span>
                     </a>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <form method="get" class="portal-list-toolbar card p-4 flex flex-wrap items-end gap-3" role="search">
+                    <div class="min-w-[13rem] flex-1">
+                        <label class="label" for="project_list_search">جست‌وجو در پروژه‌ها</label>
+                        <input id="project_list_search" name="q" type="search" value="<?= e($project_search) ?>" placeholder="عنوان، مشتری یا شرکت" class="input portal-form-control">
+                    </div>
+                    <div class="min-w-[11rem]">
+                        <label class="label" for="project_list_customer">مشتری</label>
+                        <select id="project_list_customer" name="customer_id" class="input portal-form-control">
+                            <option value="0">همهٔ مشتریان</option>
+                            <?php foreach ($customers as $c): ?>
+                                <?php $customerName = trim($c['first_name'] . ' ' . $c['last_name']) ?: $c['username']; ?>
+                                <option value="<?= (int) $c['id'] ?>" <?= $project_customer_filter === (int) $c['id'] ? 'selected' : '' ?>><?= e($customerName) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="min-w-[10rem]">
+                        <label class="label" for="project_list_status">وضعیت</label>
+                        <select id="project_list_status" name="status" class="input portal-form-control">
+                            <option value="">همهٔ وضعیت‌ها</option>
+                            <?php foreach ($project_statuses as $statusKey => $statusLabel): ?>
+                                <option value="<?= e($statusKey) ?>" <?= $project_status_filter === $statusKey ? 'selected' : '' ?>><?= e($statusLabel) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary">اعمال فیلتر</button>
+                    <?php if ($project_search !== '' || $project_customer_filter > 0 || $project_status_filter !== ''): ?>
+                        <a href="projects.php" class="btn btn-secondary">پاک‌کردن</a>
+                    <?php endif; ?>
+                </form>
+
+                <div class="card portal-list-card overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="table table-card-mobile">
                             <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">

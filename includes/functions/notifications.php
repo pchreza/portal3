@@ -121,11 +121,33 @@ function notification_recipient_ids(string $target_type, string $target_filter =
     return array_map('intval', array_column($st->fetchAll(), 'id'));
 }
 
+/** مسیر داخلی مجاز برای CTA اعلان مشتری؛ URL خارجی یا protocol-relative پذیرفته نمی‌شود. */
+function notification_internal_action_url(?string $url): ?string
+{
+    $url = trim((string) $url);
+    if ($url === '') {
+        return null;
+    }
+    if (strlen($url) > 500 || preg_match('/[\x00-\x1F\\\\]/', $url)) {
+        return null;
+    }
+    $parts = parse_url($url);
+    if ($parts === false || isset($parts['scheme']) || isset($parts['host']) || isset($parts['user']) || isset($parts['pass']) || isset($parts['port']) || isset($parts['fragment'])) {
+        return null;
+    }
+    $path = (string) ($parts['path'] ?? '');
+    $query = (string) ($parts['query'] ?? '');
+    if (!preg_match('/^[a-z][a-z0-9_-]*\.php$/i', $path) || ($query !== '' && !preg_match('/^[A-Za-z0-9_.~%=&-]+$/', $query))) {
+        return null;
+    }
+    return $path . ($query !== '' ? '?' . $query : '');
+}
+
 /**
  * ایجاد اعلان جدید و توزیع آن بین گیرندگان
  * @return int|false شناسه اعلان یا false در صورت خطا
  */
-function send_notification(string $title, string $body, string $ntype = 'info', string $target_type = 'all', string $target_filter = '', array $custom_ids = [], ?int $created_by = null, ?string $expires_at = null)
+function send_notification(string $title, string $body, string $ntype = 'info', string $target_type = 'all', string $target_filter = '', array $custom_ids = [], ?int $created_by = null, ?string $expires_at = null, ?string $action_url = null)
 {
     global $pdo;
     if (!$pdo || trim($title) === '') {
@@ -156,11 +178,12 @@ function send_notification(string $title, string $body, string $ntype = 'info', 
                 $expires_clean = null; // قالب نامعتبر — انقضا اعمال نشود
             }
         }
+        $safeActionUrl = notification_internal_action_url($action_url);
         $q = $pdo->prepare(
-            "INSERT INTO notifications (title, body, ntype, target_type, target_filter, created_by, expires_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO notifications (title, body, action_url, ntype, target_type, target_filter, created_by, expires_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         );
-        $q->execute([trim($title), trim($body), $ntype, $target_type, $target_filter, $created_by, $expires_clean]);
+        $q->execute([trim($title), trim($body), $safeActionUrl, $ntype, $target_type, $target_filter, $created_by, $expires_clean]);
         $nid = (int) $pdo->lastInsertId();
 
         $recipients = notification_recipient_ids($target_type, $target_filter, $custom_ids);

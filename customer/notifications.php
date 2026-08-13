@@ -61,6 +61,10 @@ render_customer_header(
                                 <?php endif; ?>
                                 <div class="flex items-center gap-2 mt-3 flex-wrap">
                                     <?= notification_type_badge($n['ntype']) ?>
+                                    <?php $notificationAction = notification_internal_action_url($n['action_url'] ?? null); ?>
+                                    <?php if ($notificationAction): ?>
+                                        <a href="<?= e($notificationAction) ?>" class="btn btn-sm btn-primary" aria-label="اقدام مرتبط با اعلان: <?= e($n['title']) ?>">مشاهده و اقدام</a>
+                                    <?php endif; ?>
                                     <?php if ($n['is_read']): ?>
                                         <span class="text-xs text-slate-400">خوانده شده<?= $n['read_at'] ? ' در <span class="value-ltr whitespace-nowrap" dir="ltr">' . htmlspecialchars(fa_datetime($n['read_at'])) . '</span>' : '' ?></span>
                                     <?php else: ?>

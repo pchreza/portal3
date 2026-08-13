@@ -8,7 +8,7 @@
 
 /** آخرین نسخه اسکیمای دیتابیس — هنگام افزودن مهاجرت جدید، این عدد را یک واحد زیاد کنید. */
 if (!defined('PORTAL_SCHEMA_VERSION')) {
-    define('PORTAL_SCHEMA_VERSION', 33);
+    define('PORTAL_SCHEMA_VERSION', 35);
 }
 
 function portal_column_exists(PDO $db, string $table, string $column): bool {
@@ -619,6 +619,27 @@ function portal_migrations(PDO $pdo): void {
                 $db->exec("ALTER TABLE survey_questions MODIFY question_type ENUM('rating_1_10','yes_no','star_rating','satisfaction_5','text_free','multiple_choice') NOT NULL");
                 if (portal_column_data_type($db, 'survey_answers', 'answer_value') !== 'text') {
                     $db->exec("ALTER TABLE survey_answers MODIFY answer_value TEXT NOT NULL");
+                }
+            },
+            34=>function($db){
+                // پیوند داخلی اختیاری برای هدایت مشتری از اعلان به اقدام مرتبط.
+                if (!portal_column_exists($db, 'notifications', 'action_url')) {
+                    $db->exec("ALTER TABLE notifications ADD COLUMN action_url VARCHAR(500) NULL AFTER body");
+                }
+            },
+            35=>function($db){
+                // indexهای ترکیبی برای فهرست‌های فیلترشده و گزارش ledger؛ هر index فقط یک‌بار ساخته می‌شود.
+                $indexes = [
+                    ['products', 'idx_products_customer_status_id', 'customer_id, product_status, id'],
+                    ['projects', 'idx_projects_customer_status_id', 'customer_id, status, id'],
+                    ['customer_point_ledger', 'idx_gam_ledger_customer_event_id', 'customer_id, event_key, id'],
+                ];
+                foreach ($indexes as [$table, $name, $columns]) {
+                    $check = $db->prepare('SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?');
+                    $check->execute([$table, $name]);
+                    if (!(int) $check->fetchColumn()) {
+                        $db->exec("ALTER TABLE {$table} ADD INDEX {$name} ({$columns})");
+                    }
                 }
             }
         ];

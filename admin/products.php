@@ -136,15 +136,39 @@ if ($action === 'edit' && isset($_GET['id'])) {
 // Fetch all customers for dropdown
 $customers = $pdo->query("SELECT id, first_name, last_name, username, company_name, mobile FROM users WHERE role = 'customer' ORDER BY first_name ASC")->fetchAll();
 
-// Fetch all products with customer details (با صفحه‌بندی)
-$products_total = (int) $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
+// فیلترهای فهرست محصول — queryهای prepared و قابل‌اشتراک با pagination.
+$product_search = trim((string) ($_GET['q'] ?? ''));
+$product_customer_filter = max(0, (int) ($_GET['customer_id'] ?? 0));
+$product_status_filter = (string) ($_GET['status'] ?? '');
+if (!array_key_exists($product_status_filter, product_status_list())) {
+    $product_status_filter = '';
+}
+$product_where = [];
+$product_params = [];
+if ($product_search !== '') {
+    $product_where[] = '(pr.title LIKE ? OR pr.description LIKE ? OR pr.license_key LIKE ? OR u.username LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ? OR u.company_name LIKE ?)';
+    $product_like = '%' . $product_search . '%';
+    $product_params = array_fill(0, 7, $product_like);
+}
+if ($product_customer_filter > 0) {
+    $product_where[] = 'pr.customer_id = ?';
+    $product_params[] = $product_customer_filter;
+}
+if ($product_status_filter !== '') {
+    $product_where[] = 'pr.product_status = ?';
+    $product_params[] = $product_status_filter;
+}
+$product_where_sql = $product_where ? ' WHERE ' . implode(' AND ', $product_where) : '';
+$product_count = $pdo->prepare('SELECT COUNT(*) FROM products pr JOIN users u ON pr.customer_id = u.id' . $product_where_sql);
+$product_count->execute($product_params);
+$products_total = (int) $product_count->fetchColumn();
 $pi = pagination_info($products_total, 15);
-$products = $pdo->query("
-    SELECT pr.*, u.first_name, u.last_name, u.username, u.company_name 
-    FROM products pr 
-    JOIN users u ON pr.customer_id = u.id 
-    ORDER BY pr.id DESC LIMIT " . (int) $pi['per_page'] . " OFFSET " . (int) $pi['offset'] . "
-")->fetchAll();
+$product_list = $pdo->prepare("SELECT pr.*, u.first_name, u.last_name, u.username, u.company_name
+    FROM products pr
+    JOIN users u ON pr.customer_id = u.id{$product_where_sql}
+    ORDER BY pr.id DESC LIMIT " . (int) $pi['per_page'] . " OFFSET " . (int) $pi['offset']);
+$product_list->execute($product_params);
+$products = $product_list->fetchAll();
 ?>
 <?php render_admin_header(
     'مدیریت محصولات',
@@ -310,14 +334,44 @@ $products = $pdo->query("
                 </div>
 
             <?php else: ?>
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-slate-800">لیست محصولات خریداری شده (<?php echo count($products); ?>)</h3>
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="text-lg font-bold text-slate-800">محصولات (<?= number_format($products_total) ?>)</h3>
                     <a href="products.php?action=add" class="btn btn-primary">
                         <?= icon('plus') ?><span>تعریف محصول جدید</span>
                     </a>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <form method="get" class="portal-list-toolbar card p-4 flex flex-wrap items-end gap-3" role="search">
+                    <div class="min-w-[13rem] flex-1">
+                        <label class="label" for="product_list_search">جست‌وجو در محصولات</label>
+                        <input id="product_list_search" name="q" type="search" value="<?= e($product_search) ?>" placeholder="عنوان، لایسنس، مشتری یا شرکت" class="input portal-form-control">
+                    </div>
+                    <div class="min-w-[11rem]">
+                        <label class="label" for="product_list_customer">مشتری</label>
+                        <select id="product_list_customer" name="customer_id" class="input portal-form-control">
+                            <option value="0">همهٔ مشتریان</option>
+                            <?php foreach ($customers as $c): ?>
+                                <?php $customerName = trim($c['first_name'] . ' ' . $c['last_name']) ?: $c['username']; ?>
+                                <option value="<?= (int) $c['id'] ?>" <?= $product_customer_filter === (int) $c['id'] ? 'selected' : '' ?>><?= e($customerName) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="min-w-[10rem]">
+                        <label class="label" for="product_list_status">وضعیت</label>
+                        <select id="product_list_status" name="status" class="input portal-form-control">
+                            <option value="">همهٔ وضعیت‌ها</option>
+                            <?php foreach (product_status_list() as $statusKey => $statusLabel): ?>
+                                <option value="<?= e($statusKey) ?>" <?= $product_status_filter === $statusKey ? 'selected' : '' ?>><?= e($statusLabel) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary">اعمال فیلتر</button>
+                    <?php if ($product_search !== '' || $product_customer_filter > 0 || $product_status_filter !== ''): ?>
+                        <a href="products.php" class="btn btn-secondary">پاک‌کردن</a>
+                    <?php endif; ?>
+                </form>
+
+                <div class="card portal-list-card overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="table table-card-mobile">
                             <thead class="bg-slate-50 text-slate-500 text-xs font-semibold">
