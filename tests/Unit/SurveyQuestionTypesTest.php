@@ -29,8 +29,22 @@ final class SurveyQuestionTypesTest extends TestCase
         self::assertTrue(survey_answer_is_valid('yes_no', 'بله'));
         self::assertTrue(survey_answer_is_valid('rating_1_10', '10'));
         self::assertTrue(survey_answer_is_valid('star_rating', '5'));
+        self::assertTrue(survey_answer_is_valid('text_free', 'پاسخ تشریحی معتبر'));
+        self::assertTrue(survey_answer_is_valid('multiple_choice', 'خوب', ['عالی', 'خوب', 'ضعیف']));
         self::assertFalse(survey_answer_is_valid('satisfaction_5', 'خیلی عالی'));
         self::assertFalse(survey_answer_is_valid('rating_1_10', '11'));
+        self::assertFalse(survey_answer_is_valid('text_free', ''));
+        self::assertFalse(survey_answer_is_valid('multiple_choice', 'نامعتبر', ['عالی', 'خوب']));
+    }
+
+    public function testMultipleChoiceCatalogAndOptionParserAreSafe(): void
+    {
+        $types = survey_question_types();
+        self::assertSame('پاسخ تشریحی', $types['text_free']['label']);
+        self::assertSame('چندگزینه‌ای', $types['multiple_choice']['label']);
+        self::assertSame(['عالی', 'خوب', 'ضعیف'], survey_multiple_choice_options_from_text("عالی\nخوب\nخوب\n\nضعیف"));
+        self::assertSame(['عالی', 'خوب'], survey_multiple_choice_options('["عالی","خوب","عالی"]'));
+        self::assertSame('["عالی","خوب"]', survey_multiple_choice_options_json(['عالی', 'خوب']));
     }
 
     public function testAnswerLabelMapsSatisfactionKeyToPersianText(): void

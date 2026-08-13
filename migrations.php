@@ -8,7 +8,7 @@
 
 /** آخرین نسخه اسکیمای دیتابیس — هنگام افزودن مهاجرت جدید، این عدد را یک واحد زیاد کنید. */
 if (!defined('PORTAL_SCHEMA_VERSION')) {
-    define('PORTAL_SCHEMA_VERSION', 32);
+    define('PORTAL_SCHEMA_VERSION', 33);
 }
 
 function portal_column_exists(PDO $db, string $table, string $column): bool {
@@ -610,6 +610,16 @@ function portal_migrations(PDO $pdo): void {
             32=>function($db){
                 // پشتیبانی از مقیاس رضایت توصیفی پنج‌گزینه‌ای در نصب‌های موجود.
                 $db->exec("ALTER TABLE survey_questions MODIFY question_type ENUM('rating_1_10','yes_no','star_rating','satisfaction_5') NOT NULL");
+            },
+            33=>function($db){
+                // سؤال تشریحی و چندگزینه‌ای: گزینه‌ها JSON هستند و پاسخ متن آزاد تا 2000 کاراکتر پشتیبانی می‌شود.
+                if (!portal_column_exists($db, 'survey_questions', 'question_options')) {
+                    $db->exec("ALTER TABLE survey_questions ADD COLUMN question_options TEXT NULL AFTER question_type");
+                }
+                $db->exec("ALTER TABLE survey_questions MODIFY question_type ENUM('rating_1_10','yes_no','star_rating','satisfaction_5','text_free','multiple_choice') NOT NULL");
+                if (portal_column_data_type($db, 'survey_answers', 'answer_value') !== 'text') {
+                    $db->exec("ALTER TABLE survey_answers MODIFY answer_value TEXT NOT NULL");
+                }
             }
         ];
         // گارد: مطمئن شو ثابت نسخه با بالاترین مهاجرت هماهنگ است

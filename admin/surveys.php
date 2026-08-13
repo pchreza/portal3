@@ -81,11 +81,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = 'فرم با موفقیت ویرایش شد.';
         }
     } elseif ($a === 'question') {
+        $surveyId = (int) ($_POST['survey_id'] ?? 0);
+        $questionText = trim((string) ($_POST['question_text'] ?? ''));
         $allowed_qtypes = array_keys(survey_question_types());
         $qtype = in_array($_POST['question_type'] ?? '', $allowed_qtypes, true) ? (string) $_POST['question_type'] : 'yes_no';
-        $q = $pdo->prepare("INSERT INTO survey_questions (survey_id, question_text, question_type) VALUES (?, ?, ?)");
-        $q->execute([(int) ($_POST['survey_id'] ?? 0), trim($_POST['question_text'] ?? ''), $qtype]);
-        $msg = 'سؤال اضافه شد.';
+        $options = $qtype === 'multiple_choice' ? survey_multiple_choice_options_from_text((string) ($_POST['question_options'] ?? '')) : [];
+        if ($surveyId <= 0 || $questionText === '') {
+            $err = 'متن سؤال الزامی است.';
+        } elseif ($qtype === 'multiple_choice' && count($options) < 2) {
+            $err = 'برای سؤال چندگزینه‌ای، دست‌کم دو گزینهٔ متفاوت وارد کنید.';
+        } else {
+            $q = $pdo->prepare("INSERT INTO survey_questions (survey_id, question_text, question_type, question_options) VALUES (?, ?, ?, ?)");
+            $q->execute([$surveyId, $questionText, $qtype, $qtype === 'multiple_choice' ? survey_multiple_choice_options_json($options) : null]);
+            $msg = 'سؤال اضافه شد.';
+        }
     } elseif ($a === 'delete') {
         $id = (int) ($_POST['delete_id'] ?? 0);
         // پاک‌سازی انتساب‌های باقی‌مانده (survey_assignments کلید خارجی ندارد)
@@ -97,14 +106,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg = 'سؤال حذف شد.';
     } elseif ($a === 'update_question') {
         $qid = (int) ($_POST['question_id'] ?? 0);
-        $qtext = trim($_POST['question_text'] ?? '');
+        $qtext = trim((string) ($_POST['question_text'] ?? ''));
         $allowed_qtypes = array_keys(survey_question_types());
         $qtype = in_array($_POST['question_type'] ?? '', $allowed_qtypes, true) ? (string) $_POST['question_type'] : 'yes_no';
-        if ($qid > 0 && $qtext !== '') {
-            $pdo->prepare('UPDATE survey_questions SET question_text = ?, question_type = ? WHERE id = ?')->execute([$qtext, $qtype, $qid]);
-            $msg = 'سؤال ویرایش شد.';
-        } else {
+        $options = $qtype === 'multiple_choice' ? survey_multiple_choice_options_from_text((string) ($_POST['question_options'] ?? '')) : [];
+        if ($qid <= 0 || $qtext === '') {
             $err = 'متن سؤال نمی‌تواند خالی باشد.';
+        } elseif ($qtype === 'multiple_choice' && count($options) < 2) {
+            $err = 'برای سؤال چندگزینه‌ای، دست‌کم دو گزینهٔ متفاوت وارد کنید.';
+        } else {
+            $pdo->prepare('UPDATE survey_questions SET question_text = ?, question_type = ?, question_options = ? WHERE id = ?')->execute([$qtext, $qtype, $qtype === 'multiple_choice' ? survey_multiple_choice_options_json($options) : null, $qid]);
+            $msg = 'سؤال ویرایش شد.';
         }
     }
 }
@@ -127,6 +139,7 @@ $form = null;
 $questions = [];
 $results = [];
 $stats = [];
+$result_customers = [];
 
 if ($edit_survey) {
     $x = $pdo->prepare('SELECT * FROM surveys WHERE id = ?');
@@ -152,6 +165,9 @@ if ($result_id) {
     $form = $x->fetch();
 
     if ($form) {
+        $customersQuery = $pdo->prepare("SELECT DISTINCT u.id, u.username, u.first_name, u.last_name FROM survey_responses r JOIN users u ON u.id = r.customer_id WHERE r.survey_id = ? ORDER BY u.first_name, u.last_name, u.username");
+        $customersQuery->execute([$result_id]);
+        $result_customers = $customersQuery->fetchAll();
         $filter_customer = (int) ($_GET['customer_id'] ?? 0);
         $filter_entity   = $_GET['entity_type'] ?? '';
         $filter_from     = $_GET['from'] ?? '';
@@ -183,7 +199,7 @@ if ($result_id) {
             if ($result_ids) {
                 $ph = implode(',', array_fill(0, count($result_ids), '?'));
                 $st = $pdo->prepare(
-                    "SELECT q.id, q.question_text, q.question_type, a.answer_value
+                    "SELECT q.id, q.question_text, q.question_type, q.question_options, a.answer_value
                      FROM survey_answers a
                      JOIN survey_questions q ON q.id = a.question_id
                      JOIN survey_responses r ON r.id = a.response_id
@@ -195,13 +211,15 @@ if ($result_id) {
             foreach ($stats_rows as $row) {
                 $k = $row['id'];
                 if (!isset($stats[$k])) {
-                    $stats[$k] = ['text' => $row['question_text'], 'type' => $row['question_type'], 'sum' => 0, 'count' => 0, 'yes' => 0, 'no' => 0, 'distribution' => []];
+                    $stats[$k] = ['text' => $row['question_text'], 'type' => $row['question_type'], 'options' => survey_multiple_choice_options($row['question_options'] ?? null), 'sum' => 0, 'count' => 0, 'yes' => 0, 'no' => 0, 'text_count' => 0, 'distribution' => []];
                 }
                 if ($row['question_type'] === 'yes_no') {
                     if ($row['answer_value'] === 'بله') { $stats[$k]['yes']++; } else { $stats[$k]['no']++; }
-                } elseif ($row['question_type'] === 'satisfaction_5') {
+                } elseif (in_array($row['question_type'], ['satisfaction_5', 'multiple_choice'], true)) {
                     $answerKey = (string) $row['answer_value'];
                     $stats[$k]['distribution'][$answerKey] = ($stats[$k]['distribution'][$answerKey] ?? 0) + 1;
+                } elseif ($row['question_type'] === 'text_free') {
+                    $stats[$k]['text_count']++;
                 } else {
                     $stats[$k]['sum'] += (float) $row['answer_value'];
                     $stats[$k]['count']++;
@@ -237,8 +255,14 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                 <form method="get" class="portal-survey-filter card p-5 flex flex-wrap items-end gap-3">
                     <input type="hidden" name="results" value="<?= $result_id ?>">
                     <div>
-                        <label class="block text-xs text-slate-500 mb-1" for="survey_filter_customer">شناسه مشتری</label>
-                        <input type="number" id="survey_filter_customer" name="customer_id" placeholder="شناسه مشتری" value="<?= htmlspecialchars($_GET['customer_id'] ?? '') ?>" dir="ltr" class="value-ltr px-3 py-2 rounded-lg border border-slate-300 text-sm">
+                        <label class="block text-xs text-slate-500 mb-1" for="survey_filter_customer">مشتری</label>
+                        <select id="survey_filter_customer" name="customer_id" class="input portal-form-control !min-h-0 !h-10 text-sm">
+                            <option value="0">همهٔ مشتریان</option>
+                            <?php foreach ($result_customers as $resultCustomer): ?>
+                                <?php $resultCustomerName = trim(($resultCustomer['first_name'] ?? '') . ' ' . ($resultCustomer['last_name'] ?? '')) ?: $resultCustomer['username']; ?>
+                                <option value="<?= (int) $resultCustomer['id'] ?>" <?= $filter_customer === (int) $resultCustomer['id'] ? 'selected' : '' ?>><?= e($resultCustomerName) ?> — #<?= (int) $resultCustomer['id'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-xs text-slate-500 mb-1" for="survey_filter_entity">نوع مورد</label>
@@ -262,29 +286,41 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                 <p class="text-sm text-slate-500">تعداد پاسخ‌ها: <b class="text-slate-800 value-ltr" dir="ltr"><?= count($results) ?></b></p>
 
                 <?php if (!empty($stats)): ?>
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h4 class="font-bold text-slate-800 mb-3">خلاصه آماری</h4>
-                        <div class="space-y-2">
+                    <section class="portal-survey-results-summary card p-5" aria-labelledby="survey-results-summary-title">
+                        <h4 id="survey-results-summary-title" class="font-bold text-slate-800 mb-3">خلاصه آماری</h4>
+                        <div class="space-y-3">
                             <?php foreach ($stats as $st): ?>
-                                <div class="flex items-center justify-between text-sm bg-slate-50 rounded-lg px-3 py-2">
-                                    <span class="text-slate-700"><bdi dir="auto"><?= htmlspecialchars($st['text']) ?></bdi></span>
-                                    <span class="text-slate-500 font-medium">
-                                        <?php if ($st['type'] === 'yes_no'): ?>
-                                            بله: <b class="text-emerald-600 value-ltr" dir="ltr"><?= $st['yes'] ?></b> | خیر: <b class="text-red-500 value-ltr" dir="ltr"><?= $st['no'] ?></b>
-                                        <?php elseif ($st['type'] === 'satisfaction_5'): ?>
-                                            <span class="survey-stats-distribution">
-                                                <?php foreach (survey_satisfaction_options() as $answerKey => $answerLabel): ?>
-                                                    <span class="survey-stats-chip"><span><?= e($answerLabel) ?></span><b class="value-ltr" dir="ltr"><?= (int) ($st['distribution'][$answerKey] ?? 0) ?></b></span>
-                                                <?php endforeach; ?>
-                                            </span>
-                                        <?php else: ?>
-                                            میانگین: <b class="text-indigo-700 value-ltr" dir="ltr"><?= number_format($st['count'] ? $st['sum'] / $st['count'] : 0, 2) ?></b> از <span class="value-ltr" dir="ltr"><?= $st['type'] === 'rating_1_10' ? 10 : 5 ?></span>
-                                        <?php endif; ?>
-                                    </span>
-                                </div>
+                                <article class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                    <h5 class="font-medium text-slate-800"><bdi dir="auto"><?= e($st['text']) ?></bdi></h5>
+                                    <?php if ($st['type'] === 'yes_no'): ?>
+                                        <p class="text-slate-500 font-medium mt-2">بله: <b class="text-emerald-600 value-ltr" dir="ltr"><?= $st['yes'] ?></b> | خیر: <b class="text-red-500 value-ltr" dir="ltr"><?= $st['no'] ?></b></p>
+                                    <?php elseif (in_array($st['type'], ['satisfaction_5', 'multiple_choice'], true)): ?>
+                                        <?php
+                                        $distributionOptions = $st['type'] === 'satisfaction_5'
+                                            ? survey_satisfaction_options()
+                                            : array_combine($st['options'], $st['options']);
+                                        if (!$distributionOptions) { $distributionOptions = array_combine(array_keys($st['distribution']), array_keys($st['distribution'])) ?: []; }
+                                        $distributionTotal = max(1, array_sum($st['distribution']));
+                                        ?>
+                                        <div class="survey-distribution" role="list" aria-label="توزیع پاسخ‌ها">
+                                            <?php foreach ($distributionOptions as $answerKey => $answerLabel): ?>
+                                                <?php $answerCount = (int) ($st['distribution'][$answerKey] ?? 0); $answerShare = ($answerCount / $distributionTotal) * 100; ?>
+                                                <div class="survey-distribution-row" role="listitem">
+                                                    <span><bdi dir="auto"><?= e((string) $answerLabel) ?></bdi></span>
+                                                    <span class="survey-distribution-track" aria-hidden="true"><span style="--survey-answer-share: <?= number_format($answerShare, 2, '.', '') ?>%"></span></span>
+                                                    <b class="value-ltr" dir="ltr" aria-label="<?= $answerCount ?> پاسخ"><?= $answerCount ?></b>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php elseif ($st['type'] === 'text_free'): ?>
+                                        <p class="text-slate-500 font-medium mt-2"><b class="text-indigo-700 value-ltr" dir="ltr"><?= (int) $st['text_count'] ?></b> پاسخ تشریحی ثبت شده است؛ متن کامل در فهرست پاسخ‌ها قابل مشاهده است.</p>
+                                    <?php else: ?>
+                                        <p class="text-slate-500 font-medium mt-2">میانگین: <b class="text-indigo-700 value-ltr" dir="ltr"><?= number_format($st['count'] ? $st['sum'] / $st['count'] : 0, 2) ?></b> از <span class="value-ltr" dir="ltr"><?= $st['type'] === 'rating_1_10' ? 10 : 5 ?></span></p>
+                                    <?php endif; ?>
+                                </article>
                             <?php endforeach; ?>
                         </div>
-                    </div>
+                    </section>
                 <?php endif; ?>
 
                 <?php foreach ($results as $r): ?>
@@ -300,9 +336,9 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                             $aa->execute([$r['id']]);
                             foreach ($aa->fetchAll() as $ans):
                             ?>
-                                <div class="bg-slate-50 rounded-lg p-3 text-sm flex items-center justify-between">
-                                    <span class="text-slate-600"><bdi dir="auto"><?= htmlspecialchars($ans['question_text']) ?></bdi></span>
-                                    <span class="text-indigo-700 font-medium"><bdi dir="auto"><?= htmlspecialchars(survey_answer_label((string) ($ans['question_type'] ?? ''), (string) $ans['answer_value'])) ?></bdi></span>
+                                <div class="bg-slate-50 rounded-lg p-3 text-sm flex items-start justify-between gap-4">
+                                    <span class="text-slate-600 shrink-0"><bdi dir="auto"><?= htmlspecialchars($ans['question_text']) ?></bdi></span>
+                                    <span class="text-indigo-700 font-medium whitespace-pre-wrap break-words text-end"><bdi dir="auto"><?= htmlspecialchars(survey_answer_label((string) ($ans['question_type'] ?? ''), (string) $ans['answer_value'])) ?></bdi></span>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -341,12 +377,16 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1" for="survey_question_type_new">نوع سؤال</label>
-                            <select id="survey_question_type_new" name="question_type" class="input portal-form-control">
-                                <option value="rating_1_10">امتیاز ۱ تا ۱۰</option>
-                                <option value="yes_no">بله / خیر</option>
-                                <option value="star_rating">امتیاز ستاره‌ای ۱ تا ۵</option>
-                                <option value="satisfaction_5">رضایت‌سنجی: عالی تا بد</option>
+                            <select id="survey_question_type_new" name="question_type" class="input portal-form-control" data-question-type>
+                                <?php foreach ($question_type_labels as $typeKey => $typeLabel): ?>
+                                    <option value="<?= e($typeKey) ?>"><?= e($typeLabel) ?></option>
+                                <?php endforeach; ?>
                             </select>
+                        </div>
+                        <div class="md:col-span-3" data-question-options-wrap hidden>
+                            <label class="block text-sm font-medium text-slate-700 mb-1" for="survey_question_options_new">گزینه‌ها <span class="text-xs font-normal text-slate-500">(هر گزینه در یک خط)</span></label>
+                            <textarea id="survey_question_options_new" name="question_options" rows="4" class="input portal-form-control" data-question-options placeholder="مثال: عالی&#10;خوب&#10;نیازمند پیگیری"></textarea>
+                            <p class="helper mt-1">حداقل دو و حداکثر دوازده گزینهٔ متفاوت وارد کنید. گزینهٔ تکراری خودکار حذف می‌شود.</p>
                         </div>
                         <div class="md:col-span-3 flex justify-end">
                             <button class="btn btn-primary"><?= icon('plus') ?><span>افزودن سؤال</span></button>
@@ -360,6 +400,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                     <?php else: ?>
                         <div class="divide-y divide-slate-100">
                             <?php foreach ($questions as $i => $item): ?>
+                                <?php $questionOptionText = implode("\n", survey_multiple_choice_options($item['question_options'] ?? null)); ?>
                                 <div class="portal-question-item px-6 py-4" data-question-item="<?= $item['id'] ?>">
                                     <div class="flex items-center justify-between gap-3">
                                         <div>
@@ -388,12 +429,16 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-slate-700 mb-1" for="survey_question_type_<?= $item['id'] ?>">نوع سؤال</label>
-                                                <select id="survey_question_type_<?= $item['id'] ?>" name="question_type" class="input portal-form-control">
-                                                    <option value="rating_1_10" <?= $item['question_type'] === 'rating_1_10' ? 'selected' : '' ?>>امتیاز ۱ تا ۱۰</option>
-                                                    <option value="yes_no" <?= $item['question_type'] === 'yes_no' ? 'selected' : '' ?>>بله / خیر</option>
-                                                    <option value="star_rating" <?= $item['question_type'] === 'star_rating' ? 'selected' : '' ?>>امتیاز ستاره‌ای ۱ تا ۵</option>
-                                                    <option value="satisfaction_5" <?= $item['question_type'] === 'satisfaction_5' ? 'selected' : '' ?>>رضایت‌سنجی: عالی تا بد</option>
+                                                <select id="survey_question_type_<?= $item['id'] ?>" name="question_type" class="input portal-form-control" data-question-type>
+                                                    <?php foreach ($question_type_labels as $typeKey => $typeLabel): ?>
+                                                        <option value="<?= e($typeKey) ?>" <?= $item['question_type'] === $typeKey ? 'selected' : '' ?>><?= e($typeLabel) ?></option>
+                                                    <?php endforeach; ?>
                                                 </select>
+                                            </div>
+                                            <div class="md:col-span-3" data-question-options-wrap <?= $item['question_type'] === 'multiple_choice' ? '' : 'hidden' ?>>
+                                                <label class="block text-sm font-medium text-slate-700 mb-1" for="survey_question_options_<?= $item['id'] ?>">گزینه‌ها <span class="text-xs font-normal text-slate-500">(هر گزینه در یک خط)</span></label>
+                                                <textarea id="survey_question_options_<?= $item['id'] ?>" name="question_options" rows="4" class="input portal-form-control" data-question-options><?= e($questionOptionText) ?></textarea>
+                                                <p class="helper mt-1">حداقل دو و حداکثر دوازده گزینهٔ متفاوت وارد کنید.</p>
                                             </div>
                                             <div class="md:col-span-3 flex justify-end gap-2">
                                                 <button type="button" class="btn btn-sm btn-secondary" data-question-cancel>انصراف</button>
@@ -619,6 +664,15 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                         var period = toggle.form ? toggle.form.querySelector('#period') : null;
                         if (period) period.hidden = !toggle.checked;
                     });
+                });
+                function toggleQuestionOptions(select){
+                    var form = select.closest('form');
+                    var wrap = form ? form.querySelector('[data-question-options-wrap]') : null;
+                    if (wrap) wrap.hidden = select.value !== 'multiple_choice';
+                }
+                document.querySelectorAll('[data-question-type]').forEach(function(select){
+                    select.addEventListener('change', function(){ toggleQuestionOptions(select); });
+                    toggleQuestionOptions(select);
                 });
             });
             </script>

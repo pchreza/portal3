@@ -128,6 +128,14 @@ function survey_question_types(): array
             'label' => 'رضایت‌سنجی: عالی تا بد',
             'kind' => 'satisfaction',
         ],
+        'text_free' => [
+            'label' => 'پاسخ تشریحی',
+            'kind' => 'text',
+        ],
+        'multiple_choice' => [
+            'label' => 'چندگزینه‌ای',
+            'kind' => 'choice',
+        ],
     ];
 }
 
@@ -148,7 +156,45 @@ function survey_question_type_label(string $type): string
     return survey_question_types()[$type]['label'] ?? 'نوع سؤال نامشخص';
 }
 
-function survey_answer_is_valid(string $type, string $value): bool
+/** @return list<string> گزینه‌های پاک‌سازی‌شده از متن چندخطی مدیر */
+function survey_multiple_choice_options_from_text(string $raw): array
+{
+    $options = [];
+    foreach (preg_split('/\R/u', $raw) ?: [] as $line) {
+        $option = trim($line);
+        if ($option === '') {
+            continue;
+        }
+        $option = mb_substr($option, 0, 120);
+        if (!in_array($option, $options, true)) {
+            $options[] = $option;
+        }
+        if (count($options) >= 12) {
+            break;
+        }
+    }
+    return $options;
+}
+
+/** @return list<string> */
+function survey_multiple_choice_options(?string $stored): array
+{
+    if ($stored === null || trim($stored) === '') {
+        return [];
+    }
+    $decoded = json_decode($stored, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+    return survey_multiple_choice_options_from_text(implode("\n", array_map(static fn ($option): string => is_scalar($option) ? (string) $option : '', $decoded)));
+}
+
+function survey_multiple_choice_options_json(array $options): string
+{
+    return json_encode(array_values($options), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
+}
+
+function survey_answer_is_valid(string $type, string $value, array $options = []): bool
 {
     $value = trim($value);
     return match ($type) {
@@ -156,6 +202,8 @@ function survey_answer_is_valid(string $type, string $value): bool
         'rating_1_10' => ctype_digit($value) && (int) $value >= 1 && (int) $value <= 10,
         'star_rating' => ctype_digit($value) && (int) $value >= 1 && (int) $value <= 5,
         'satisfaction_5' => array_key_exists($value, survey_satisfaction_options()),
+        'text_free' => $value !== '' && mb_strlen($value) <= 2000,
+        'multiple_choice' => in_array($value, $options, true),
         default => false,
     };
 }

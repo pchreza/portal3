@@ -53,12 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assignment_id'])) {
                 $ins = $pdo->prepare("INSERT INTO survey_answers (response_id, question_id, answer_value) VALUES (?, ?, ?)");
                 foreach ($questions as $q) {
                     $key = 'q_' . $q['id'];
-                    if (!isset($_POST[$key])) {
+                    if (!isset($_POST[$key]) || is_array($_POST[$key])) {
                         throw new Exception('همه سؤال‌ها الزامی هستند.');
                     }
                     $value = trim((string) $_POST[$key]);
+                    $options = survey_multiple_choice_options($q['question_options'] ?? null);
 
-                    if (!survey_answer_is_valid((string) $q['question_type'], $value)) {
+                    if (!survey_answer_is_valid((string) $q['question_type'], $value, $options)) {
                         throw new Exception('پاسخ سؤال «' . survey_question_type_label((string) $q['question_type']) . '» معتبر نیست.');
                     }
 
@@ -267,6 +268,20 @@ render_customer_header(
                                 </div>
                                 <div class="survey-hint"><span>بد</span><span>عالی</span></div>
 
+                            <?php elseif ($q['question_type'] === 'multiple_choice'): ?>
+                                <?php $choiceOptions = survey_multiple_choice_options($q['question_options'] ?? null); ?>
+                                <div class="multiple-choice" role="radiogroup" aria-label="<?= e($q['question_text']) ?>">
+                                    <?php foreach ($choiceOptions as $choiceIndex => $choiceLabel): ?>
+                                        <input type="radio" id="q<?= $q['id'] ?>_choice_<?= $choiceIndex ?>" name="<?= $fieldName ?>" value="<?= e($choiceLabel) ?>" required>
+                                        <label for="q<?= $q['id'] ?>_choice_<?= $choiceIndex ?>"><span class="multiple-choice-mark" aria-hidden="true"></span><span><bdi dir="auto"><?= e($choiceLabel) ?></bdi></span></label>
+                                    <?php endforeach; ?>
+                                </div>
+
+                            <?php elseif ($q['question_type'] === 'text_free'): ?>
+                                <label class="sr-only" for="q<?= $q['id'] ?>_text">پاسخ به سؤال: <?= e($q['question_text']) ?></label>
+                                <textarea id="q<?= $q['id'] ?>_text" name="<?= $fieldName ?>" class="survey-text-answer" dir="auto" rows="5" maxlength="2000" required aria-describedby="q<?= $q['id'] ?>_hint" placeholder="پاسخ خود را بنویسید..."></textarea>
+                                <div id="q<?= $q['id'] ?>_hint" class="survey-hint"><span>پاسخ شما فقط برای مدیران مجاز این فرم قابل مشاهده است.</span><span><span data-character-count>۰</span> / ۲۰۰۰</span></div>
+
                             <?php else: ?>
                                 <div class="rating-scale" role="radiogroup" aria-label="<?= e($q['question_text']) ?>">
                                     <?php for ($score = 1; $score <= 10; $score++): ?>
@@ -296,14 +311,22 @@ render_customer_header(
                     function update(){
                         var answered = 0;
                         cards.forEach(function(card){
-                            var group = card.querySelector('[name^="q_"]');
-                            var done = group && group.form && group.form.elements[group.name] && Array.prototype.some.call(form.elements[group.name], function(r){ return r.checked; });
+                            var selected = card.querySelector('input[type="radio"]:checked');
+                            var textarea = card.querySelector('textarea[name^="q_"]');
+                            var done = Boolean(selected || (textarea && textarea.value.trim() !== ''));
                             if (done) { answered++; card.classList.remove('is-focused'); }
+                            if (textarea) {
+                                var count = card.querySelector('[data-character-count]');
+                                if (count) count.textContent = textarea.value.length.toLocaleString('fa-IR');
+                            }
                         });
                         var pct = cards.length ? Math.round(answered / cards.length * 100) : 0;
                         if (bar) bar.style.width = pct + '%';
                         if (lbl) lbl.textContent = answered + ' / ' + cards.length;
                     }
+                    form.addEventListener('input', function(e){
+                        if (e.target.name && e.target.name.indexOf('q_') === 0) update();
+                    });
                     form.addEventListener('change', function(e){
                         if (e.target.name && e.target.name.indexOf('q_') === 0) update();
                     });
