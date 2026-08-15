@@ -97,8 +97,11 @@ html.dark {
 .text-slate-700     { color: var(--fg); }
 .text-slate-600     { color: var(--fg-muted); }
 .text-slate-500     { color: var(--fg-muted); }
-.text-slate-400     { color: var(--fg-faint); }
-.text-slate-300     { color: var(--fg-faint); }
+.text-slate-400     { color: var(--fg-muted); }
+.text-slate-300     { color: var(--fg-muted); }
+/* در حالت دارک، این رنگ‌ها باید روشن‌تر باشند تا روی پس‌زمینه تیره خوانا باشند */
+html.dark .text-slate-400 { color: var(--fg-faint); }
+html.dark .text-slate-300 { color: var(--fg-faint); }
 .hover\:text-slate-700:hover,
 .hover\:text-slate-800:hover { color: var(--fg); }
 
@@ -203,7 +206,7 @@ textarea.input { height: auto; padding: .625rem .875rem; }
 .badge-danger  { background: var(--danger-soft);  color: var(--danger); }
 .badge-info    { background: var(--info-soft);    color: var(--info); }
 .badge-muted   { background: var(--surface-2);    color: var(--fg-muted); }
-.badge-brand   { background: color-mix(in srgb, var(--ring) 14%, transparent); color: var(--ring); }
+.badge-brand   { background: color-mix(in srgb, var(--ring) 14%, transparent); color: var(--tp-primary-dark, var(--ring)); }
 
 .alert { display: flex; gap: .75rem; align-items: flex-start; padding: .9rem 1rem; border-radius: var(--radius-sm); font-size: .875rem; line-height: 1.6; border: 1px solid transparent; }
 .alert-success { background: var(--success-soft); color: var(--success); border-color: color-mix(in srgb, var(--success) 25%, transparent); }
@@ -1082,3 +1085,71 @@ html.dark .portal-notifications-page .text-amber-600 { color: #fcd34d !important
 .survey-distribution-track { height: .45rem; overflow: hidden; background: var(--portal-surface-muted); border-radius: 999px; }
 .survey-distribution-track > span { display: block; width: var(--survey-answer-share, 0%); height: 100%; background: var(--portal-primary); border-radius: inherit; }
 @media (max-width: 480px) { .survey-distribution-row { grid-template-columns: 1fr auto; } .survey-distribution-track { grid-column: 1 / -1; } }
+
+
+/* ===== Onboarding Tour ===== */
+body.portal-onboarding-active { overflow: hidden; }
+.portal-onboarding-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+}
+.portal-onboarding-spotlight {
+    position: absolute;
+    border-radius: var(--radius);
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
+    transition: top 0.3s var(--ease), left 0.3s var(--ease), width 0.3s var(--ease), height 0.3s var(--ease);
+}
+.portal-onboarding-tooltip {
+    position: absolute;
+    width: 360px;
+    max-width: calc(100vw - 32px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+    padding: 1.25rem;
+    transition: top 0.3s var(--ease), left 0.3s var(--ease);
+    z-index: 10000;
+}
+.portal-onboarding-tooltip:focus { outline: none; }
+.portal-onboarding-header {
+    display: flex; align-items: center; gap: .65rem;
+    margin-bottom: .75rem;
+}
+.portal-onboarding-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem;
+    border-radius: .65rem;
+    background: var(--ring); color: #fff;
+    flex-shrink: 0;
+}
+.portal-onboarding-icon svg { width: 1.1rem; height: 1.1rem; }
+.portal-onboarding-title {
+    margin: 0; font-size: .95rem; font-weight: 700; color: var(--fg-strong);
+    flex: 1; min-width: 0;
+}
+.portal-onboarding-counter {
+    font-size: .7rem; font-weight: 600; color: var(--fg-faint);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.portal-onboarding-body {
+    font-size: .85rem; line-height: 1.7; color: var(--fg-muted);
+    margin-bottom: 1rem;
+}
+.portal-onboarding-actions {
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+}
+.portal-onboarding-nav {
+    display: flex; gap: .5rem;
+}
+.portal-onboarding-nav .btn { min-width: 4rem; }
+@media (max-width: 767px) {
+    .portal-onboarding-tooltip {
+        width: calc(100vw - 32px) !important;
+        left: 16px !important;
+    }
+    .portal-onboarding-actions { flex-direction: column-reverse; align-items: stretch; }
+    .portal-onboarding-nav { width: 100%; }
+    .portal-onboarding-nav .btn { flex: 1; }
+    .portal-onboarding-skip { width: 100%; }
+}

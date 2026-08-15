@@ -362,7 +362,7 @@ render_customer_header(
                                     <?php if ($i['answered']): ?>
                                         <span class="badge badge-success"><?= icon('check', 'w-3.5 h-3.5') ?> پاسخ شما ثبت شد</span>
                                     <?php elseif (!$i['entity_exists']): ?>
-                                        <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-slate-100 px-3 py-2 rounded-lg">مورد مربوطه حذف شده است</span>
+                                        <span class="inline-flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100 px-3 py-2 rounded-lg">مورد مربوطه حذف شده است</span>
                                     <?php elseif (strtotime($i['available_at'] ?? '') > time()): ?>
                                         <?php
                                             $diff_sec = max(0, strtotime($i['available_at']) - time());

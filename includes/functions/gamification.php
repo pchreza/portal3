@@ -131,7 +131,7 @@ function gamification_award_points(
         $points = min(100000, max(1, (int) $rule['points']));
         $dailyCap = min(1000000, max(0, (int) $rule['daily_cap']));
         if ($dailyCap > 0) {
-            $cap = $pdo->prepare("SELECT COALESCE(SUM(delta), 0) FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 AND created_at >= UTC_DATE()");
+            $cap = $pdo->prepare("SELECT COALESCE(SUM(delta), 0) FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 AND created_at >= CURDATE()");
             $cap->execute([$customerId, $eventKey]);
             if ((int) $cap->fetchColumn() + $points > $dailyCap) {
                 if ($ownTransaction) $pdo->commit();
@@ -140,8 +140,8 @@ function gamification_award_points(
         }
         $cooldown = min(86400 * 30, max(0, (int) $rule['cooldown_seconds']));
         if ($cooldown > 0) {
-            $last = $pdo->prepare("SELECT id FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL {$cooldown} SECOND) LIMIT 1");
-            $last->execute([$customerId, $eventKey]);
+            $last = $pdo->prepare('SELECT id FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? SECOND) LIMIT 1');
+            $last->execute([$customerId, $eventKey, $cooldown]);
             if ($last->fetchColumn()) {
                 if ($ownTransaction) $pdo->commit();
                 return 0;
@@ -155,6 +155,8 @@ function gamification_award_points(
         $walletUpdate->execute([$newBalance, $points, $customerId]);
 
         // اعلان پایدار باید در مسیر مرکزی award ساخته شود تا هیچ event موفقی جا نماند.
+        if ($ownTransaction) $pdo->commit();
+        // ارسال notification خارج از تراکنش برای جلوگیری از تداخل
         if (function_exists('send_notification')) {
             $eventTitle = gamification_event_catalog()[$eventKey]['title'] ?? $eventKey;
             $awardMessage = 'برای «' . $eventTitle . '» ' . gamification_points_label($points) . ' گرفتید.';
@@ -162,8 +164,6 @@ function gamification_award_points(
                 error_log('[Gamification Award] notification delivery failed for customer ' . $customerId . ' / ' . $eventKey);
             }
         }
-
-        if ($ownTransaction) $pdo->commit();
         return $points;
     } catch (Throwable $e) {
         if ($ownTransaction && $pdo->inTransaction()) $pdo->rollBack();
@@ -236,7 +236,7 @@ function gamification_customer_event_status(int $customerId, string $eventKey): 
     }
     $totalStmt = $pdo->prepare('SELECT COALESCE(SUM(delta), 0) FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0');
     $totalStmt->execute([$customerId, $eventKey]);
-    $dailyStmt = $pdo->prepare('SELECT COALESCE(SUM(delta), 0) FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 AND created_at >= UTC_DATE()');
+    $dailyStmt = $pdo->prepare('SELECT COALESCE(SUM(delta), 0) FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 AND created_at >= CURDATE()');
     $dailyStmt->execute([$customerId, $eventKey]);
     $lastStmt = $pdo->prepare('SELECT created_at, UNIX_TIMESTAMP(created_at) created_epoch FROM customer_point_ledger WHERE customer_id = ? AND event_key = ? AND delta > 0 ORDER BY id DESC LIMIT 1');
     $lastStmt->execute([$customerId, $eventKey]);
@@ -286,7 +286,13 @@ function gamification_bonus_feedback(int $customerId, int $points): void
 /** @return array{event_key:string,title:string,description:string,points:int,daily_cap:int,cooldown_seconds:int}|null */
 function gamification_context_offer(int $customerId, string $eventKey): ?array
 {
+    static $cache = [];
+    $cacheKey = $customerId . ':' . $eventKey;
+    if (array_key_exists($cacheKey, $cache)) {
+        return $cache[$cacheKey];
+    }
     if (!gamification_enabled() || $customerId <= 0 || !isset(gamification_event_catalog()[$eventKey])) {
+        $cache[$cacheKey] = null;
         return null;
     }
     $rule = gamification_rule($eventKey);
@@ -298,7 +304,7 @@ function gamification_context_offer(int $customerId, string $eventKey): ?array
         return null;
     }
     $event = gamification_event_catalog()[$eventKey];
-    return [
+    $result = [
         'event_key' => $eventKey,
         'title' => $event['title'],
         'description' => $event['description'],
@@ -306,6 +312,8 @@ function gamification_context_offer(int $customerId, string $eventKey): ?array
         'daily_cap' => (int) $rule['daily_cap'],
         'cooldown_seconds' => (int) $rule['cooldown_seconds'],
     ];
+    $cache[$cacheKey] = $result;
+    return $result;
 }
 
 /** @return array{points:int,balance:int} */
@@ -366,11 +374,17 @@ function gamification_list_rewards(int $customerId = 0): array
                    (SELECT COUNT(*) FROM reward_coupon_pool cp WHERE cp.reward_id = r.id AND cp.status = 'available' AND (cp.expires_at IS NULL OR cp.expires_at >= UTC_TIMESTAMP())) available_codes
             FROM reward_catalog r JOIN reward_sites s ON s.id = r.site_id WHERE r.is_active = 1 AND s.is_active = 1 ORDER BY r.points_cost, r.id";
     $rows = $pdo->query($sql)->fetchAll();
-    if ($customerId > 0) {
+    if ($customerId > 0 && $rows) {
+        $rewardIds = array_map(static fn($r) => (int) $r['id'], $rows);
+        $placeholders = implode(',', array_fill(0, count($rewardIds), '?'));
+        $stmt = $pdo->prepare("SELECT reward_id, COUNT(*) cnt FROM reward_redemptions WHERE customer_id = ? AND status = 'issued' AND reward_id IN ({$placeholders}) GROUP BY reward_id");
+        $stmt->execute(array_merge([$customerId], $rewardIds));
+        $counts = [];
+        foreach ($stmt->fetchAll() as $c) {
+            $counts[(int) $c['reward_id']] = (int) $c['cnt'];
+        }
         foreach ($rows as &$row) {
-            $stmt = $pdo->prepare('SELECT COUNT(*) FROM reward_redemptions WHERE reward_id = ? AND customer_id = ? AND status = \'issued\'');
-            $stmt->execute([(int) $row['id'], $customerId]);
-            $row['customer_redemptions'] = (int) $stmt->fetchColumn();
+            $row['customer_redemptions'] = $counts[(int) $row['id']] ?? 0;
         }
         unset($row);
     }
@@ -438,11 +452,12 @@ function gamification_redeem_reward(int $customerId, int $rewardId, string $nonc
             if (!gamification_valid_code($couponCode)) throw new RuntimeException('کد ثابت این پاداش توسط مدیر معتبر تنظیم نشده است.');
         }
         $newBalance = $wallet['balance'] - $cost;
-        $redemption = $pdo->prepare('INSERT INTO reward_redemptions (reward_id, customer_id, coupon_id, coupon_code_snapshot, points_cost, site_id, redirect_url_snapshot, expires_at, status, idempotency_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'issued\', ?)');
-        $redemption->execute([$rewardId, $customerId, $couponId, $couponCode, $cost, (int) $reward['site_id'], (string) $reward['base_url'], $expiresAt, $idempotency]);
-        $redemptionId = (int) $pdo->lastInsertId();
         $ledger = $pdo->prepare('INSERT INTO customer_point_ledger (customer_id, delta, balance_after, event_key, reference_type, reference_id, idempotency_key, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        $ledger->execute([$customerId, -$cost, $newBalance, 'reward_redeemed', 'reward_redemption', (string) $redemptionId, $idempotency . ':ledger', 'تبدیل امتیاز به پاداش: ' . $reward['title']]);
+        $ledger->execute([$customerId, -$cost, $newBalance, 'reward_redeemed', 'reward_redemption', '', $idempotency . ':ledger', 'تبدیل امتیاز به پاداش: ' . $reward['title']]);
+        $ledgerId = (int) $pdo->lastInsertId();
+        $redemption = $pdo->prepare('INSERT INTO reward_redemptions (reward_id, customer_id, coupon_id, ledger_id, coupon_code_snapshot, points_cost, site_id, redirect_url_snapshot, expires_at, status, idempotency_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, \'issued\', ?)');
+        $redemption->execute([$rewardId, $customerId, $couponId, $ledgerId, $couponCode, $cost, (int) $reward['site_id'], (string) $reward['base_url'], $expiresAt, $idempotency]);
+        $redemptionId = (int) $pdo->lastInsertId();
         $pdo->prepare('UPDATE customer_point_wallets SET balance = ?, total_spent = total_spent + ?, updated_at = CURRENT_TIMESTAMP WHERE customer_id = ?')->execute([$newBalance, $cost, $customerId]);
         $pdo->commit();
         return ['reward_id' => $rewardId, 'title' => (string) $reward['title'], 'coupon_code' => $couponCode, 'redirect_url' => (string) $reward['base_url'], 'expires_at' => $expiresAt, 'balance' => $newBalance, 'redemption_id' => $redemptionId];

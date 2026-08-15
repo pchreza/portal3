@@ -1,7 +1,7 @@
 # Portal3 — پورتال مشتریان
 
 **نسخهٔ انتشار:** `2.7.1`
-**schema دیتابیس:** `35`
+**schema دیتابیس:** `37`
 **نوع سیستم:** پورتال مشتریان با PHP خالص، MariaDB/MySQL و رابط فارسی RTL
 **مخزن رسمی:** [github.com/pchreza/portal3](https://github.com/pchreza/portal3)
 
@@ -113,7 +113,7 @@ composer install --no-dev --optimize-autoloader
 php bin/migrate.php
 ```
 
-در نسخهٔ `2.7.0`، schema نهایی باید `35` باشد. migrationها idempotent هستند و migration اجراشده را دوباره اعمال نمی‌کنند. در production مقدارهای زیر را تنظیم کنید و migration را فقط در maintenance window اجرا کنید:
+در نسخهٔ `2.7.0`، schema نهایی باید `37` باشد. migrationها idempotent هستند و migration اجراشده را دوباره اعمال نمی‌کنند. در production مقدارهای زیر را تنظیم کنید و migration را فقط در maintenance window اجرا کنید:
 
 ```dotenv
 PORTAL_ENV=production
@@ -148,6 +148,30 @@ PORTAL_TRUST_PROXY=false
 ## راهنمای استفادهٔ مشتری
 
 مشتری پس از ورود به `customer/index.php` فقط داده‌های متعلق به شناسهٔ خودش را می‌بیند. امکانات پنل مشتری شامل داشبورد، پروژه‌ها، محصولات، فاکتورها، تیکت‌ها، surveyهای تخصیص‌یافته، اعلان‌ها، پروفایل و Gamification است. عملیات تغییر‌دهنده از فرم‌های داخلی و CSRF محافظت‌شده انجام می‌شوند.
+
+## نمونه پیکربندی nginx
+
+اگر از nginx استفاده می‌کنید، این ruleها را برای هم‌ارز ساختن امنیت Apache اضافه کنید:
+
+```nginx
+# مسدودسازی اجرای PHP در پوشه uploads
+location ~* /uploads/\.php$ {
+    deny all;
+    return 403;
+}
+
+# مسدودسازی دسترسی به فایل‌های حساس
+location ~ /\.(db_config\.php|env.*)$ {
+    deny all;
+    return 403;
+}
+
+# ارسال هدرهای امنیتی
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+```
 
 ## Backup و Restore
 

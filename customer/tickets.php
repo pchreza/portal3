@@ -21,6 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     if (empty($subject) || empty($message)) {
         $error = 'موضوع و متن پیام تیکت الزامی است.';
+    } elseif (mb_strlen($subject) > 255) {
+        $error = 'موضوع تیکت نباید بیش از ۲۵۵ کاراکتر باشد.';
+    } elseif (mb_strlen($message) > 10000) {
+        $error = 'متن پیام تیکت نباید بیش از ۱۰٬۰۰۰ کاراکتر باشد.';
     } else {
         try {
             $pdo->beginTransaction();
@@ -61,6 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $ticket = $stmt->fetch();
 
     if ($ticket && $ticket['status'] !== 'closed' && !empty($message)) {
+        if (mb_strlen($message) > 10000) {
+            $error = 'متن پاسخ نباید بیش از ۱۰٬۰۰۰ کاراکتر باشد.';
+        } else
         try {
             $pdo->beginTransaction();
             $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message) VALUES (?, ?, 'customer', ?)");

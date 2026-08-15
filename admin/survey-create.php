@@ -3,5 +3,5 @@
 require_once 'auth.php';
 if (!admin_can('surveys')) { header('Location: index.php'); exit; }
 if (!is_module_enabled('surveys')) { header('Location: index.php'); exit; }
-header('Location: surveys.php?action=create');
+header('Location: surveys.php?action=create', true, 301);
 exit;

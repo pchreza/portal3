@@ -559,6 +559,19 @@ function theme_styles(): string
 	.group:hover .group-hover\:border-indigo-500 { border-color: var(--tp-primary); }
 	.file\:bg-indigo-50::file-selector-button { background-color: var(--tp-primary-light); }
 	.file\:text-indigo-700::file-selector-button { color: var(--tp-primary-dark); }
+/* ---- تقویت کنتراست رنگ primary در حالت دارک ---- */
+html.dark {
+  --tp-primary: color-mix(in srgb, var(--tp-primary-orig, #4f46e5) 60%, #c7d2fe) !important;
+  --tp-primary-dark: color-mix(in srgb, var(--tp-primary-orig-dark, #4338ca) 50%, #a5b4fc) !important;
+}
+html.dark .text-indigo-600, html.dark .text-indigo-700,
+html.dark .hover\:text-indigo-600:hover, html.dark .hover\:text-indigo-700:hover { color: color-mix(in srgb, var(--tp-primary) 75%, white); }
+html.dark .text-violet-600, html.dark .text-violet-700,
+html.dark .hover\:text-violet-600:hover, html.dark .hover\:text-violet-700:hover { color: color-mix(in srgb, var(--tp-accent) 75%, white); }
+html.dark .bg-indigo-50, html.dark .bg-indigo-100 { background-color: color-mix(in srgb, var(--tp-primary) 18%, var(--portal-surface, #1f1f21)); }
+html.dark .bg-violet-50, html.dark .bg-violet-100 { background-color: color-mix(in srgb, var(--tp-accent) 18%, var(--portal-surface, #1f1f21)); }
+html.dark .badge-brand { background: color-mix(in srgb, var(--tp-primary) 22%, transparent); color: color-mix(in srgb, var(--tp-primary) 75%, white); }
+
 /* ---- سایدبار و بخش‌های تیره — هماهنگ با پالت رنگی ---- */
 .bg-slate-900 { background: var(--tp-sidebar); }
 .bg-slate-800, .hover\:bg-slate-800\/80:hover { background-color: var(--tp-sidebar-hover); }
@@ -1012,7 +1025,7 @@ function send_otp_code(string $mobile): array
     $ins->execute([$m, $code, $expires]);
 
     // ارسال پیامک
-    if (get_setting('sms_api_key', '') === '') {
+    if (portal_sms_api_key() === '') {
         // حالت تست (بدون درگاه پیامک): کد فقط در محیط توسعه در پاسخ/سشن می‌آید.
         // در تولید (PORTAL_DEV_MODE=false) کد فقط در لاگ سرور ثبت می‌شود — امنیت ورود
         if (defined('PORTAL_DEV_MODE') && PORTAL_DEV_MODE) {
@@ -2018,6 +2031,62 @@ function portal_validation_script(): string
         . 'else{var sum=form.querySelector(".form-error-summary");if(sum)sum.style.display="none";}'
         . '});});});'
         . "\n" . '</script>' . "\n";
+}
+
+/**
+ * آیا آموزش onboarding برای مدیر فعلی نمایش داده شود؟
+ * فقط مدیرانی که قبلاً آموزش را ندیده‌اند (first login) آموزش می‌بینند.
+ */
+function portal_onboarding_should_show(): bool
+{
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+        return false;
+    }
+    if (!in_array($_SESSION['role'], ['admin', 'super_admin'], true)) {
+        return false;
+    }
+    // بررسی فلگ در user meta (settings با کلید اختصاصی کاربر)
+    $dismissed = get_setting('onboarding_dismissed_' . (int) $_SESSION['user_id'], '0');
+    return $dismissed !== '1';
+}
+
+/** علامت‌گذاری آموزش به‌عنوان دیده‌شده/ردشده برای مدیر فعلی */
+function portal_onboarding_dismiss(): void
+{
+    if (isset($_SESSION['user_id'])) {
+        set_setting('onboarding_dismissed_' . (int) $_SESSION['user_id'], '1');
+    }
+}
+
+/** بازنشانی وضعیت آموزش (برای نمایش مجدد) */
+function portal_onboarding_reset(): void
+{
+    if (isset($_SESSION['user_id'])) {
+        set_setting('onboarding_dismissed_' . (int) $_SESSION['user_id'], '0');
+    }
+}
+
+/** لینک فایل onboarding.js با cache-busting */
+function portal_onboarding_js(): string
+{
+    return '<script src="' . e(portal_asset_href('assets/onboarding.js')) . '"></script>' . "\n";
+}
+
+/** اسکریپت راه‌اندازی آموزش (auto-start + dismiss URL + CSRF) */
+function portal_onboarding_init(): string
+{
+    $autoStart = portal_onboarding_should_show() ? 'auto' : 'manual';
+    $dismissUrl = ui_base_path() . 'profile.php';
+    $csrf = csrf_token();
+    $vars = json_encode([
+        'dismissUrl' => $dismissUrl,
+        'csrf' => $csrf,
+    ]);
+    return '<script nonce="' . e(portal_csp_nonce()) . '">' . "\n"
+        . 'var portalOnboardingDismissUrl=' . json_encode($dismissUrl) . ';' . "\n"
+        . 'var portalOnboardingCsrf=' . json_encode($csrf) . ';' . "\n"
+        . 'document.documentElement.setAttribute("data-portal-onboarding","' . $autoStart . '");' . "\n"
+        . '</script>' . "\n";
 }
 
 /**

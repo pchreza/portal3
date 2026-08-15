@@ -72,11 +72,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 
     if (empty($username)) {
         $error = 'نام کاربری الزامی است.';
+    } elseif (!preg_match('/^[A-Za-z0-9_.-]{3,50}$/u', $username)) {
+        $error = 'نام کاربری فقط می‌تواند شامل حروف انگلیسی، عدد، نقطه، خط تیره و زیرخط (۳ تا ۵۰ کاراکتر) باشد.';
+    } elseif ($mobile !== null && $mobile !== '' && !preg_match('/^09[0-9]{9}$/', $mobile)) {
+        $error = 'شماره موبایل باید با فرمت 09XXXXXXXXX باشد.';
     } elseif ($mobile !== null && $mobile !== '' && mobile_exists($mobile, $id > 0 ? $id : null)) {
         // شماره موبایل نباید با هیچ کاربر دیگری (مشتری یا مدیر) یکسان باشد
         $error = 'این شماره موبایل قبلاً برای کاربر دیگری (مشتری یا مدیر) ثبت شده است.';
     } else {
-        if ($id === 0) {
+        if ($id === 0 && $password !== '' && strlen($password) < 8) {
+            $error = 'رمز عبور باید حداقل ۸ کاراکتر باشد.';
+        } elseif ($id === 0) {
             // New customer
             $auto_password = '';
             if (empty($password)) {
@@ -147,9 +153,20 @@ if ($action === 'edit' && isset($_GET['id'])) {
 }
 
 // Fetch all customers for list (با صفحه‌بندی)
-$customers_total = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'customer'")->fetchColumn();
+try {
+    $customers_total = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'customer'")->fetchColumn();
+} catch (PDOException $e) {
+    error_log('[Admin Customers] ' . $e->getMessage());
+    $customers_total = 0;
+}
 $pi = pagination_info($customers_total, 15);
-$customers_stmt = $pdo->query("SELECT * FROM users WHERE role = 'customer' ORDER BY id DESC LIMIT " . (int) $pi['per_page'] . " OFFSET " . (int) $pi['offset']);
+try {
+    $customers_stmt = $pdo->query("SELECT * FROM users WHERE role = 'customer' ORDER BY id DESC LIMIT " . (int) $pi['per_page'] . " OFFSET " . (int) $pi['offset']);
+} catch (PDOException $e) {
+    error_log('[Admin Customers] ' . $e->getMessage());
+    $customers_stmt = $pdo->prepare("SELECT * FROM users WHERE role = 'customer' ORDER BY id DESC LIMIT 0");
+    $customers_stmt->execute();
+}
 $customers = $customers_stmt->fetchAll();
 ?>
 <?php render_admin_header(

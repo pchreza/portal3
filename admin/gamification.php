@@ -135,23 +135,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cost = max(1, min(100000000, (int) ($_POST['points_cost'] ?? 0)));
             $validDays = max(0, min(3650, (int) ($_POST['valid_days'] ?? 30)));
             $maxPerCustomer = max(1, min(1000, (int) ($_POST['max_per_customer'] ?? 1)));
-            $codes = $normalize_pool_codes((string) ($_POST['coupon_codes'] ?? ''));
+            $couponMode = in_array(($_POST['coupon_mode'] ?? 'pool'), ['pool', 'fixed'], true) ? $_POST['coupon_mode'] : 'pool';
             $siteCheck = $pdo->prepare('SELECT id FROM reward_sites WHERE id = ? AND is_active = 1');
             $siteCheck->execute([$siteId]);
             if (!$siteCheck->fetchColumn() || $title === '' || strlen($title) > 180) {
                 throw new InvalidArgumentException('سایت فعال و عنوان پاداش معتبر الزامی است.');
             }
-            $pdo->beginTransaction();
-            $assert_pool_codes_are_new($pdo, $codes);
-            $pdo->prepare("INSERT INTO reward_catalog (site_id, title, description, points_cost, coupon_mode, fixed_coupon_code, valid_days, max_per_customer, is_active, created_by) VALUES (?, ?, ?, ?, 'pool', '', ?, ?, 1, ?)")->execute([$siteId, $title, $description, $cost, $validDays, $maxPerCustomer, $adminId]);
-            $rewardId = (int) $pdo->lastInsertId();
-            $insertCoupon = $pdo->prepare('INSERT INTO reward_coupon_pool (reward_id, coupon_code, coupon_hash) VALUES (?, ?, ?)');
-            foreach ($codes as $code) {
-                $insertCoupon->execute([$rewardId, $code, hash('sha256', $code)]);
+            if ($couponMode === 'pool') {
+                $codes = $normalize_pool_codes((string) ($_POST['coupon_codes'] ?? ''));
+                $pdo->beginTransaction();
+                $assert_pool_codes_are_new($pdo, $codes);
+                $pdo->prepare("INSERT INTO reward_catalog (site_id, title, description, points_cost, coupon_mode, fixed_coupon_code, valid_days, max_per_customer, is_active, created_by) VALUES (?, ?, ?, ?, 'pool', '', ?, ?, 1, ?)")->execute([$siteId, $title, $description, $cost, $validDays, $maxPerCustomer, $adminId]);
+                $rewardId = (int) $pdo->lastInsertId();
+                $insertCoupon = $pdo->prepare('INSERT INTO reward_coupon_pool (reward_id, coupon_code, coupon_hash) VALUES (?, ?, ?)');
+                foreach ($codes as $code) {
+                    $insertCoupon->execute([$rewardId, $code, hash('sha256', $code)]);
+                }
+                $pdo->commit();
+                log_activity($adminId, 'افزودن پاداش pool و ' . count($codes) . ' کد یکتا: ' . $title);
+                $success = 'پاداش و ' . count($codes) . ' کد تخفیف با هم ایجاد شدند.';
+            } else {
+                $fixedCode = gamification_normalize_code((string) ($_POST['fixed_coupon_code'] ?? ''));
+                if (!gamification_valid_code($fixedCode)) {
+                    throw new InvalidArgumentException('کد تخفیف ثابت معتبر نیست (حداقل ۶ کاراکتر، حروف انگلیسی/عدد).');
+                }
+                $pdo->prepare("INSERT INTO reward_catalog (site_id, title, description, points_cost, coupon_mode, fixed_coupon_code, valid_days, max_per_customer, is_active, created_by) VALUES (?, ?, ?, ?, 'fixed', ?, ?, ?, 1, ?)")->execute([$siteId, $title, $description, $cost, $fixedCode, $validDays, $maxPerCustomer, $adminId]);
+                log_activity($adminId, 'افزودن پاداش fixed با کد ثابت: ' . $title);
+                $success = 'پاداش با کد تخفیف ثابت ایجاد شد.';
             }
-            $pdo->commit();
-            log_activity($adminId, 'افزودن پاداش و ' . count($codes) . ' کد یکتا: ' . $title);
-            $success = 'پاداش و ' . count($codes) . ' کد تخفیف با هم ایجاد شدند.';
         } elseif ($action === 'toggle_reward') {
             $rewardId = max(0, (int) ($_POST['reward_id'] ?? 0));
             $pdo->prepare('UPDATE reward_catalog SET is_active = IF(is_active = 1, 0, 1) WHERE id = ?')->execute([$rewardId]);
@@ -180,7 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($startsAt !== null && $expiresAt !== null && strtotime($expiresAt) < strtotime($startsAt)) {
                 throw new InvalidArgumentException('تاریخ پایان باید بعد از شروع باشد.');
             }
-            $pdo->prepare('INSERT INTO bonus_code_campaigns (name, code_hash, points, starts_at, expires_at, max_redemptions, max_per_customer, created_by) VALUES (?, ?, ?, ?, ?, ?, 1, ?)')->execute([$name, hash('sha256', $code), $points, $startsAt, $expiresAt, $maxRedemptions, $adminId]);
+            $maxPerCustomerCampaign = max(1, min(1000, (int) ($_POST['max_per_customer_campaign'] ?? 1)));
+            $pdo->prepare('INSERT INTO bonus_code_campaigns (name, code_hash, points, starts_at, expires_at, max_redemptions, max_per_customer, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')->execute([$name, hash('sha256', $code), $points, $startsAt, $expiresAt, $maxRedemptions, $maxPerCustomerCampaign, $adminId]);
             log_activity($adminId, 'ایجاد کمپین کد هدیه Gamification: ' . $name);
             $success = 'کمپین کد هدیه ایجاد شد. این کد برای هر مشتری فقط یک‌بار قابل‌استفاده است.';
         } elseif ($action === 'toggle_campaign') {
@@ -188,6 +200,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare('UPDATE bonus_code_campaigns SET is_active = IF(is_active = 1, 0, 1) WHERE id = ?')->execute([$campaignId]);
             log_activity($adminId, 'تغییر وضعیت کمپین کد هدیه: ' . $campaignId);
             $success = 'وضعیت کمپین تغییر کرد.';
+        } elseif ($action === 'delete_campaign') {
+            $campaignId = max(0, (int) ($_POST['campaign_id'] ?? 0));
+            $redeemed = $pdo->prepare('SELECT COUNT(*) FROM bonus_code_redemptions WHERE campaign_id = ?');
+            $redeemed->execute([$campaignId]);
+            if ((int) $redeemed->fetchColumn() > 0) {
+                throw new InvalidArgumentException('این کمپین قبلاً استفاده شده و قابل حذف نیست؛ آن را غیرفعال کنید.');
+            }
+            $pdo->prepare('DELETE FROM bonus_code_campaigns WHERE id = ?')->execute([$campaignId]);
+            log_activity($adminId, 'حذف کمپین کد هدیه: ' . $campaignId);
+            $success = 'کمپین کد هدیه حذف شد.';
         } elseif ($action === 'import_coupons') {
             $rewardId = max(0, (int) ($_POST['reward_id'] ?? 0));
             $codes = $normalize_pool_codes((string) ($_POST['coupon_codes'] ?? ''));
@@ -220,16 +242,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$rules = $pdo->query('SELECT * FROM gamification_rules ORDER BY id')->fetchAll();
+try { $rules = $pdo->query('SELECT * FROM gamification_rules ORDER BY id')->fetchAll(); } catch (PDOException $e) { error_log('[Admin Gamification] ' . $e->getMessage()); $rules = []; }
 $ruleByKey = [];
 foreach ($rules as $rule) {
     $ruleByKey[(string) $rule['event_key']] = $rule;
 }
 $catalog = gamification_event_catalog();
 $configurableEvents = array_filter($catalog, static fn (array $_event, string $key): bool => $key !== 'bonus_code_redeemed', ARRAY_FILTER_USE_BOTH);
-$sites = $pdo->query('SELECT * FROM reward_sites ORDER BY id DESC')->fetchAll();
+try { $sites = $pdo->query('SELECT * FROM reward_sites ORDER BY id DESC')->fetchAll(); } catch (PDOException $e) { error_log('[Admin Gamification] ' . $e->getMessage()); $sites = []; }
 $rewards = $pdo->query("SELECT r.*, s.name site_name, (SELECT COUNT(*) FROM reward_coupon_pool cp WHERE cp.reward_id = r.id AND cp.status = 'available' AND (cp.expires_at IS NULL OR cp.expires_at >= UTC_TIMESTAMP())) available_codes, (SELECT COUNT(*) FROM reward_redemptions rr WHERE rr.reward_id = r.id AND rr.status = 'issued') redemption_count FROM reward_catalog r JOIN reward_sites s ON s.id = r.site_id ORDER BY r.id DESC")->fetchAll();
-$campaigns = $pdo->query('SELECT * FROM bonus_code_campaigns ORDER BY id DESC LIMIT 100')->fetchAll();
+try { $campaigns = $pdo->query('SELECT * FROM bonus_code_campaigns ORDER BY id DESC LIMIT 100')->fetchAll(); } catch (PDOException $e) { error_log('[Admin Gamification] ' . $e->getMessage()); $campaigns = []; }
 
 // گزارش کیف امتیاز: فیلتر مشتری، جست‌وجو، رویداد و بازه زمانی بدون تغییر ledger.
 $walletSearch = trim((string) ($_GET['wallet_q'] ?? ''));
@@ -349,7 +371,7 @@ render_admin_header('باشگاه امتیاز و پاداش', 'portal-page-main
                     <div><label class="label" for="wallet-customer">مشتری</label><select id="wallet-customer" class="input portal-form-control" name="wallet_customer"><option value="0">همهٔ مشتریان</option><?php foreach ($walletCustomers as $walletCustomer): $walletCustomerName = trim((string) $walletCustomer['first_name'] . ' ' . (string) $walletCustomer['last_name']) ?: $walletCustomer['username']; ?><option value="<?= (int) $walletCustomer['id'] ?>" <?= $walletCustomerId === (int) $walletCustomer['id'] ? 'selected' : '' ?>><?= e($walletCustomerName) ?></option><?php endforeach; ?></select></div>
                     <div><label class="label" for="ledger-event">رویداد تراکنش</label><select id="ledger-event" class="input portal-form-control" name="ledger_event"><option value="">همهٔ رویدادها</option><?php foreach ($ledgerEventOptions as $eventOption): ?><option value="<?= e((string) $eventOption) ?>" <?= $ledgerEvent === $eventOption ? 'selected' : '' ?>><?= e($catalog[$eventOption]['title'] ?? (string) $eventOption) ?></option><?php endforeach; ?></select></div>
                     <div class="grid grid-cols-2 gap-2"><div><label class="label" for="ledger-from">از تاریخ</label><input id="ledger-from" class="input portal-form-control value-ltr" type="date" name="ledger_from" value="<?= e($ledgerFrom) ?>" dir="ltr"></div><div><label class="label" for="ledger-to">تا تاریخ</label><input id="ledger-to" class="input portal-form-control value-ltr" type="date" name="ledger_to" value="<?= e($ledgerTo) ?>" dir="ltr"></div></div>
-                    <div class="flex flex-wrap gap-2"><button class="btn btn-primary">اعمال فیلتر</button><?php if ($walletFilterQuery !== ''): ?><a href="gamification.php#wallet-report" class="btn btn-secondary">پاک‌کردن</a><?php endif; ?></div>
+                    <div class="flex flex-wrap gap-2"><button type="submit" class="btn btn-primary">اعمال فیلتر</button><?php if ($walletFilterQuery !== ''): ?><a href="gamification.php#wallet-report" class="btn btn-secondary">پاک‌کردن</a><?php endif; ?></div>
                 </form>
                 <div class="table-scroll"><table class="table table-card-mobile"><thead><tr><th>مشتری</th><th>موجودی</th><th>کسب‌شده</th><th>مصرف‌شده</th><th>تراکنش‌ها</th><th>آخرین فعالیت</th><th>جزئیات</th></tr></thead><tbody><?php if (!$customerBalances): ?><tr><td colspan="7" class="p-5 text-center text-slate-500">مشتری منطبق با فیلتر پیدا نشد.</td></tr><?php endif; ?><?php foreach ($customerBalances as $customer): $customerName = trim((string) $customer['first_name'] . ' ' . (string) $customer['last_name']) ?: $customer['username']; $detailQuery = http_build_query(array_filter(['wallet_q' => $walletSearch, 'wallet_customer' => (int) $customer['id'], 'ledger_event' => $ledgerEvent, 'ledger_from' => $ledgerFrom, 'ledger_to' => $ledgerTo])); ?><tr><td data-label="مشتری" class="font-medium"><bdi dir="auto"><?= e($customerName) ?></bdi><span class="block text-xs text-slate-500" dir="ltr"><?= e($customer['username']) ?></span></td><td data-label="موجودی" class="font-bold text-indigo-600 tabular-nums" dir="ltr"><?= number_format((int) $customer['balance']) ?></td><td data-label="کل کسب‌شده" class="text-emerald-600 tabular-nums" dir="ltr"><?= number_format((int) $customer['total_earned']) ?></td><td data-label="کل مصرف‌شده" class="text-amber-600 tabular-nums" dir="ltr"><?= number_format((int) $customer['total_spent']) ?></td><td data-label="تراکنش‌ها" class="text-slate-500 tabular-nums" dir="ltr">+<?= (int) $customer['earned_count'] ?> / −<?= (int) $customer['spent_count'] ?></td><td data-label="آخرین فعالیت" class="text-xs text-slate-500 value-ltr whitespace-nowrap" dir="ltr"><?= $customer['last_ledger_at'] ? e(fa_datetime((string) $customer['last_ledger_at'])) : '—' ?></td><td data-label="جزئیات"><a class="btn btn-secondary btn-sm" href="?<?= e($detailQuery) ?>#ledger-title">تراکنش‌ها</a></td></tr><?php endforeach; ?></tbody></table></div><?php if ($customerPageCount > 1): $paginationPrefix = $walletFilterQuery !== '' ? $walletFilterQuery . '&' : ''; ?><nav class="flex items-center justify-between gap-3 pt-3" aria-label="صفحه‌بندی موجودی مشتریان"><a class="btn btn-secondary btn-sm <?= $customerPage <= 1 ? 'pointer-events-none opacity-50' : '' ?>" href="?<?= e($paginationPrefix) ?>customer_page=<?= max(1, $customerPage - 1) ?>#wallet-report" <?= $customerPage <= 1 ? 'aria-disabled="true" tabindex="-1"' : '' ?>>صفحهٔ قبل</a><span class="text-xs text-slate-500">صفحه <?= $customerPage ?> از <?= $customerPageCount ?></span><a class="btn btn-secondary btn-sm <?= $customerPage >= $customerPageCount ? 'pointer-events-none opacity-50' : '' ?>" href="?<?= e($paginationPrefix) ?>customer_page=<?= min($customerPageCount, $customerPage + 1) ?>#wallet-report" <?= $customerPage >= $customerPageCount ? 'aria-disabled="true" tabindex="-1"' : '' ?>>صفحهٔ بعد</a></nav><?php endif; ?></section>
 

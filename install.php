@@ -167,6 +167,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
 
         if (empty($admin_username) || empty($admin_password)) {
             $error = 'لطفاً نام کاربری و رمز عبور مدیر را وارد کنید.';
+        } elseif (strlen($admin_password) < 8) {
+            $error = 'رمز عبور مدیر باید حداقل ۸ کاراکتر باشد.';
+        } elseif (!preg_match('/^[A-Za-z0-9_.-]{3,50}$/u', $admin_username)) {
+            $error = 'نام کاربری باید شامل حروف انگلیسی، عدد، نقطه، خط تیره و زیرخط (۳ تا ۵۰ کاراکتر) باشد.';
         } else {
             $hashed_password = password_hash($admin_password, PASSWORD_DEFAULT);
             // ادمین اول سیستم به‌عنوان «مدیر ارشد (سوپر ادمین)» ساخته می‌شود
@@ -283,11 +287,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
                 <div class="text-center py-6">
                     <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">✓</div>
                     <h2 class="text-xl font-bold text-slate-800 mb-2">سیستم با موفقیت نصب شد!</h2>
-                    <p class="text-slate-600 text-sm mb-6">اکنون می‌توانید با حساب کاربری ادمین خود وارد سیستم شوید و مشتریان، پروژه‌ها و محصولات را مدیریت کنید.</p>
-                    <a href="index.php" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-8 py-3 rounded-lg transition shadow-md shadow-indigo-200">
-                        ورود به صفحه اصلی (ورود به سیستم)
-                    </a>
+                    <p class="text-slate-600 text-sm mb-4">اکنون می‌توانید با حساب کاربری ادمین خود وارد سیستم شوید و مشتریان، پروژه‌ها و محصولات را مدیریت کنید.</p>
                 </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0l3-3m-3 3L9 5"/><path d="M3 12h18M5 12v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>
+                        تنظیم متغیرهای محیطی (Environment)
+                    </h3>
+                    <p class="text-xs text-slate-600 mb-3 leading-6">برای فعال‌سازی کامل قابلیت‌ها، متغیرهای زیر را در تنظیمات سرور (environment) قرار دهید. فایل <code dir="ltr" class="bg-slate-200 px-1 rounded">.env</code> به‌صورت خودکار توسط PHP خوانده نمی‌شود؛ این مقادیر را در پیکربندی سرور وب، cron یا systemd تنظیم کنید.</p>
+                    <div class="space-y-2 text-xs" dir="ltr">
+                        <div class="bg-white border border-slate-200 rounded-lg p-3 font-mono">
+                            <span class="text-slate-400"># محیط اجرا (production یا development)</span><br>
+                            PORTAL_ENV=production<br>
+                            <span class="text-slate-400"># حالت توسعه (false در production)</span><br>
+                            PORTAL_DEV_MODE=false<br>
+                            <span class="text-slate-400"># migration خودکار (پیش‌فرض: فعال)</span><br>
+                            PORTAL_AUTO_MIGRATE=true<br>
+                            <span class="text-slate-400"># تشخیص HTTPS پشت پراکسی</span><br>
+                            PORTAL_TRUST_PROXY=false<br>
+                            <span class="text-slate-400"># کلید API پیامک ippanel</span><br>
+                            PORTAL_SMS_API_KEY=replace-with-secret
+                        </div>
+                    </div>
+                    <p class="text-xs text-amber-700 bg-amber-50 rounded-lg p-3 mt-3 leading-6">⚠️ مقادیر حساس را هرگز در Git، log یا screenshot ذخیره نکنید. اگر SSH ندارید، از پنل مدیریت هاست برای تنظیم environment variables استفاده کنید.</p>
+                </div>
+                <a href="index.php" class="block text-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-8 py-3 rounded-lg transition shadow-md shadow-indigo-200">
+                    ورود به صفحه اصلی (ورود به سیستم)
+                </a>
             <?php endif; ?>
             <?php endif; // !isInstalled ?>
         </div>

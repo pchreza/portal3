@@ -513,7 +513,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                             <?php endforeach; ?>
                         </div>
                         <div class="pt-5 border-t border-slate-100 flex justify-end">
-                            <button class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره وضعیت ماژول‌ها</span></button>
+                            <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره وضعیت ماژول‌ها</span></button>
                         </div>
                     </form>
 
@@ -548,7 +548,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                     <form method="POST" class="mt-4" data-confirm-msg="کش سیستم پاک شود؟">
                         <?php echo csrf_input(); ?>
                         <input type="hidden" name="save_type" value="flush_cache">
-                        <button class="btn btn-secondary"><?= icon('trash') ?><span>پاک‌سازی کش</span></button>
+                        <button type="submit" class="btn btn-secondary"><?= icon('trash') ?><span>پاک‌سازی کش</span></button>
                     </form>
 
                 <?php elseif ($tab === 'backups'): ?>
@@ -657,7 +657,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                             <?php endforeach; ?>
                         </div>
                         <div class="pt-5 border-t border-slate-100 flex justify-end">
-                            <button class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره تنظیمات فیلدهای اجباری</span></button>
+                            <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره تنظیمات فیلدهای اجباری</span></button>
                         </div>
                     </form>
 
@@ -686,7 +686,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                             <?php endforeach; ?>
                         </div>
                         <div class="pt-5 border-t border-slate-100 flex justify-end">
-                            <button class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره تنظیمات داشبورد کاربر</span></button>
+                            <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره تنظیمات داشبورد کاربر</span></button>
                         </div>
                     </form>
 
@@ -810,7 +810,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                         </div>
 
                         <div class="pt-4 border-t border-slate-100 flex justify-end">
-                            <button class="btn btn-primary btn-lg">ذخیره ظاهر سایت</button>
+                            <button type="submit" class="btn btn-primary btn-lg">ذخیره ظاهر سایت</button>
                         </div>
                     </form>
 
@@ -891,7 +891,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                         </div>
 
                         <div class="pt-4 border-t border-slate-100 flex justify-end">
-                            <button class="btn btn-primary btn-lg">ذخیره تنظیمات ورود و پیامک</button>
+                            <button type="submit" class="btn btn-primary btn-lg">ذخیره تنظیمات ورود و پیامک</button>
                         </div>
                     </form>
 
@@ -908,7 +908,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                                 <label class="block text-xs text-slate-500 mb-1">شماره موبایل گیرنده</label>
                                 <input type="text" name="test_mobile" dir="ltr" placeholder="09123456789" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
                             </div>
-                            <button class="btn btn-primary"><?= icon('send') ?><span>ارسال تست</span></button>
+                            <button type="submit" class="btn btn-primary"><?= icon('send') ?><span>ارسال تست</span></button>
                         </form>
                     </div>
 
@@ -1114,7 +1114,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                                 <p>📌 یادآوری فقط به کسانی ارسال می‌شود که هنوز پاسخ نداده‌اند و پس از تکمیل فرم، خودکار متوقف می‌شود.</p>
                             </div>
                             <div class="flex justify-end pt-3 border-t border-slate-100">
-                                <button class="btn btn-primary">ذخیره تنظیمات یادآوری</button>
+                                <button type="submit" class="btn btn-primary">ذخیره تنظیمات یادآوری</button>
                             </div>
                         </form>
                     </div>
@@ -1163,7 +1163,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                                 </div>
                             </div>
                             <div class="flex justify-end">
-                                <button class="btn btn-primary"><?= icon('send') ?><span>ارسال پیامک</span></button>
+                                <button type="submit" class="btn btn-primary"><?= icon('send') ?><span>ارسال پیامک</span></button>
                             </div>
                         </form>
                     </div>
@@ -1475,7 +1475,7 @@ render_admin_header('تنظیمات سیستم', 'portal-page-main portal-admin-
                                 syncLayout();
                             });
                             </script>
-                            <button class="btn btn-primary btn-lg"><?= icon('check') ?> ذخیره تنظیمات عمومی و صفحه ورود</button>
+                            <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?> ذخیره تنظیمات عمومی و صفحه ورود</button>
                         </div>
                     </form>
                 <?php endif; ?>

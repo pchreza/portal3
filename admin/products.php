@@ -64,8 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     $customer_id = intval($_POST['customer_id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
-    $purchase_date = portal_date_to_db(trim($_POST['purchase_date'] ?? '')); // شمسی → میلادی
+    $purchase_date = portal_date_to_db(trim($_POST['purchase_date'] ?? ''));
     $product_status = in_array($_POST['product_status'] ?? '', array_keys(product_status_list()), true) ? $_POST['product_status'] : 'purchased';
+    $price = normalize_money_input(trim($_POST['price'] ?? ''));
+    $license_key = trim($_POST['license_key'] ?? '');
 
     // پردازش آپلود عکس
     $image = trim($_POST['current_image'] ?? ''); // تصویر قبلی (پیش‌فرض: خالی)
@@ -94,9 +96,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     if (empty($title) || $customer_id <= 0) {
         $error = 'انتخاب مشتری و عنوان محصول الزامی است.';
     } elseif (!$error) {
+        $cust_chk = $pdo->prepare("SELECT id FROM users WHERE id = ? AND role = 'customer'");
+        $cust_chk->execute([$customer_id]);
+        if (!$cust_chk->fetchColumn()) {
+            $error = 'مشتری انتخاب‌شده معتبر نیست.';
+        }
+    }
+    if (!$error) {
         if ($id === 0) {
-            $stmt = $pdo->prepare("INSERT INTO products (customer_id, title, description, purchase_date, product_status, image) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$customer_id, $title, $description, $purchase_date, $product_status, $image]);
+            $stmt = $pdo->prepare("INSERT INTO products (customer_id, title, description, price, license_key, purchase_date, product_status, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$customer_id, $title, $description, $price, $license_key, $purchase_date, $product_status, $image]);
             $new_product_id = $pdo->lastInsertId();
 
             // Save custom fields
@@ -108,8 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
             header('Location: products.php');
             exit;
         } else {
-            $stmt = $pdo->prepare("UPDATE products SET customer_id = ?, title = ?, description = ?, purchase_date = ?, product_status = ?, image = ? WHERE id = ?");
-            $stmt->execute([$customer_id, $title, $description, $purchase_date, $product_status, $image, $id]);
+            $stmt = $pdo->prepare("UPDATE products SET customer_id = ?, title = ?, description = ?, price = ?, license_key = ?, purchase_date = ?, product_status = ?, image = ? WHERE id = ?");
+            $stmt->execute([$customer_id, $title, $description, $price, $license_key, $purchase_date, $product_status, $image, $id]);
 
             // Save custom fields
             save_custom_fields_values('product', $id);
@@ -212,7 +221,7 @@ $products = $product_list->fetchAll();
                                 <p class="portal-form-subtitle"><?php echo $action === 'edit' ? 'اطلاعات محصول را به‌روزرسانی کنید' : 'محصول را ثبت و به مشتری منتسب کنید'; ?></p>
                             </div>
                         </div>
-                            <a href="products.php" class="btn btn-sm portal-form-back">← بازگشت به لیست</a>
+                            <a href="products.php" class="btn btn-sm portal-form-back" type="button">← بازگشت به لیست</a>
                     </div>
 
                     <form method="POST" class="portal-form-body" enctype="multipart/form-data" novalidate>
@@ -250,6 +259,17 @@ $products = $product_list->fetchAll();
                                 <div>
                                     <label class="label" for="product_description">توضیحات محصول</label>
                                     <textarea id="product_description" name="description" rows="4" placeholder="شرح مختصری از محصول بنویسید..." class="input portal-form-control"><?php echo htmlspecialchars($edit_product['description'] ?? ''); ?></textarea>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="label" for="product_price">قیمت (تومان)</label>
+                                        <input type="text" id="product_price" name="price" dir="ltr" value="<?php echo htmlspecialchars($edit_product['price'] ?? ''); ?>" placeholder="مثال: 2500000" class="input portal-form-control value-ltr">
+                                        <p class="helper">فقط عدد، با یا بدون کاما</p>
+                                    </div>
+                                    <div>
+                                        <label class="label" for="license_key">کد لایسنس</label>
+                                        <input type="text" id="license_key" name="license_key" dir="ltr" value="<?php echo htmlspecialchars($edit_product['license_key'] ?? ''); ?>" placeholder="مثال: ABCD-1234-EFGH" class="input portal-form-control value-ltr">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -327,11 +347,56 @@ $products = $product_list->fetchAll();
 
                         <!-- دکمه‌ها -->
                         <div class="portal-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                            <a href="products.php" class="btn btn-secondary">انصراف</a>
+                            <a href="products.php" class="btn btn-secondary" type="button">انصراف</a>
                             <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره محصول</span></button>
                         </div>
                     </form>
-                </div>
+                    <script nonce="<?= e(portal_csp_nonce()) ?>">
+                    (function(){
+                        // جستجوی مشتری
+                        var search = document.getElementById('customer_search');
+                        var select = document.getElementById('customer_id');
+                        if (search && select) {
+                            var options = Array.prototype.slice.call(select.options);
+                            search.addEventListener('input', function() {
+                                var q = this.value.toLowerCase().trim();
+                                options.forEach(function(opt) {
+                                    if (!opt.value) return;
+                                    var text = opt.textContent.toLowerCase();
+                                    opt.style.display = q === '' || text.indexOf(q) !== -1 ? '' : 'none';
+                                });
+                                if (q !== '' && select.selectedIndex === 0) {
+                                    for (var i = 1; i < select.options.length; i++) {
+                                        if (select.options[i].style.display !== 'none') { select.selectedIndex = i; break; }
+                                    }
+                                }
+                            });
+                        }
+                        // پیش‌نمایش تصویر
+                        var fileInput = document.getElementById('product_image');
+                        var preview = document.querySelector('.portal-image-preview');
+                        if (fileInput && preview) {
+                            fileInput.addEventListener('change', function() {
+                                var file = this.files[0];
+                                if (file) {
+                                    var reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        var img = preview.querySelector('img');
+                                        if (img) { img.src = e.target.result; }
+                                        else {
+                                            var ph = preview.querySelector('span'); if (ph) ph.style.display = 'none';
+                                            img = document.createElement('img'); img.src = e.target.result;
+                                            img.className = 'w-full h-full object-cover'; img.alt = 'پیش‌نمایش';
+                                            preview.appendChild(img);
+                                        }
+                                    };
+                                    reader.readAsDataURL(file);
+                                }
+                            });
+                        }
+                    })();
+                    </script>
+
 
             <?php else: ?>
                 <div class="flex items-center justify-between gap-3">
@@ -365,7 +430,7 @@ $products = $product_list->fetchAll();
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <button class="btn btn-primary">اعمال فیلتر</button>
+                    <button type="submit" class="btn btn-primary">اعمال فیلتر</button>
                     <?php if ($product_search !== '' || $product_customer_filter > 0 || $product_status_filter !== ''): ?>
                         <a href="products.php" class="btn btn-secondary">پاک‌کردن</a>
                     <?php endif; ?>

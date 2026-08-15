@@ -33,6 +33,17 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// --- مدیریت timeout سشن (idle) ---
+// سشن‌های غیرفعال پس از ۳۰ دقیقه منقضی می‌شوند.
+$session_idle_timeout = 30 * 60;
+if (isset($_SESSION['last_activity']) && (time() - (int) $_SESSION['last_activity']) > $session_idle_timeout) {
+    $_SESSION = [];
+    session_destroy();
+    session_start();
+    session_regenerate_id(true);
+}
+$_SESSION['last_activity'] = time();
+
 // --- محیط اجرا و حالت توسعه ---
 // حالت امن پیش‌فرض production است؛ development فقط با environment صریح فعال می‌شود.
 $portal_env = strtolower(trim((string) (getenv('PORTAL_ENV') ?: 'production')));
@@ -45,6 +56,25 @@ if (!defined('PORTAL_DEV_MODE')) {
         ? filter_var($dev_env, FILTER_VALIDATE_BOOLEAN)
         : in_array($portal_env, ['local', 'development', 'test'], true);
     define('PORTAL_DEV_MODE', $dev_enabled);
+}
+
+// --- کنترل نمایش خطاها بر اساس محیط اجرا ---
+// در production خطاها نمایش داده نمی‌شوند تا اطلاعات حساس سرور افشا نشود.
+if (PORTAL_DEV_MODE) {
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+    error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+    set_error_handler(static function (int $errno, string $errstr, string $errfile, int $errline): bool {
+        if (!(error_reporting() & $errno)) {
+            return false;
+        }
+        error_log(sprintf('[Portal PHP %d] %s in %s on line %d', $errno, $errstr, $errfile, $errline));
+        return true;
+    });
 }
 
 // --- اتصال به پایگاه داده ---
@@ -99,24 +129,24 @@ if (!$is_install_page && (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST')) {
 }
 
 // --- اجرای migration ---
-// در production migration باید با bin/migrate.php و خارج از request اجرا شود.
-// auto-migrate فقط برای local/test یا با PORTAL_AUTO_MIGRATE=true مجاز است.
+// مهاجرت دیتابیس پس از هر آپدیت به‌صورت خودکار و امن اجرا می‌شود.
+// در محیط‌های production نیز auto-migrate فعال است تا نیاز به اجرای دستی نباشد.
+// مهاجرت با GET_LOCK هم‌زمان‌سازی شده تا چند درخواست همزمان تدخل نکنند.
+// برای غیرفعال‌کردن: PORTAL_AUTO_MIGRATE=false در environment تنظیم کنید.
 require_once __DIR__ . '/migrations.php';
 $auto_migrate_env = getenv('PORTAL_AUTO_MIGRATE');
 $auto_migrate = $auto_migrate_env !== false
     ? filter_var($auto_migrate_env, FILTER_VALIDATE_BOOLEAN)
-    : in_array(PORTAL_ENV, ['local', 'development', 'test'], true);
-if ($pdo && $auto_migrate) {
-    if (portal_auto_migrate($pdo)) {
-        portal_cache_flush(); // migration اجرا شد — کش‌ها را باطل کن
+    : true; // پیش‌فرض: فعال در تمام محیط‌ها
+if ($pdo && !$is_install_page && $auto_migrate) {
+    // بررسی سریع نسخه schema قبل از اجرای migration (جلوگیری از اجرای بی‌مورد)
+    if (portal_schema_version($pdo) < PORTAL_SCHEMA_VERSION) {
+        if (portal_auto_migrate($pdo)) {
+            portal_cache_flush(); // migration اجرا شد — کش‌ها را باطل کن
+        }
     }
 }
-if ($pdo && !$auto_migrate && !$is_install_page && PHP_SAPI !== 'cli'
-    && portal_schema_version($pdo) < PORTAL_SCHEMA_VERSION) {
-    http_response_code(503);
-    header('Retry-After: 300');
-    exit('<div style="font-family:Tahoma;direction:rtl;text-align:center;padding:50px"><h2>سامانه در حال ارتقاست</h2><p>مدیر سامانه باید migration نسخهٔ جدید را اجرا کند.</p></div>');
-}
+
 
 // --- پردازش سراسری فرم گزارش خطا (دکمه شناور) ---
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'report_error') {

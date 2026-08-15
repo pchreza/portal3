@@ -8,7 +8,7 @@
 
 /** آخرین نسخه اسکیمای دیتابیس — هنگام افزودن مهاجرت جدید، این عدد را یک واحد زیاد کنید. */
 if (!defined('PORTAL_SCHEMA_VERSION')) {
-    define('PORTAL_SCHEMA_VERSION', 35);
+    define('PORTAL_SCHEMA_VERSION', 38);
 }
 
 function portal_column_exists(PDO $db, string $table, string $column): bool {
@@ -639,6 +639,46 @@ function portal_migrations(PDO $pdo): void {
                     $check->execute([$table, $name]);
                     if (!(int) $check->fetchColumn()) {
                         $db->exec("ALTER TABLE {$table} ADD INDEX {$name} ({$columns})");
+                    }
+                }
+            },
+            36=>function($db){
+                // یکتاسازی شماره موبایل: ایندکس UNIQUE روی users.mobile
+                // ابتدا رکوردهای تکراری موبایل خالی را NULL می‌کنیم تا UNIQUE قابل اعمال باشد
+                $db->exec('UPDATE users SET mobile = NULL WHERE mobile = \'\'');
+                $chk = $db->prepare('SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?');
+                $chk->execute(['users', 'uniq_users_mobile']);
+                if (!(int) $chk->fetchColumn()) {
+                    try {
+                        $db->exec('ALTER TABLE users ADD UNIQUE KEY uniq_users_mobile (mobile)');
+                    } catch (PDOException $e) {
+                        // اگر رکورد تکراری باقی مانده بود، لاگ کن و ادامه بده
+                        error_log('[Portal Migration 36] ' . $e->getMessage());
+                    }
+                }
+                $chk2 = $db->prepare('SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?');
+                $chk2->execute(['users', 'idx_users_role']);
+                if (!(int) $chk2->fetchColumn()) {
+                    $db->exec('ALTER TABLE users ADD INDEX idx_users_role (role)');
+                }
+            },
+            37=>function($db){
+                // تبدیل budget پروژه از VARCHAR به DECIMAL برای محاسبات عددی صحیح
+                if (portal_column_data_type($db, 'projects', 'budget') !== 'decimal') {
+                    try {
+                        $db->exec('ALTER TABLE projects MODIFY COLUMN budget DECIMAL(18,2) DEFAULT NULL');
+                    } catch (PDOException $e) {
+                        error_log('[Portal Migration 37] ' . $e->getMessage());
+                    }
+                }
+            },
+            38=>function(\$db){
+                // اضافه‌کردن ledger_id به جدول reward_redemptions برای رابطه با دفترکل
+                if (!portal_column_exists(\$db, 'reward_redemptions', 'ledger_id')) {
+                    try {
+                        \$db->exec('ALTER TABLE reward_redemptions ADD COLUMN ledger_id BIGINT NULL AFTER coupon_id');
+                    } catch (PDOException \$e) {
+                        error_log('[Portal Migration 38] ' . \$e->getMessage());
                     }
                 }
             }

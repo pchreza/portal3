@@ -18,13 +18,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($action === 'redeem_reward') {
             $rewardId = (int) ($_POST['reward_id'] ?? 0);
             $issuedReward = gamification_redeem_reward($customerId, $rewardId, (string) ($_POST['reward_nonce'] ?? ''));
-            $_SESSION['gamification_reward_nonce'][$rewardId] = bin2hex(random_bytes(16));
             log_activity($customerId, 'دریافت پاداش Gamification: ' . $issuedReward['reward_id']);
             $success = 'پاداش شما آماده شد. کد را در سایت مقصد وارد کنید.';
         }
     } catch (Throwable $e) {
         error_log('[Customer Gamification] ' . $e->getMessage());
         $error = $e instanceof PDOException ? 'عملیات انجام نشد. لطفاً دوباره تلاش کنید.' : $e->getMessage();
+    }
+    // nonce همیشه روتیشن می‌شود (موفق یا ناموفق) تا قابل استفاده مجدد نباشد
+    if ($action === 'redeem_reward' && isset($_POST['reward_id'])) {
+        $_SESSION['gamification_reward_nonce'][(int) $_POST['reward_id']] = bin2hex(random_bytes(16));
     }
 }
 
@@ -105,7 +108,9 @@ $customer_gamification_styles = '
 
 render_customer_header('امتیازها و پاداش‌ها', 'portal-page-main portal-gamification-page p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto space-y-6', $customer_gamification_styles, '', '');
 ?>
-            <?php if ($success): ?>
+            <?php if (!empty($_SESSION['gamification_award_flash']['message'])): $success = $success ?: (string) $_SESSION['gamification_award_flash']['message']; ?>
+                <div class="alert alert-success" role="status" aria-live="polite"><?= icon('check') ?><span><?= e($success) ?></span></div>
+            <?php elseif ($success): ?>
                 <div class="alert alert-success" role="status" aria-live="polite"><?= icon('check') ?><span><?= e($success) ?></span></div>
             <?php endif; ?>
             <?php if ($error): ?>
@@ -196,7 +201,7 @@ render_customer_header('امتیازها و پاداش‌ها', 'portal-page-mai
                                 <div class="text-xs text-slate-500 flex flex-wrap gap-x-3 gap-y-1"><span>سایت مقصد: <b class="text-slate-700"><bdi dir="auto"><?= e($reward['site_name']) ?></bdi></b></span><span>اعتبار: <?= (int) $reward['valid_days'] > 0 ? (int) $reward['valid_days'] . ' روز' : 'بدون انقضا' ?></span></div>
                                 <div><div class="flex items-center justify-between gap-3 text-xs mb-2"><span class="text-slate-500">پیشرفت شما</span><span class="font-semibold <?= $rewardProgress >= 100 ? 'text-emerald-600' : 'text-indigo-600' ?>"><?= $rewardProgress >= 100 ? 'آمادهٔ دریافت' : e(gamification_points_label($rewardRemaining)) . ' تا دریافت' ?></span></div><div class="gamification-progress" role="progressbar" aria-label="پیشرفت تا پاداش <?= e($reward['title']) ?>" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $rewardProgress ?>"><span class="gamification-progress-fill" data-gamification-progress="<?= $rewardProgress ?>"></span></div></div>
                                 <?php if ($customerLimitReached): ?><p class="text-xs text-amber-700 bg-amber-50 rounded-lg p-3" role="status">سقف دریافت این پاداش برای شما تکمیل شده است.</p><?php elseif ((string) $reward['coupon_mode'] === 'pool' && (int) $reward['available_codes'] <= 0): ?><p class="text-xs text-slate-500 bg-slate-50 rounded-lg p-3" role="status">کد این پاداش موقتاً موجود نیست.</p><?php endif; ?>
-                                <form method="post" class="mt-auto" data-confirm-msg="با کسر <?= e(gamification_points_label($rewardCost)) ?> این پاداش صادر می‌شود. ادامه می‌دهید؟" data-confirm-title="تأیید دریافت پاداش" data-confirm-ok-label="دریافت پاداش" data-confirm-tone="primary"><?= csrf_input() ?><input type="hidden" name="action" value="redeem_reward"><input type="hidden" name="reward_id" value="<?= (int) $reward['id'] ?>"><input type="hidden" name="reward_nonce" value="<?= e($reward['nonce']) ?>"><button class="btn <?= $canRedeem ? 'btn-primary' : 'btn-secondary' ?> w-full" type="submit" <?= $canRedeem ? '' : 'disabled' ?>><?= icon('star') ?><span><?= $canRedeem ? 'دریافت پاداش' : 'امکان دریافت نیست' ?></span></button></form>
+                                <form method="post" class="mt-auto" data-confirm-msg="با کسر <?= e(gamification_points_label($rewardCost)) ?> این پاداش صادر می‌شود. ادامه می‌دهید؟" data-confirm-title="تأیید دریافت پاداش" data-confirm-ok-label="دریافت پاداش" data-confirm-tone="primary"><?= csrf_input() ?><input type="hidden" name="action" value="redeem_reward"><input type="hidden" name="reward_id" value="<?= (int) $reward['id'] ?>"><input type="hidden" name="reward_nonce" value="<?= e($reward['nonce']) ?>"><button type="submit" class="btn <?= $canRedeem ? 'btn-primary' : 'btn-secondary' ?> w-full" <?= $canRedeem ? '' : 'disabled' ?>><?= icon('star') ?><span><?= $canRedeem ? 'دریافت پاداش' : 'امکان دریافت نیست' ?></span></button></form>
                             </article>
                         <?php endforeach; ?>
                     </div>
