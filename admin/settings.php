@@ -75,7 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // ---- تنظیمات طرح دوطرفه ----
         set_setting('split_ratio', (string) max(40, min(75, (int) ($_POST['split_ratio'] ?? 70))));
         set_setting('split_side', ($_POST['split_side'] ?? 'right') === 'left' ? 'left' : 'right');
-        set_setting('split_vertical', in_array($_POST['split_vertical'] ?? 'center', ['top', 'center', 'bottom'], true) ? $_POST['split_vertical'] : 'center');
+        $sv = $_POST['split_vertical'] ?? 'center';
+        set_setting('split_vertical', in_array($sv, ['top', 'center', 'bottom'], true) ? $sv : 'center');
         set_setting('split_title', trim($_POST['split_title'] ?? 'پورتال هوشمند مشتریان'));
         set_setting('split_subtitle', trim($_POST['split_subtitle'] ?? ''));
         foreach ([1, 2, 3] as $i) {
@@ -117,7 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         save_header_menu_items($menu_items);
-        set_setting('header_menu_align', in_array($_POST['header_menu_align'] ?? 'start', ['start', 'center', 'end'], true) ? $_POST['header_menu_align'] : 'start');
+        $hma = $_POST['header_menu_align'] ?? 'start';
+        set_setting('header_menu_align', in_array($hma, ['start', 'center', 'end'], true) ? $hma : 'start');
 
         log_activity($_SESSION['user_id'], "بروزرسانی تنظیمات عمومی و صفحه ورود");
         $success = 'تنظیمات عمومی با موفقیت ذخیره شد.';
@@ -278,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-    } elseif ($save_type === 'modules') {
+    } elseif ($save_type === 'sms_test') {
         // --- ارسال پیامک تست ---
         $test_mobile = trim($_POST['test_mobile'] ?? '');
         if ($test_mobile === '') {
@@ -291,17 +293,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $err = 'ارسال تست ناموفق: ' . $result['message'];
             }
         }
-    } elseif ($save_type === 'cache') {
-        set_setting('cache_enabled', isset($_POST['cache_enabled']) ? '1' : '0');
-        $ttl = max(5, min(86400, (int) ($_POST['cache_ttl'] ?? 300)));
-        set_setting('cache_ttl', (string) $ttl);
-        portal_cache_flush();
-        log_activity($_SESSION['user_id'], "بروزرسانی تنظیمات کش");
-        $success = 'تنظیمات کش با موفقیت ذخیره و کش پاک‌سازی شد.';
-    } elseif ($save_type === 'flush_cache') {
-        $n = portal_cache_flush();
-        log_activity($_SESSION['user_id'], "پاک‌سازی کش سیستم");
-        $success = 'کش سیستم پاک‌سازی شد (' . $n . ' فایل حذف گردید).';
     } elseif ($save_type === 'cache') {
         set_setting('cache_enabled', isset($_POST['cache_enabled']) ? '1' : '0');
         $ttl = max(5, min(86400, (int) ($_POST['cache_ttl'] ?? 300)));

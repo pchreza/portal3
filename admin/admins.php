@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $admin_id = (int) $pdo->lastInsertId();
                 $ins = $pdo->prepare("INSERT IGNORE INTO admin_permissions (role, permission) VALUES ('admin', ?)");
                 foreach (array_keys(admin_permissions_list()) as $perm) {
-                    if ($perm === 'admins') continue;
+                    if ($perm === 'admins' || $perm === 'settings') continue;
                     $ins->execute([$perm]);
                 }
 
@@ -218,9 +218,9 @@ render_admin_header('مدیریت مدیران سیستم', 'portal-page-main po
                     <input type="hidden" name="target_admin_id" id="perm-target-id" value="">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         <?php foreach (admin_permissions_list() as $pkey => $plabel): ?>
-                            <?php if ($pkey === 'admins') continue; ?>
-                            <label class="portal-permission-option flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition <?= in_array($pkey, $current_perms, true) ? 'bg-indigo-50/40' : '' ?>">
-                                <input type="checkbox" data-perm-checkbox data-permission="<?= e($pkey) ?>" name="perms[]" value="<?= e($pkey) ?>" <?= in_array($pkey, $current_perms, true) ? 'checked' : '' ?> class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                            <?php if ($pkey === 'admins' || $pkey === 'settings') continue; ?>
+                            <label class="portal-permission-option flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition">
+                                <input type="checkbox" data-perm-checkbox data-permission="<?= e($pkey) ?>" name="perms[]" value="<?= e($pkey) ?>" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
                                 <span class="text-sm text-slate-700"><?= $plabel ?></span>
                             </label>
                         <?php endforeach; ?>

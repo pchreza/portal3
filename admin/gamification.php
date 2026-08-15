@@ -5,6 +5,10 @@ if (!admin_can('gamification')) {
     header('Location: index.php');
     exit;
 }
+if (!is_module_enabled('gamification')) {
+    header('Location: index.php');
+    exit;
+}
 
 global $pdo;
 $success = '';

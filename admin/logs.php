@@ -2,6 +2,7 @@
 // admin/logs.php - Activity Logs
 require_once 'auth.php';
 if (!admin_can('logs')) { header('Location: index.php'); exit; }
+if (!is_module_enabled('logs')) { header('Location: index.php'); exit; }
 
 // Fetch activity logs with user info (با صفحه‌بندی)
 $logs_total = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs")->fetchColumn();
