@@ -1,7 +1,7 @@
 # Portal3 — پورتال مشتریان
 
 **نسخهٔ انتشار:** `2.7.1`
-**schema دیتابیس:** `35`
+**schema دیتابیس:** `37`
 **نوع سیستم:** پورتال مشتریان با PHP خالص، MariaDB/MySQL و رابط فارسی RTL
 **مخزن رسمی:** [github.com/pchreza/portal3](https://github.com/pchreza/portal3)
 
@@ -113,7 +113,7 @@ composer install --no-dev --optimize-autoloader
 php bin/migrate.php
 ```
 
-در نسخهٔ `2.7.0`، schema نهایی باید `35` باشد. migrationها idempotent هستند و migration اجراشده را دوباره اعمال نمی‌کنند. در production مقدارهای زیر را تنظیم کنید و migration را فقط در maintenance window اجرا کنید:
+در نسخهٔ `2.7.0`، schema نهایی باید `37` باشد. migrationها idempotent هستند و migration اجراشده را دوباره اعمال نمی‌کنند. در production مقدارهای زیر را تنظیم کنید و migration را فقط در maintenance window اجرا کنید:
 
 ```dotenv
 PORTAL_ENV=production

@@ -129,24 +129,24 @@ if (!$is_install_page && (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST')) {
 }
 
 // --- اجرای migration ---
-// در production migration باید با bin/migrate.php و خارج از request اجرا شود.
-// auto-migrate فقط برای local/test یا با PORTAL_AUTO_MIGRATE=true مجاز است.
+// مهاجرت دیتابیس پس از هر آپدیت به‌صورت خودکار و امن اجرا می‌شود.
+// در محیط‌های production نیز auto-migrate فعال است تا نیاز به اجرای دستی نباشد.
+// مهاجرت با GET_LOCK هم‌زمان‌سازی شده تا چند درخواست همزمان تدخل نکنند.
+// برای غیرفعال‌کردن: PORTAL_AUTO_MIGRATE=false در environment تنظیم کنید.
 require_once __DIR__ . '/migrations.php';
 $auto_migrate_env = getenv('PORTAL_AUTO_MIGRATE');
 $auto_migrate = $auto_migrate_env !== false
     ? filter_var($auto_migrate_env, FILTER_VALIDATE_BOOLEAN)
-    : in_array(PORTAL_ENV, ['local', 'development', 'test'], true);
-if ($pdo && $auto_migrate) {
-    if (portal_auto_migrate($pdo)) {
-        portal_cache_flush(); // migration اجرا شد — کش‌ها را باطل کن
+    : true; // پیش‌فرض: فعال در تمام محیط‌ها
+if ($pdo && !$is_install_page && $auto_migrate) {
+    // بررسی سریع نسخه schema قبل از اجرای migration (جلوگیری از اجرای بی‌مورد)
+    if (portal_schema_version($pdo) < PORTAL_SCHEMA_VERSION) {
+        if (portal_auto_migrate($pdo)) {
+            portal_cache_flush(); // migration اجرا شد — کش‌ها را باطل کن
+        }
     }
 }
-if ($pdo && !$auto_migrate && !$is_install_page && PHP_SAPI !== 'cli'
-    && portal_schema_version($pdo) < PORTAL_SCHEMA_VERSION) {
-    http_response_code(503);
-    header('Retry-After: 300');
-    exit('<div style="font-family:Tahoma;direction:rtl;text-align:center;padding:50px"><h2>سامانه در حال ارتقاست</h2><p>مدیر سامانه باید migration نسخهٔ جدید را اجرا کند.</p></div>');
-}
+
 
 // --- پردازش سراسری فرم گزارش خطا (دکمه شناور) ---
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['action'] ?? '') === 'report_error') {
