@@ -105,9 +105,9 @@ render_admin_header('پروفایل مدیر سیستم', 'portal-page-main port
                         </div>
                     </div>
                     <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
-                        <button class="btn btn-primary"><?= icon('check') ?><span>ذخیره اطلاعات</span></button>
+                        <button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره اطلاعات</span></button>
                     </div>
-                    <div class="mobile-action-bar"><button class="btn btn-primary"><?= icon('check') ?><span>ذخیره</span></button></div>
+                    <div class="mobile-action-bar"><button type="submit" class="btn btn-primary"><?= icon('check') ?><span>ذخیره</span></button></div>
                 </form>
             </div>
 
@@ -134,9 +134,9 @@ render_admin_header('پروفایل مدیر سیستم', 'portal-page-main port
                         </div>
                     </div>
                     <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
-                        <button class="btn btn-primary"><?= icon('lock') ?><span>تغییر رمز عبور</span></button>
+                        <button type="submit" class="btn btn-primary"><?= icon('lock') ?><span>تغییر رمز عبور</span></button>
                     </div>
-                    <div class="mobile-action-bar"><button class="btn btn-primary"><?= icon('lock') ?><span>تغییر رمز</span></button></div>
+                    <div class="mobile-action-bar"><button type="submit" class="btn btn-primary"><?= icon('lock') ?><span>تغییر رمز</span></button></div>
                 </form>
             </div>
 

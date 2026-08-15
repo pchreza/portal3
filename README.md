@@ -149,6 +149,30 @@ PORTAL_TRUST_PROXY=false
 
 مشتری پس از ورود به `customer/index.php` فقط داده‌های متعلق به شناسهٔ خودش را می‌بیند. امکانات پنل مشتری شامل داشبورد، پروژه‌ها، محصولات، فاکتورها، تیکت‌ها، surveyهای تخصیص‌یافته، اعلان‌ها، پروفایل و Gamification است. عملیات تغییر‌دهنده از فرم‌های داخلی و CSRF محافظت‌شده انجام می‌شوند.
 
+## نمونه پیکربندی nginx
+
+اگر از nginx استفاده می‌کنید، این ruleها را برای هم‌ارز ساختن امنیت Apache اضافه کنید:
+
+```nginx
+# مسدودسازی اجرای PHP در پوشه uploads
+location ~* /uploads/\.php$ {
+    deny all;
+    return 403;
+}
+
+# مسدودسازی دسترسی به فایل‌های حساس
+location ~ /\.(db_config\.php|env.*)$ {
+    deny all;
+    return 403;
+}
+
+# ارسال هدرهای امنیتی
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+```
+
 ## Backup و Restore
 
 در `admin/settings.php?tab=backups`، فقط `super_admin` مجاز به backup و restore است. Backup می‌تواند شامل داده‌های حساس، دیتابیس و `db_config.php` باشد؛ بنابراین فایل آن را خارج از document root یا در storage امن نگه‌داری کنید و هرگز در repository یا مسیر عمومی قرار ندهید. قبل از restore، عبارت تأیید را دقیق وارد کنید و checksum فایل را بررسی کنید.

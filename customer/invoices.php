@@ -50,7 +50,7 @@ $invoices = $stmt->fetchAll();
                                                 <div class="text-xs text-slate-500"><bdi dir="auto"><?php echo htmlspecialchars($inv['title']); ?></bdi></div>
                                             </div>
                                         </td>
-                                        <td data-label="مبلغ" class="p-4 font-semibold text-slate-900"><span class="value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['amount']); ?></span> <span dir="rtl">تومان</span></td>
+                                        <td data-label="مبلغ" class="p-4 font-semibold text-slate-900"><span class="value-ltr" dir="ltr"><?php echo htmlspecialchars(number_format((float) $inv['amount'], 0, '.', ',')); ?></span> <span dir="rtl">تومان</span></td>
                                         <td data-label="تاریخ سررسید" class="p-4 text-xs text-slate-600 value-ltr whitespace-nowrap" dir="ltr"><?php echo htmlspecialchars($inv['due_date'] ?: '-'); ?></td>
                                         <td data-label="وضعیت" class="p-4">
                                             <?php 

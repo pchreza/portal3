@@ -37,6 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 
     if ($amount === null) {
         $error = 'مبلغ فاکتور باید فقط شامل عدد و حداکثر دو رقم اعشار باشد.';
+    } elseif ((float) $amount <= 0) {
+        $error = 'مبلغ فاکتور باید بزرگتر از صفر باشد.';
     } elseif (empty($title) || empty($invoice_number) || $customer_id <= 0) {
         $error = 'انتخاب مشتری، شماره فاکتور و عنوان فاکتور الزامی است.';
     } else {
@@ -219,7 +221,7 @@ $invoices = $pdo->query("
                                                 <div><?php echo htmlspecialchars(trim($inv['first_name'] . ' ' . $inv['last_name']) !== '' ? $inv['first_name'] . ' ' . $inv['last_name'] : $inv['username']); ?></div>
                                                 <div class="text-xs text-slate-400"><?php echo htmlspecialchars($inv['company_name'] ?: ''); ?></div>
                                             </td>
-                                            <td data-label="مبلغ" class="p-4 font-semibold text-slate-900"><span class="value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['amount']); ?></span> <span dir="rtl">تومان</span></td>
+                                            <td data-label="مبلغ" class="p-4 font-semibold text-slate-900"><span class="value-ltr" dir="ltr"><?php echo htmlspecialchars(number_format((float) $inv['amount'], 0, '.', ',')); ?></span> <span dir="rtl">تومان</span></td>
                                             <td class="p-4 text-xs text-slate-600 value-ltr" dir="ltr"><?php echo htmlspecialchars($inv['due_date'] ?: '-'); ?></td>
                                             <td data-label="وضعیت" class="p-4">
                                                 <?php 

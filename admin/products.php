@@ -94,6 +94,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     if (empty($title) || $customer_id <= 0) {
         $error = 'انتخاب مشتری و عنوان محصول الزامی است.';
     } elseif (!$error) {
+        $cust_chk = $pdo->prepare("SELECT id FROM users WHERE id = ? AND role = 'customer'");
+        $cust_chk->execute([$customer_id]);
+        if (!$cust_chk->fetchColumn()) {
+            $error = 'مشتری انتخاب‌شده معتبر نیست.';
+        }
+    }
+    if (!$error) {
         if ($id === 0) {
             $stmt = $pdo->prepare("INSERT INTO products (customer_id, title, description, purchase_date, product_status, image) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([$customer_id, $title, $description, $purchase_date, $product_status, $image]);
@@ -365,7 +372,7 @@ $products = $product_list->fetchAll();
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <button class="btn btn-primary">اعمال فیلتر</button>
+                    <button type="submit" class="btn btn-primary">اعمال فیلتر</button>
                     <?php if ($product_search !== '' || $product_customer_filter > 0 || $product_status_filter !== ''): ?>
                         <a href="products.php" class="btn btn-secondary">پاک‌کردن</a>
                     <?php endif; ?>

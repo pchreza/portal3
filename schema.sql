@@ -44,7 +44,9 @@
                 `birth_date` VARCHAR(20) DEFAULT '',
                 `gender` VARCHAR(20) DEFAULT '',
                 `profile_skipped` TINYINT DEFAULT 0,
-                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_users_role` (`role`),
+                UNIQUE KEY `uniq_users_mobile` (`mobile`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
             CREATE TABLE IF NOT EXISTS `admin_user_permissions` (
@@ -63,7 +65,7 @@
                 `description` TEXT,
                 `status` VARCHAR(50) DEFAULT 'in_progress',
                 `image` VARCHAR(255) DEFAULT '',
-                `budget` VARCHAR(100) DEFAULT '',
+                `budget` DECIMAL(18,2) DEFAULT NULL,
                 `deadline` DATE DEFAULT NULL,
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX `idx_projects_customer_status_id` (`customer_id`, `status`, `id`),

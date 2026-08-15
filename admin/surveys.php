@@ -280,7 +280,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                         <label class="block text-xs text-slate-500 mb-1" for="survey_filter_to">تا تاریخ</label>
                         <input type="date" id="survey_filter_to" name="to" value="<?= htmlspecialchars($filter_to) ?>" dir="ltr" class="value-ltr px-3 py-2 rounded-lg border border-slate-300 text-sm">
                     </div>
-                    <button class="btn btn-primary">فیلتر</button>
+                    <button type="submit" class="btn btn-primary">فیلتر</button>
                 </form>
 
                 <p class="text-sm text-slate-500">تعداد پاسخ‌ها: <b class="text-slate-800 value-ltr" dir="ltr"><?= count($results) ?></b></p>
@@ -389,7 +389,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                             <p class="helper mt-1">حداقل دو و حداکثر دوازده گزینهٔ متفاوت وارد کنید. گزینهٔ تکراری خودکار حذف می‌شود.</p>
                         </div>
                         <div class="md:col-span-3 flex justify-end">
-                            <button class="btn btn-primary"><?= icon('plus') ?><span>افزودن سؤال</span></button>
+                            <button type="submit" class="btn btn-primary"><?= icon('plus') ?><span>افزودن سؤال</span></button>
                         </div>
                     </form>
                 </div>
@@ -413,7 +413,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                                                 <?php echo csrf_input(); ?>
                                                 <input type="hidden" name="action" value="delete_question">
                                                 <input type="hidden" name="delete_id" value="<?= $item['id'] ?>">
-                                                <button class="btn btn-sm btn-outline-danger"><?= icon('trash') ?><span>حذف</span></button>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"><?= icon('trash') ?><span>حذف</span></button>
                                             </form>
                                         </div>
                                     </div>
@@ -442,7 +442,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                                             </div>
                                             <div class="md:col-span-3 flex justify-end gap-2">
                                                 <button type="button" class="btn btn-sm btn-secondary" data-question-cancel>انصراف</button>
-                                                <button class="btn btn-sm btn-primary"><?= icon('check') ?><span>ذخیره سؤال</span></button>
+                                                <button type="submit" class="btn btn-sm btn-primary"><?= icon('check') ?><span>ذخیره سؤال</span></button>
                                             </div>
                                         </form>
                                     </div>
@@ -515,7 +515,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
 
                         <div class="flex justify-end gap-3 pt-2">
                             <a href="surveys.php" class="btn btn-secondary">انصراف</a>
-                            <button class="btn btn-primary">ذخیره تغییرات</button>
+                            <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
                         </div>
                     </form>
                 </div>
@@ -572,7 +572,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                         </div>
 
                         <div class="flex justify-end pt-2">
-                            <button class="btn btn-primary">ذخیره و افزودن سؤال‌ها</button>
+                            <button type="submit" class="btn btn-primary">ذخیره و افزودن سؤال‌ها</button>
                         </div>
                     </form>
                 </div>
@@ -631,7 +631,7 @@ render_admin_header('مدیریت نظرسنجی', 'portal-page-main portal-admi
                                                         <?php echo csrf_input(); ?>
                                                         <input type="hidden" name="action" value="delete">
                                                         <input type="hidden" name="delete_id" value="<?= $f['id'] ?>">
-                                                        <button class="btn btn-sm btn-outline-danger">حذف</button>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
                                                     </form>
                                                 </div>
                                             </td>

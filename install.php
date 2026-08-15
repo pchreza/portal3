@@ -167,6 +167,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isInstalled) {
 
         if (empty($admin_username) || empty($admin_password)) {
             $error = 'لطفاً نام کاربری و رمز عبور مدیر را وارد کنید.';
+        } elseif (strlen($admin_password) < 8) {
+            $error = 'رمز عبور مدیر باید حداقل ۸ کاراکتر باشد.';
+        } elseif (!preg_match('/^[A-Za-z0-9_.-]{3,50}$/u', $admin_username)) {
+            $error = 'نام کاربری باید شامل حروف انگلیسی، عدد، نقطه، خط تیره و زیرخط (۳ تا ۵۰ کاراکتر) باشد.';
         } else {
             $hashed_password = password_hash($admin_password, PASSWORD_DEFAULT);
             // ادمین اول سیستم به‌عنوان «مدیر ارشد (سوپر ادمین)» ساخته می‌شود

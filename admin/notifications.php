@@ -268,9 +268,9 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                         </div>
 
                         <div class="desktop-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
-                            <button class="btn btn-primary btn-lg"><?= icon('send') ?><span>ارسال اعلان</span></button>
+                            <button type="submit" class="btn btn-primary btn-lg"><?= icon('send') ?><span>ارسال اعلان</span></button>
                         </div>
-                        <div class="mobile-action-bar"><button class="btn btn-primary btn-lg"><?= icon('send') ?><span>ارسال اعلان</span></button></div>
+                        <div class="mobile-action-bar"><button type="submit" class="btn btn-primary btn-lg"><?= icon('send') ?><span>ارسال اعلان</span></button></div>
                     </form>
                 </div>
 
@@ -353,13 +353,13 @@ render_admin_header('مدیریت اعلانات و اطلاع‌رسانی', 'p
                                                         <?php echo csrf_input(); ?>
                                                         <input type="hidden" name="action" value="delete">
                                                         <input type="hidden" name="delete_id" value="<?= $n['id'] ?>">
-                                                        <button class="btn btn-sm btn-outline-danger"><?= icon('trash') ?><span>حذف</span></button>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"><?= icon('trash') ?><span>حذف</span></button>
                                                     </form>
                                                     <form method="post">
                                                         <?php echo csrf_input(); ?>
                                                         <input type="hidden" name="action" value="toggle">
                                                         <input type="hidden" name="notification_id" value="<?= $n['id'] ?>">
-                                                        <button title="فعال/غیرفعال" class="btn btn-sm btn-secondary"><?= !empty($n['is_active']) ? icon('x') : icon('check') ?><span><?= !empty($n['is_active']) ? 'غیرفعال‌سازی' : 'فعال‌سازی' ?></span></button>
+                                                        <button type="submit" title="فعال/غیرفعال" class="btn btn-sm btn-secondary"><?= !empty($n['is_active']) ? icon('x') : icon('check') ?><span><?= !empty($n['is_active']) ? 'غیرفعال‌سازی' : 'فعال‌سازی' ?></span></button>
                                                     </form>
                                                 </div>
                                             </td>

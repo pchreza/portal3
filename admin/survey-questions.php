@@ -4,5 +4,5 @@ require_once 'auth.php';
 if (!admin_can('surveys')) { header('Location: index.php'); exit; }
 if (!is_module_enabled('surveys')) { header('Location: index.php'); exit; }
 $id = (int) ($_GET['id'] ?? $_POST['survey_id'] ?? 0);
-header('Location: surveys.php?questions=' . $id);
+header('Location: surveys.php?questions=' . $id, true, 301);
 exit;

@@ -44,12 +44,12 @@ function portal_cache_get(string $key, ?int $ttl = null, bool $skipEnabled = fal
     if ($raw === false) {
         return null;
     }
-    $data = @unserialize($raw);
+    $data = @json_decode($raw, true);
     if (!is_array($data) || !isset($data['exp'], $data['val'])) {
         @unlink($file);
         return null;
     }
-    if ($data['exp'] < time()) {
+    if ((int) $data['exp'] < time()) {
         @unlink($file);
         return null;
     }
@@ -61,8 +61,8 @@ function portal_cache_set(string $key, mixed $value, ?int $ttl = null, bool $ski
     if (!$skipEnabled && !portal_cache_enabled()) {
         return false;
     }
-    $payload = serialize(['exp' => time() + ($ttl ?? portal_cache_ttl()), 'val' => $value]);
-    return @file_put_contents(portal_cache_file($key), $payload, LOCK_EX) !== false;
+    $payload = json_encode(['exp' => time() + ($ttl ?? portal_cache_ttl()), 'val' => $value], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    return $payload !== false && @file_put_contents(portal_cache_file($key), $payload, LOCK_EX) !== false;
 }
 
 function portal_cache_delete(string $key): bool

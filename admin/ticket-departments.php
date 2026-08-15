@@ -79,7 +79,7 @@ render_admin_header('مدیریت دپارتمان‌های تیکت', 'portal-p
                         <input type="number" name="sort_order" id="td_sort" value="0" dir="ltr" inputmode="numeric" class="value-ltr input">
                     </div>
                     <div class="md:col-span-4 flex justify-end">
-                        <button class="btn btn-primary"><?= icon('plus') ?><span>افزودن</span></button>
+                        <button type="submit" class="btn btn-primary"><?= icon('plus') ?><span>افزودن</span></button>
                     </div>
                 </form>
             </div>
@@ -121,13 +121,13 @@ render_admin_header('مدیریت دپارتمان‌های تیکت', 'portal-p
                                                     <?php echo csrf_input(); ?>
                                                     <input type="hidden" name="action" value="toggle">
                                                     <input type="hidden" name="id" value="<?= $dep['id'] ?>">
-                                                    <button class="btn btn-sm btn-ghost !text-slate-700 whitespace-nowrap"><?= $dep['is_active'] ? 'غیرفعال' : 'فعال' ?></button>
+                                                    <button type="submit" class="btn btn-sm btn-ghost !text-slate-700 whitespace-nowrap"><?= $dep['is_active'] ? 'غیرفعال' : 'فعال' ?></button>
                                                 </form>
                                                 <form method="post" data-confirm-msg="حذف شود؟ تیکت‌های این دپارتمان به «عمومی» منتقل می‌شوند.">
                                                     <?php echo csrf_input(); ?>
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="id" value="<?= $dep['id'] ?>">
-                                                    <button class="btn btn-sm btn-outline-danger">حذف</button>
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
                                                 </form>
                                             </div>
                                         </td>

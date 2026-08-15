@@ -22,7 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mobile      = fa_digits_to_en(trim($_POST['mobile'] ?? ''));
         $mobile_db   = $mobile !== '' ? normalize_mobile_db($mobile) : null;
 
-        if ($username === '' || strlen($password) < 8) {
+        if ($username === '') {
+            $error = 'نام کاربری الزامی است.';
+        } elseif (!preg_match('/^[A-Za-z0-9_.-]{3,50}$/u', $username)) {
+            $error = 'نام کاربری فقط می‌تواند شامل حروف انگلیسی، عدد، نقطه، خط تیره و زیرخط (۳ تا ۵۰ کاراکتر) باشد.';
+        } elseif (strlen($password) < 8) {
             $err = 'نام کاربری و رمز عبور (حداقل ۸ کاراکتر) الزامی است.';
         } elseif ($mobile_db !== null && $mobile_db !== '' && mobile_exists($mobile_db)) {
             $err = 'این شماره موبایل قبلاً برای کاربر دیگری (مشتری یا مدیر) ثبت شده است.';
@@ -143,7 +147,7 @@ render_admin_header('مدیریت مدیران سیستم', 'portal-page-main po
                         <input type="text" name="mobile" id="am_mobile" dir="ltr" inputmode="tel" autocomplete="tel" class="value-ltr input">
                     </div>
                     <div>
-                        <button class="btn btn-primary w-full">ایجاد مدیر</button>
+                        <button type="submit" class="btn btn-primary w-full">ایجاد مدیر</button>
                     </div>
                 </form>
             </div>
@@ -190,7 +194,7 @@ render_admin_header('مدیریت مدیران سیستم', 'portal-page-main po
                                                         <?php echo csrf_input(); ?>
                                                         <input type="hidden" name="action" value="delete">
                                                         <input type="hidden" name="admin_id" value="<?= $ad['id'] ?>">
-                                                        <button class="btn btn-sm btn-outline-danger">حذف</button>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
                                                     </form>
                                                 <?php else: ?>
                                                     <span class="text-xs text-slate-400">—</span>
@@ -226,7 +230,7 @@ render_admin_header('مدیریت مدیران سیستم', 'portal-page-main po
                         <?php endforeach; ?>
                     </div>
                     <div class="flex justify-end pt-4">
-                        <button class="btn btn-primary">ذخیره دسترسی‌ها</button>
+                        <button type="submit" class="btn btn-primary">ذخیره دسترسی‌ها</button>
                     </div>
                 </form>
             </section>

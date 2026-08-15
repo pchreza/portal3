@@ -109,7 +109,7 @@ render_admin_header('گزارش‌های خطا', 'portal-page-main portal-admin
                                 <?= csrf_input() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="delete_id" value="<?= $r['id'] ?>">
-                                <button class="btn btn-sm btn-outline-danger"><?= icon('trash') ?><span>حذف</span></button>
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><?= icon('trash') ?><span>حذف</span></button>
                             </form>
                         </div>
                     </td>

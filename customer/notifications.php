@@ -72,7 +72,7 @@ render_customer_header(
                                             <?php echo csrf_input(); ?>
                                             <input type="hidden" name="action" value="read">
                                             <input type="hidden" name="recipient_id" value="<?= (int) $n['recipient_id'] ?>">
-                                            <button class="btn btn-sm btn-ghost !text-indigo-600"><?= icon('check') ?><span>خوانده شد</span></button>
+                                            <button type="submit" class="btn btn-sm btn-ghost !text-indigo-600"><?= icon('check') ?><span>خوانده شد</span></button>
                                         </form>
                                     <?php endif; ?>
                                 </div>

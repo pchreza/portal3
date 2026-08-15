@@ -284,7 +284,7 @@ render_admin_header('تیکت‌های پشتیبانی مشتریان', 'portal
                             </select>
                         </div>
                         <div class="flex items-end gap-2 flex-wrap">
-                            <button class="btn btn-primary"><?= icon('search') ?><span>فیلتر</span></button>
+                            <button type="submit" class="btn btn-primary"><?= icon('search') ?><span>فیلتر</span></button>
                             <a href="tickets.php" class="btn btn-ghost">پاک‌کردن</a>
                         </div>
                         <div class="lg:col-span-6 flex items-center">

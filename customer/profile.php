@@ -8,13 +8,26 @@ $error = '';
 $user_id = $_SESSION['user_id'];
 
 // Handle Skip action — فقط از طریق POST با CSRF (قبلاً GET بود → CSRF)
+// رد کردن تنها در صورتی مجاز است که هیچ فیلد اجباری توسط مدیر تعریف نشده باشد.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'skip_profile') {
     require_valid_csrf();
-    $stmt = $pdo->prepare("UPDATE users SET profile_skipped = 1 WHERE id = ?");
-    $stmt->execute([$user_id]);
-    log_activity($user_id, "رد موقت تکمیل پروفایل");
-    header('Location: index.php');
-    exit;
+    $required_fields = ['first_name', 'last_name', 'mobile', 'company_name', 'job_title', 'birth_date', 'gender'];
+    $has_required = false;
+    foreach ($required_fields as $rf) {
+        if (get_setting('req_' . $rf, '0') === '1') {
+            $has_required = true;
+            break;
+        }
+    }
+    if ($has_required) {
+        $error = 'تکمیل برخی فیلدها اجباری است و نمی‌توانید از تکمیل پروفایل صرف‌نظر کنید.';
+    } else {
+        $stmt = $pdo->prepare("UPDATE users SET profile_skipped = 1 WHERE id = ?");
+        $stmt->execute([$user_id]);
+        log_activity($user_id, "رد موقت تکمیل پروفایل");
+        header('Location: index.php');
+        exit;
+    }
 }
 
 // Handle Form Submission
@@ -27,7 +40,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $job_title = trim($_POST['job_title'] ?? '');
     $birth_date = portal_date_to_db(trim($_POST['birth_date'] ?? '')); // شمسی → میلادی
     $gender = trim($_POST['gender'] ?? '');
-    $password = $_POST['password'];
+    $password = $_POST['password'] ?? '';
+    $current_password = $_POST['current_password'] ?? '';
+
+    // بررسی رمز عبور فعلی پیش از هر تغییر (رمز جدید یا ویرایش پروفایل)
+    $pw_stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+    $pw_stmt->execute([$user_id]);
+    $stored_hash = (string) $pw_stmt->fetchColumn();
+    if (!password_verify($current_password, $stored_hash)) {
+        $error = 'رمز عبور فعلی نادرست است. برای ذخیره تغییرات، رمز عبور فعلی خود را وارد کنید.';
+        $has_error = true;
+    } else {
+        $has_error = false;
+    }
+
+    // بررسی حداقل طول رمز جدید در صورت وارد شدن
+    if (!$has_error && $password !== '' && strlen($password) < 8) {
+        $error = 'رمز عبور جدید باید حداقل ۸ کاراکتر باشد.';
+        $has_error = true;
+    }
 
     // Check mandatory fields based on admin settings
     $fields_config = ['first_name', 'last_name', 'mobile', 'company_name', 'job_title', 'birth_date', 'gender'];
@@ -52,6 +83,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // شماره موبایل نباید با کاربر دیگری یکسان باشد (مشتری یا مدیر)
+    if (!$has_error && $mobile !== null && $mobile !== '' && !preg_match('/^09[0-9]{9}$/', $mobile)) {
+        $error = 'شماره موبایل باید با فرمت 09XXXXXXXXX باشد.';
+        $has_error = true;
+    }
     if (!$has_error && $mobile !== null && $mobile !== '' && mobile_exists($mobile, $user_id)) {
         $error = 'این شماره موبایل قبلاً برای کاربر دیگری (مشتری یا مدیر) ثبت شده است.';
         $has_error = true;
@@ -162,8 +197,13 @@ $full_name = trim($user['first_name'] . ' ' . $user['last_name']) !== '' ? $user
                             <input type="text" id="pf_username" value="<?php echo htmlspecialchars($user['username']); ?>" dir="ltr" disabled class="value-ltr input bg-slate-100 text-slate-500 cursor-not-allowed">
                         </div>
                         <div>
-                            <label class="label" for="pf_password">تغییر رمز عبور (در صورت نیاز)</label>
-                            <input type="password" name="password" id="pf_password" class="input" placeholder="••••••••">
+                            <label class="label" for="pf_current_password">رمز عبور فعلی <span class="required-star" aria-hidden="true">*</span></label>
+                            <input type="password" name="current_password" id="pf_current_password" required autocomplete="current-password" class="input" placeholder="••••••••">
+                            <p class="helper">برای تأیید تغییرات، رمز عبور فعلی خود را وارد کنید.</p>
+                        </div>
+                        <div>
+                            <label class="label" for="pf_password">رمز عبور جدید (در صورت نیاز به تغییر)</label>
+                            <input type="password" name="password" id="pf_password" autocomplete="new-password" minlength="8" class="input" placeholder="حداقل ۸ کاراکتر">
                         </div>
                         <div>
                             <label class="label" for="pf_first_name">نام<?php echo get_setting('req_first_name') === '1' ? '<span class="required-star" aria-hidden="true">*</span>' : ''; ?></label>

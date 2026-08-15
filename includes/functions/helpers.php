@@ -1012,7 +1012,7 @@ function send_otp_code(string $mobile): array
     $ins->execute([$m, $code, $expires]);
 
     // ارسال پیامک
-    if (get_setting('sms_api_key', '') === '') {
+    if (portal_sms_api_key() === '') {
         // حالت تست (بدون درگاه پیامک): کد فقط در محیط توسعه در پاسخ/سشن می‌آید.
         // در تولید (PORTAL_DEV_MODE=false) کد فقط در لاگ سرور ثبت می‌شود — امنیت ورود
         if (defined('PORTAL_DEV_MODE') && PORTAL_DEV_MODE) {
