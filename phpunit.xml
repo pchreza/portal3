@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="tests/bootstrap.php" colors="true" cacheDirectory="storage/phpunit-cache">
-    <testsuites>
-        <testsuite name="portal3 unit tests">
-            <directory>tests/Unit</directory>
-        </testsuite>
-    </testsuites>
-</phpunit>
