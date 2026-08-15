@@ -219,7 +219,7 @@ $products = $product_list->fetchAll();
                                 <p class="portal-form-subtitle"><?php echo $action === 'edit' ? 'اطلاعات محصول را به‌روزرسانی کنید' : 'محصول را ثبت و به مشتری منتسب کنید'; ?></p>
                             </div>
                         </div>
-                            <a href="products.php" class="btn btn-sm portal-form-back">← بازگشت به لیست</a>
+                            <a href="products.php" class="btn btn-sm portal-form-back" type="button">← بازگشت به لیست</a>
                     </div>
 
                     <form method="POST" class="portal-form-body" enctype="multipart/form-data" novalidate>
@@ -259,6 +259,17 @@ $products = $product_list->fetchAll();
                                     <textarea id="product_description" name="description" rows="4" placeholder="شرح مختصری از محصول بنویسید..." class="input portal-form-control"><?php echo htmlspecialchars($edit_product['description'] ?? ''); ?></textarea>
                                 </div>
                             </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="label" for="product_price">قیمت (تومان)</label>
+                                        <input type="text" id="product_price" name="price" dir="ltr" value="<?php echo htmlspecialchars($edit_product['price'] ?? ''); ?>" placeholder="مثال: 2500000" class="input portal-form-control value-ltr">
+                                        <p class="helper">فقط عدد، با یا بدون کاما</p>
+                                    </div>
+                                    <div>
+                                        <label class="label" for="license_key">کد لایسنس</label>
+                                        <input type="text" id="license_key" name="license_key" dir="ltr" value="<?php echo htmlspecialchars($edit_product['license_key'] ?? ''); ?>" placeholder="مثال: ABCD-1234-EFGH" class="input portal-form-control value-ltr">
+                                    </div>
+                                </div>
                         </div>
 
                         <!-- بخش ۲: وضعیت و تاریخ -->
@@ -334,11 +345,56 @@ $products = $product_list->fetchAll();
 
                         <!-- دکمه‌ها -->
                         <div class="portal-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                            <a href="products.php" class="btn btn-secondary">انصراف</a>
+                            <a href="products.php" class="btn btn-secondary" type="button">انصراف</a>
                             <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره محصول</span></button>
                         </div>
                     </form>
-                </div>
+                    <script nonce="<?= e(portal_csp_nonce()) ?>">
+                    (function(){
+                        // جستجوی مشتری
+                        var search = document.getElementById('customer_search');
+                        var select = document.getElementById('customer_id');
+                        if (search && select) {
+                            var options = Array.prototype.slice.call(select.options);
+                            search.addEventListener('input', function() {
+                                var q = this.value.toLowerCase().trim();
+                                options.forEach(function(opt) {
+                                    if (!opt.value) return;
+                                    var text = opt.textContent.toLowerCase();
+                                    opt.style.display = q === '' || text.indexOf(q) !== -1 ? '' : 'none';
+                                });
+                                if (q !== '' && select.selectedIndex === 0) {
+                                    for (var i = 1; i < select.options.length; i++) {
+                                        if (select.options[i].style.display !== 'none') { select.selectedIndex = i; break; }
+                                    }
+                                }
+                            });
+                        }
+                        // پیش‌نمایش تصویر
+                        var fileInput = document.getElementById('product_image');
+                        var preview = document.querySelector('.portal-image-preview');
+                        if (fileInput && preview) {
+                            fileInput.addEventListener('change', function() {
+                                var file = this.files[0];
+                                if (file) {
+                                    var reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        var img = preview.querySelector('img');
+                                        if (img) { img.src = e.target.result; }
+                                        else {
+                                            var ph = preview.querySelector('span'); if (ph) ph.style.display = 'none';
+                                            img = document.createElement('img'); img.src = e.target.result;
+                                            img.className = 'w-full h-full object-cover'; img.alt = 'پیش‌نمایش';
+                                            preview.appendChild(img);
+                                        }
+                                    };
+                                    reader.readAsDataURL(file);
+                                }
+                            });
+                        }
+                    })();
+                    </script>
+
 
             <?php else: ?>
                 <div class="flex items-center justify-between gap-3">

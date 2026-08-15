@@ -65,7 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $status = trim($_POST['status'] ?? 'in_progress');
-    $deadline = portal_date_to_db(trim($_POST['deadline'] ?? '')); // شمسی → میلادی
+    $deadline = portal_date_to_db(trim($_POST['deadline'] ?? ''));
+    $budget = normalize_money_input(trim($_POST['budget'] ?? '')); // شمسی → میلادی
 
     // پردازش آپلود عکس
     $image = trim($_POST['current_image'] ?? '');
@@ -102,8 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     }
     if (!$error) {
         if ($id === 0) {
-            $stmt = $pdo->prepare("INSERT INTO projects (customer_id, title, description, status, deadline, image) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$customer_id, $title, $description, $status, $deadline, $image]);
+            $stmt = $pdo->prepare("INSERT INTO projects (customer_id, title, description, budget, status, deadline, image) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$customer_id, $title, $description, $budget, $status, $deadline, $image]);
             $new_project_id = $pdo->lastInsertId();
             
             // Save custom fields
@@ -115,8 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
             header('Location: projects.php');
             exit;
         } else {
-            $stmt = $pdo->prepare("UPDATE projects SET customer_id = ?, title = ?, description = ?, status = ?, deadline = ?, image = ? WHERE id = ?");
-            $stmt->execute([$customer_id, $title, $description, $status, $deadline, $image, $id]);
+            $stmt = $pdo->prepare("UPDATE projects SET customer_id = ?, title = ?, description = ?, budget = ?, status = ?, deadline = ?, image = ? WHERE id = ?");
+            $stmt->execute([$customer_id, $title, $description, $budget, $status, $deadline, $image, $id]);
             
             // Save custom fields
             save_custom_fields_values('project', $id);
@@ -218,7 +219,7 @@ $projects = $project_list->fetchAll();
                                 <p class="portal-form-subtitle"><?php echo $action === 'edit' ? 'اطلاعات پروژه را به‌روزرسانی کنید' : 'پروژه را ثبت و به مشتری منتسب کنید'; ?></p>
                             </div>
                         </div>
-                            <a href="projects.php" class="btn btn-sm portal-form-back">← بازگشت به لیست</a>
+                            <a href="projects.php" class="btn btn-sm portal-form-back" type="button">← بازگشت به لیست</a>
                     </div>
 
                     <form method="POST" class="portal-form-body" enctype="multipart/form-data" novalidate>
@@ -256,6 +257,11 @@ $projects = $project_list->fetchAll();
                                 <div>
                                     <label class="label" for="project_description">توضیحات پروژه</label>
                                     <textarea id="project_description" name="description" rows="4" placeholder="شرح مختصری از پروژه بنویسید..." class="input portal-form-control"><?php echo htmlspecialchars($edit_project['description'] ?? ''); ?></textarea>
+                                </div>
+                                <div>
+                                    <label class="label" for="project_budget">بودجه پروژه (تومان)</label>
+                                    <input type="text" id="project_budget" name="budget" dir="ltr" value="<?php echo htmlspecialchars($edit_project['budget'] ?? ''); ?>" placeholder="مثال: 5000000" class="input portal-form-control value-ltr">
+                                    <p class="helper">فقط عدد، با یا بدون کاما</p>
                                 </div>
                             </div>
                         </div>
@@ -333,10 +339,54 @@ $projects = $project_list->fetchAll();
 
                         <!-- دکمه‌ها -->
                         <div class="portal-form-actions flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                            <a href="projects.php" class="btn btn-secondary">انصراف</a>
+                            <a href="projects.php" class="btn btn-secondary" type="button">انصراف</a>
                             <button type="submit" class="btn btn-primary btn-lg"><?= icon('check') ?><span>ذخیره پروژه</span></button>
                         </div>
                     </form>
+                    <script nonce="<?= e(portal_csp_nonce()) ?>">
+                    (function(){
+                        var search = document.getElementById('customer_search');
+                        var select = document.getElementById('customer_id');
+                        if (search && select) {
+                            var options = Array.prototype.slice.call(select.options);
+                            search.addEventListener('input', function() {
+                                var q = this.value.toLowerCase().trim();
+                                options.forEach(function(opt) {
+                                    if (!opt.value) return;
+                                    var text = opt.textContent.toLowerCase();
+                                    opt.style.display = q === '' || text.indexOf(q) !== -1 ? '' : 'none';
+                                });
+                                if (q !== '' && select.selectedIndex === 0) {
+                                    for (var i = 1; i < select.options.length; i++) {
+                                        if (select.options[i].style.display !== 'none') { select.selectedIndex = i; break; }
+                                    }
+                                }
+                            });
+                        }
+                        var fileInput = document.getElementById('project_image');
+                        var preview = document.querySelector('.portal-image-preview');
+                        if (fileInput && preview) {
+                            fileInput.addEventListener('change', function() {
+                                var file = this.files[0];
+                                if (file) {
+                                    var reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        var img = preview.querySelector('img');
+                                        if (img) { img.src = e.target.result; }
+                                        else {
+                                            var ph = preview.querySelector('span'); if (ph) ph.style.display = 'none';
+                                            img = document.createElement('img'); img.src = e.target.result;
+                                            img.className = 'w-full h-full object-cover'; img.alt = 'پیش‌نمایش';
+                                            preview.appendChild(img);
+                                        }
+                                    };
+                                    reader.readAsDataURL(file);
+                                }
+                            });
+                        }
+                    })();
+                    </script>
+
                 </div>
 
             <?php else: ?>
