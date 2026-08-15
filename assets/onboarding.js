@@ -8,6 +8,7 @@
 
     var STORAGE_KEY = 'portal_onboarding_dismissed';
     var overlay = null;
+    var wasAutoStarted = false;
     var currentStep = 0;
     var resizeTimer = null;
 
@@ -51,31 +52,31 @@
             icon: 'dashboard'
         },
         {
-            selector: '.portal-sidebar .nav-item',
+            .portal-sidebar a[href*="customers.php"], .portal-sidebar .nav-item',
             title: 'مدیریت مشتریان',
             body: 'با کلیک روی «مشتریان» در منوی کناری، می‌توانید مشتریان جدید اضافه کنید، اطلاعات آن‌ها را ویرایش کنید و فیلدهای سفارشی تعریف کنید. هر مشتری می‌تواند پروژه، محصول، فاکتور و تیکت مخصوص به خود داشته باشد.',
             icon: 'users'
         },
         {
-            selector: '.portal-sidebar .nav-item',
+            .portal-sidebar a[href*="tickets.php"], .portal-sidebar .nav-item',
             title: 'پشتیبانی و تیکت‌ها',
             body: 'در بخش «تیکت‌ها»، مشتریان سوالات و مشکلات خود را مطرح می‌کنند. شما می‌توانید پاسخ دهید، وضعیت تیکت را تغییر دهید و آن را به دپارتمان‌های مختلف ارجاع دهید.',
             icon: 'ticket'
         },
         {
-            selector: '.portal-sidebar .nav-item',
+            .portal-sidebar a[href*="notifications.php"], .portal-sidebar .nav-item',
             title: 'اعلان‌ها و نظرسنجی‌ها',
             body: 'از بخش «اعلان‌ها» می‌توانید پیام‌های عمومی یا هدفمند ارسال کنید. نظرسنجی‌ها به شما کمک می‌کنند بازخورد مشتریان را جمع‌آوری کنید.',
             icon: 'bell'
         },
         {
-            selector: '.portal-sidebar .nav-item',
+            .portal-sidebar a[href*="gamification.php"], .portal-sidebar .nav-item',
             title: 'باشگاه امتیاز و پاداش',
             body: 'در بخش «گیمیفیکیشن»، قوانین امتیازدهی را تنظیم کنید، پاداش و کد تخفیف ایجاد کنید و فعالیت مشتریان را پایش کنید. مشتریان با تکمیل پروفایل، ثبت تیکت و پاسخ به نظرسنجی امتیاز کسب می‌کنند.',
             icon: 'star'
         },
         {
-            selector: '.portal-sidebar .nav-item',
+            .portal-sidebar a[href*="settings.php"], .portal-sidebar .nav-item',
             title: 'تنظیمات سیستم',
             body: 'در بخش «تنظیمات» (فقط برای مدیر ارشد)، می‌توانید ظاهر سایت، رنگ‌بندی، سیستم پیامک، ماژول‌ها و backup/restore را مدیریت کنید.',
             icon: 'settings'
@@ -212,9 +213,15 @@
             // اسکرول به target اگر خارج از دید است
             var targetRect = target.getBoundingClientRect();
             if (targetRect.top < 0 || targetRect.bottom > window.innerHeight) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                try {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } catch (e) {
+                    target.scrollIntoView();
+                }
                 // صبر برای اتمام اسکرول سپس محاسبه مجدد
-                setTimeout(function () { positionTooltip(target, tooltipEl); }, 300);
+                setTimeout(function () {
+                    if (overlay) { positionTooltip(target, tooltipEl); }
+                }, 400);
             } else {
                 positionTooltip(target, tooltipEl);
             }
@@ -235,7 +242,7 @@
         var rect = target.getBoundingClientRect();
         var spotlight = overlay.querySelector('.portal-onboarding-spotlight');
         if (spotlight) {
-            spotlight.style.display = '';
+            spotlight.style.display = 'block';
             spotlight.style.top = Math.max(0, rect.top - 8) + 'px';
             spotlight.style.left = Math.max(0, rect.left - 8) + 'px';
             spotlight.style.width = (rect.width + 16) + 'px';
@@ -297,8 +304,11 @@
             clearTimeout(resizeTimer);
             resizeTimer = null;
         }
-        // اطلاع به سرور که آموزش رد شد
-        notifyServerDismissed();
+        // فقط اگر آموزش خودکار شروع شده بود، به سرور اطلاع بده
+        if (wasAutoStarted) {
+            notifyServerDismissed();
+        }
+        wasAutoStarted = false;
     }
 
     function notifyServerDismissed() {
@@ -327,6 +337,7 @@
     /** شروع آموزش از ابتدا */
     window.portalStartOnboarding = function () {
         clearDismissed();
+        // wasAutoStarted فقط در portalAutoStartOnboarding ست می‌شود
         currentStep = 0;
         if (overlay) {
             overlay.remove();
@@ -340,15 +351,20 @@
     /** شروع خودکار اگر قبلاً رد نشده باشد */
     window.portalAutoStartOnboarding = function () {
         if (!isDismissed()) {
+            wasAutoStarted = true;
             window.portalStartOnboarding();
         }
     };
 
-    // Auto-start on DOMContentLoaded if flag is set
+    // Auto-start only on dashboard (index.php) if flag is set
     document.addEventListener('DOMContentLoaded', function () {
         if (document.documentElement.getAttribute('data-portal-onboarding') === 'auto') {
-            // تأخیر کوتاه برای اطمینان از رندر کامل صفحه
-            setTimeout(window.portalAutoStartOnboarding, 500);
+            // فقط در داشبورد auto-start کن، نه در همه صفحات
+            var isDashboard = /\/admin\/index\.php([?#]|$)/.test(window.location.pathname + window.location.search);
+            if (isDashboard) {
+                // تأخیر کوتاه برای اطمینان از رندر کامل صفحه
+                setTimeout(window.portalAutoStartOnboarding, 500);
+            }
         }
     });
 })();
