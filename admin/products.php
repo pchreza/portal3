@@ -64,8 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     $customer_id = intval($_POST['customer_id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
-    $purchase_date = portal_date_to_db(trim($_POST['purchase_date'] ?? '')); // شمسی → میلادی
+    $purchase_date = portal_date_to_db(trim($_POST['purchase_date'] ?? ''));
     $product_status = in_array($_POST['product_status'] ?? '', array_keys(product_status_list()), true) ? $_POST['product_status'] : 'purchased';
+    $price = normalize_money_input(trim($_POST['price'] ?? ''));
+    $license_key = trim($_POST['license_key'] ?? '');
 
     // پردازش آپلود عکس
     $image = trim($_POST['current_image'] ?? ''); // تصویر قبلی (پیش‌فرض: خالی)
@@ -102,8 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     }
     if (!$error) {
         if ($id === 0) {
-            $stmt = $pdo->prepare("INSERT INTO products (customer_id, title, description, purchase_date, product_status, image) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$customer_id, $title, $description, $purchase_date, $product_status, $image]);
+            $stmt = $pdo->prepare("INSERT INTO products (customer_id, title, description, price, license_key, purchase_date, product_status, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$customer_id, $title, $description, $price, $license_key, $purchase_date, $product_status, $image]);
             $new_product_id = $pdo->lastInsertId();
 
             // Save custom fields
@@ -115,8 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
             header('Location: products.php');
             exit;
         } else {
-            $stmt = $pdo->prepare("UPDATE products SET customer_id = ?, title = ?, description = ?, purchase_date = ?, product_status = ?, image = ? WHERE id = ?");
-            $stmt->execute([$customer_id, $title, $description, $purchase_date, $product_status, $image, $id]);
+            $stmt = $pdo->prepare("UPDATE products SET customer_id = ?, title = ?, description = ?, price = ?, license_key = ?, purchase_date = ?, product_status = ?, image = ? WHERE id = ?");
+            $stmt->execute([$customer_id, $title, $description, $price, $license_key, $purchase_date, $product_status, $image, $id]);
 
             // Save custom fields
             save_custom_fields_values('product', $id);
@@ -258,7 +260,6 @@ $products = $product_list->fetchAll();
                                     <label class="label" for="product_description">توضیحات محصول</label>
                                     <textarea id="product_description" name="description" rows="4" placeholder="شرح مختصری از محصول بنویسید..." class="input portal-form-control"><?php echo htmlspecialchars($edit_product['description'] ?? ''); ?></textarea>
                                 </div>
-                            </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
                                         <label class="label" for="product_price">قیمت (تومان)</label>
@@ -270,6 +271,7 @@ $products = $product_list->fetchAll();
                                         <input type="text" id="license_key" name="license_key" dir="ltr" value="<?php echo htmlspecialchars($edit_product['license_key'] ?? ''); ?>" placeholder="مثال: ABCD-1234-EFGH" class="input portal-form-control value-ltr">
                                     </div>
                                 </div>
+                            </div>
                         </div>
 
                         <!-- بخش ۲: وضعیت و تاریخ -->
