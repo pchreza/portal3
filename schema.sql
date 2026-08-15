@@ -423,6 +423,7 @@
                 `reward_id` INT NOT NULL,
                 `customer_id` INT NOT NULL,
                 `coupon_id` BIGINT NULL,
+                `ledger_id` BIGINT NULL,
                 `coupon_code_snapshot` VARCHAR(255) DEFAULT '',
                 `points_cost` INT NOT NULL,
                 `site_id` INT NOT NULL,

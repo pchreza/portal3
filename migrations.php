@@ -8,7 +8,7 @@
 
 /** آخرین نسخه اسکیمای دیتابیس — هنگام افزودن مهاجرت جدید، این عدد را یک واحد زیاد کنید. */
 if (!defined('PORTAL_SCHEMA_VERSION')) {
-    define('PORTAL_SCHEMA_VERSION', 37);
+    define('PORTAL_SCHEMA_VERSION', 38);
 }
 
 function portal_column_exists(PDO $db, string $table, string $column): bool {
@@ -669,6 +669,16 @@ function portal_migrations(PDO $pdo): void {
                         $db->exec('ALTER TABLE projects MODIFY COLUMN budget DECIMAL(18,2) DEFAULT NULL');
                     } catch (PDOException $e) {
                         error_log('[Portal Migration 37] ' . $e->getMessage());
+                    }
+                }
+            },
+            38=>function(\$db){
+                // اضافه‌کردن ledger_id به جدول reward_redemptions برای رابطه با دفترکل
+                if (!portal_column_exists(\$db, 'reward_redemptions', 'ledger_id')) {
+                    try {
+                        \$db->exec('ALTER TABLE reward_redemptions ADD COLUMN ledger_id BIGINT NULL AFTER coupon_id');
+                    } catch (PDOException \$e) {
+                        error_log('[Portal Migration 38] ' . \$e->getMessage());
                     }
                 }
             }

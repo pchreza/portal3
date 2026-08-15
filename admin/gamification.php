@@ -135,23 +135,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cost = max(1, min(100000000, (int) ($_POST['points_cost'] ?? 0)));
             $validDays = max(0, min(3650, (int) ($_POST['valid_days'] ?? 30)));
             $maxPerCustomer = max(1, min(1000, (int) ($_POST['max_per_customer'] ?? 1)));
-            $codes = $normalize_pool_codes((string) ($_POST['coupon_codes'] ?? ''));
+            $couponMode = in_array(($_POST['coupon_mode'] ?? 'pool'), ['pool', 'fixed'], true) ? $_POST['coupon_mode'] : 'pool';
             $siteCheck = $pdo->prepare('SELECT id FROM reward_sites WHERE id = ? AND is_active = 1');
             $siteCheck->execute([$siteId]);
             if (!$siteCheck->fetchColumn() || $title === '' || strlen($title) > 180) {
                 throw new InvalidArgumentException('سایت فعال و عنوان پاداش معتبر الزامی است.');
             }
-            $pdo->beginTransaction();
-            $assert_pool_codes_are_new($pdo, $codes);
-            $pdo->prepare("INSERT INTO reward_catalog (site_id, title, description, points_cost, coupon_mode, fixed_coupon_code, valid_days, max_per_customer, is_active, created_by) VALUES (?, ?, ?, ?, 'pool', '', ?, ?, 1, ?)")->execute([$siteId, $title, $description, $cost, $validDays, $maxPerCustomer, $adminId]);
-            $rewardId = (int) $pdo->lastInsertId();
-            $insertCoupon = $pdo->prepare('INSERT INTO reward_coupon_pool (reward_id, coupon_code, coupon_hash) VALUES (?, ?, ?)');
-            foreach ($codes as $code) {
-                $insertCoupon->execute([$rewardId, $code, hash('sha256', $code)]);
+            if ($couponMode === 'pool') {
+                $codes = $normalize_pool_codes((string) ($_POST['coupon_codes'] ?? ''));
+                $pdo->beginTransaction();
+                $assert_pool_codes_are_new($pdo, $codes);
+                $pdo->prepare("INSERT INTO reward_catalog (site_id, title, description, points_cost, coupon_mode, fixed_coupon_code, valid_days, max_per_customer, is_active, created_by) VALUES (?, ?, ?, ?, 'pool', '', ?, ?, 1, ?)")->execute([$siteId, $title, $description, $cost, $validDays, $maxPerCustomer, $adminId]);
+                $rewardId = (int) $pdo->lastInsertId();
+                $insertCoupon = $pdo->prepare('INSERT INTO reward_coupon_pool (reward_id, coupon_code, coupon_hash) VALUES (?, ?, ?)');
+                foreach ($codes as $code) {
+                    $insertCoupon->execute([$rewardId, $code, hash('sha256', $code)]);
+                }
+                $pdo->commit();
+                log_activity($adminId, 'افزودن پاداش pool و ' . count($codes) . ' کد یکتا: ' . $title);
+                $success = 'پاداش و ' . count($codes) . ' کد تخفیف با هم ایجاد شدند.';
+            } else {
+                $fixedCode = gamification_normalize_code((string) ($_POST['fixed_coupon_code'] ?? ''));
+                if (!gamification_valid_code($fixedCode)) {
+                    throw new InvalidArgumentException('کد تخفیف ثابت معتبر نیست (حداقل ۶ کاراکتر، حروف انگلیسی/عدد).');
+                }
+                $pdo->prepare("INSERT INTO reward_catalog (site_id, title, description, points_cost, coupon_mode, fixed_coupon_code, valid_days, max_per_customer, is_active, created_by) VALUES (?, ?, ?, ?, 'fixed', ?, ?, ?, 1, ?)")->execute([$siteId, $title, $description, $cost, $fixedCode, $validDays, $maxPerCustomer, $adminId]);
+                log_activity($adminId, 'افزودن پاداش fixed با کد ثابت: ' . $title);
+                $success = 'پاداش با کد تخفیف ثابت ایجاد شد.';
             }
-            $pdo->commit();
-            log_activity($adminId, 'افزودن پاداش و ' . count($codes) . ' کد یکتا: ' . $title);
-            $success = 'پاداش و ' . count($codes) . ' کد تخفیف با هم ایجاد شدند.';
         } elseif ($action === 'toggle_reward') {
             $rewardId = max(0, (int) ($_POST['reward_id'] ?? 0));
             $pdo->prepare('UPDATE reward_catalog SET is_active = IF(is_active = 1, 0, 1) WHERE id = ?')->execute([$rewardId]);
@@ -180,7 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($startsAt !== null && $expiresAt !== null && strtotime($expiresAt) < strtotime($startsAt)) {
                 throw new InvalidArgumentException('تاریخ پایان باید بعد از شروع باشد.');
             }
-            $pdo->prepare('INSERT INTO bonus_code_campaigns (name, code_hash, points, starts_at, expires_at, max_redemptions, max_per_customer, created_by) VALUES (?, ?, ?, ?, ?, ?, 1, ?)')->execute([$name, hash('sha256', $code), $points, $startsAt, $expiresAt, $maxRedemptions, $adminId]);
+            $maxPerCustomerCampaign = max(1, min(1000, (int) ($_POST['max_per_customer_campaign'] ?? 1)));
+            $pdo->prepare('INSERT INTO bonus_code_campaigns (name, code_hash, points, starts_at, expires_at, max_redemptions, max_per_customer, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')->execute([$name, hash('sha256', $code), $points, $startsAt, $expiresAt, $maxRedemptions, $maxPerCustomerCampaign, $adminId]);
             log_activity($adminId, 'ایجاد کمپین کد هدیه Gamification: ' . $name);
             $success = 'کمپین کد هدیه ایجاد شد. این کد برای هر مشتری فقط یک‌بار قابل‌استفاده است.';
         } elseif ($action === 'toggle_campaign') {
@@ -188,6 +200,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare('UPDATE bonus_code_campaigns SET is_active = IF(is_active = 1, 0, 1) WHERE id = ?')->execute([$campaignId]);
             log_activity($adminId, 'تغییر وضعیت کمپین کد هدیه: ' . $campaignId);
             $success = 'وضعیت کمپین تغییر کرد.';
+        } elseif ($action === 'delete_campaign') {
+            $campaignId = max(0, (int) ($_POST['campaign_id'] ?? 0));
+            $redeemed = $pdo->prepare('SELECT COUNT(*) FROM bonus_code_redemptions WHERE campaign_id = ?');
+            $redeemed->execute([$campaignId]);
+            if ((int) $redeemed->fetchColumn() > 0) {
+                throw new InvalidArgumentException('این کمپین قبلاً استفاده شده و قابل حذف نیست؛ آن را غیرفعال کنید.');
+            }
+            $pdo->prepare('DELETE FROM bonus_code_campaigns WHERE id = ?')->execute([$campaignId]);
+            log_activity($adminId, 'حذف کمپین کد هدیه: ' . $campaignId);
+            $success = 'کمپین کد هدیه حذف شد.';
         } elseif ($action === 'import_coupons') {
             $rewardId = max(0, (int) ($_POST['reward_id'] ?? 0));
             $codes = $normalize_pool_codes((string) ($_POST['coupon_codes'] ?? ''));
