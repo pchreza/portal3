@@ -5,6 +5,14 @@ if (!admin_can('gamification')) {
     header('Location: index.php');
     exit;
 }
+// Allow the internal module toggle to re-enable gamification even when disabled;
+// block all other access when the module is off.
+if (!is_module_enabled('gamification')
+    && ($_SERVER['REQUEST_METHOD'] !== 'POST' || ($_POST['action'] ?? '') !== 'toggle_module')
+) {
+    header('Location: index.php');
+    exit;
+}
 
 global $pdo;
 $success = '';

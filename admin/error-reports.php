@@ -2,6 +2,7 @@
 // admin/error-reports.php — گزارش‌های خطای ارسال‌شده از دکمه شناور
 require_once 'auth.php';
 if (!admin_can('error_reports')) { header('Location: index.php'); exit; }
+if (!is_module_enabled('error_reports')) { header('Location: index.php'); exit; }
 
 // اگر جدول به هر دلیل وجود نداشت (نصب قدیمی/بازیابی‌شده)، همین‌جا ساخته شود تا صفحه خطای مرگبار ندهد
 try {

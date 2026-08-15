@@ -2,6 +2,7 @@
 // admin/notifications.php — مدیریت اعلانات و اطلاع‌رسانی (ارسال، فیلتر، آمار خواندن)
 require_once 'auth.php';
 if (!admin_can('notifications')) { header('Location: index.php'); exit; }
+if (!is_module_enabled('notifications')) { header('Location: index.php'); exit; }
 
 $msg = '';
 $err = '';
