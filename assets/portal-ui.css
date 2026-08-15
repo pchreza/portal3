@@ -1085,3 +1085,64 @@ html.dark .portal-notifications-page .text-amber-600 { color: #fcd34d !important
 .survey-distribution-track { height: .45rem; overflow: hidden; background: var(--portal-surface-muted); border-radius: 999px; }
 .survey-distribution-track > span { display: block; width: var(--survey-answer-share, 0%); height: 100%; background: var(--portal-primary); border-radius: inherit; }
 @media (max-width: 480px) { .survey-distribution-row { grid-template-columns: 1fr auto; } .survey-distribution-track { grid-column: 1 / -1; } }
+
+
+/* ===== Onboarding Tour ===== */
+.portal-onboarding-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    pointer-events: auto;
+}
+.portal-onboarding-spotlight {
+    position: absolute;
+    border-radius: var(--radius);
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
+    transition: all 0.3s var(--ease);
+    pointer-events: none;
+}
+.portal-onboarding-tooltip {
+    position: absolute;
+    width: 360px;
+    max-width: calc(100vw - 32px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+    padding: 1.25rem;
+    transition: top 0.3s var(--ease), left 0.3s var(--ease);
+}
+.portal-onboarding-header {
+    display: flex; align-items: center; gap: .65rem;
+    margin-bottom: .75rem;
+}
+.portal-onboarding-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem;
+    border-radius: .65rem;
+    background: var(--ring); color: #fff;
+    flex-shrink: 0;
+}
+.portal-onboarding-icon svg { width: 1.1rem; height: 1.1rem; }
+.portal-onboarding-title {
+    margin: 0; font-size: .95rem; font-weight: 700; color: var(--fg-strong);
+    flex: 1;
+}
+.portal-onboarding-counter {
+    font-size: .7rem; font-weight: 600; color: var(--fg-faint);
+    white-space: nowrap;
+}
+.portal-onboarding-body {
+    font-size: .85rem; line-height: 1.7; color: var(--fg-muted);
+    margin-bottom: 1rem;
+}
+.portal-onboarding-actions {
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+}
+.portal-onboarding-nav {
+    display: flex; gap: .5rem;
+}
+@media (max-width: 767px) {
+    .portal-onboarding-tooltip {
+        width: calc(100vw - 32px);
+        left: 16px !important;
+    }
+}

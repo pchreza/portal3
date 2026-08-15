@@ -15,5 +15,7 @@
 <?= portal_confirm_script() ?>
 <?= portal_validation_script() ?>
 <?= portal_toast_script() ?>
+<?= portal_onboarding_js() ?>
+<?= portal_onboarding_init() ?>
 </body>
 </html>

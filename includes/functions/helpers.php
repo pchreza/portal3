@@ -2034,6 +2034,59 @@ function portal_validation_script(): string
 }
 
 /**
+ * آیا آموزش onboarding برای مدیر فعلی نمایش داده شود؟
+ * فقط مدیرانی که قبلاً آموزش را ندیده‌اند (first login) آموزش می‌بینند.
+ */
+function portal_onboarding_should_show(): bool
+{
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+        return false;
+    }
+    if (!in_array($_SESSION['role'], ['admin', 'super_admin'], true)) {
+        return false;
+    }
+    // بررسی فلگ در user meta (settings با کلید اختصاصی کاربر)
+    $dismissed = get_setting('onboarding_dismissed_' . (int) $_SESSION['user_id'], '0');
+    return $dismissed !== '1';
+}
+
+/** علامت‌گذاری آموزش به‌عنوان دیده‌شده/ردشده برای مدیر فعلی */
+function portal_onboarding_dismiss(): void
+{
+    if (isset($_SESSION['user_id'])) {
+        set_setting('onboarding_dismissed_' . (int) $_SESSION['user_id'], '1');
+    }
+}
+
+/** بازنشانی وضعیت آموزش (برای نمایش مجدد) */
+function portal_onboarding_reset(): void
+{
+    if (isset($_SESSION['user_id'])) {
+        set_setting('onboarding_dismissed_' . (int) $_SESSION['user_id'], '0');
+    }
+}
+
+/** لینک فایل onboarding.js با cache-busting */
+function portal_onboarding_js(): string
+{
+    return '<script src="' . e(portal_asset_href('assets/onboarding.js')) . '"></script>' . "\n";
+}
+
+/** اسکریپت راه‌اندازی آموزش (auto-start + icon helper + dismiss URL) */
+function portal_onboarding_init(): string
+{
+    $autoStart = portal_onboarding_should_show() ? 'auto' : 'manual';
+    $dismissUrl = ui_base_path() . 'profile.php';
+    $csrf = csrf_token();
+    return '<script nonce="' . e(portal_csp_nonce()) . '">' . "\n"
+        . 'var portalOnboardingDismissUrl=' . json_encode($dismissUrl) . ';' . "\n"
+        . 'var portalOnboardingCsrf=' . json_encode($csrf) . ';' . "\n"
+        . 'window.portalOnboardingIcon=function(n){var p={"menu":"<path d=\"M4 6h16\"/><path d=\"M4 12h16\"/><path d=\"M4 18h16\"/>","layers":"<path d=\"m12 2 8.5 4.5-8.5 4.5L3.5 6.5Z\"/><path d=\"m3.5 12 8.5 4.5 8.5-4.5\"/><path d=\"m3.5 17 8.5 4.5 8.5-4.5\"/>","dashboard":"<rect x=\"3\" y=\"3\" width=\"7\" height=\"9\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\" rx=\"1\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\" rx=\"1\"/>","file":"<path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/>","info":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/>"};return \'<svg class=\"ic\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\'+(p[n]||p.info)+\'</svg>\';};' . "\n"
+        . 'document.documentElement.setAttribute("data-portal-onboarding","' . $autoStart . '");' . "\n"
+        . '</script>' . "\n";
+}
+
+/**
  * قالب مشترک صفحات پنل مدیریت
  *
  * @param string $title          عنوان صفحه (در <title> و نوار بالا)

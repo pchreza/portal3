@@ -34,6 +34,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'profi
 }
 
 // تغییر رمز عبور
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'dismiss_onboarding') {
+    require_valid_csrf();
+    portal_onboarding_dismiss();
+    header('Location: profile.php');
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'reset_onboarding') {
+    require_valid_csrf();
+    portal_onboarding_reset();
+    $_SESSION['flash'] = 'آموزش مجدداً فعال شد. در داشبورد نمایش داده خواهد شد.';
+    header('Location: index.php');
+    exit;
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'password') {
     $current      = $_POST['current_password'] ?? '';
     $new          = $_POST['new_password'] ?? '';
@@ -140,4 +153,15 @@ render_admin_header('پروفایل مدیر سیستم', 'portal-page-main port
                 </form>
             </div>
 
-        <?php render_admin_footer();
+        <?php ?>
+<div class="card p-6 mt-6">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+            <h3 class="font-bold text-slate-800">آموزش پنل مدیریت</h3>
+            <p class="text-sm text-slate-500 mt-1">آموزش تعاملی بخش‌های مختلف پنل مدیریت را دوباره ببینید.</p>
+        </div>
+        <form method="post" class="inline"><?php echo csrf_input(); ?><input type="hidden" name="action" value="reset_onboarding"><button type="submit" class="btn btn-primary"><?= icon('info') ?><span>نمایش آموزش</span></button></form>
+    </div>
+</div>
+<?php
+render_admin_footer();
