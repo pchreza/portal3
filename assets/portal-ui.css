@@ -203,7 +203,7 @@ textarea.input { height: auto; padding: .625rem .875rem; }
 .badge-danger  { background: var(--danger-soft);  color: var(--danger); }
 .badge-info    { background: var(--info-soft);    color: var(--info); }
 .badge-muted   { background: var(--surface-2);    color: var(--fg-muted); }
-.badge-brand   { background: color-mix(in srgb, var(--ring) 14%, transparent); color: var(--ring); }
+.badge-brand   { background: color-mix(in srgb, var(--ring) 14%, transparent); color: var(--tp-primary-dark, var(--ring)); }
 
 .alert { display: flex; gap: .75rem; align-items: flex-start; padding: .9rem 1rem; border-radius: var(--radius-sm); font-size: .875rem; line-height: 1.6; border: 1px solid transparent; }
 .alert-success { background: var(--success-soft); color: var(--success); border-color: color-mix(in srgb, var(--success) 25%, transparent); }

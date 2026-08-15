@@ -326,7 +326,7 @@ render_public_header('ورود به ' . $site_title, 'bg-slate-50 text-slate-800
         <?php if ($lc['branded_mobile_image']): ?><img src="<?= e(asset_url($lc['branded_mobile_image'])) ?>" alt="" class="lg:hidden absolute inset-0 w-full h-full object-cover opacity-30"><?php endif; ?>
         <div class="absolute inset-0 opacity-20" style="background-image:radial-gradient(circle at 20% 20%,#fff 0,transparent 40%),radial-gradient(circle at 80% 80%,#fff 0,transparent 40%)"></div>
         <div class="relative z-10 w-full max-w-md">
-            <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur rounded-3xl shadow-2xl p-8">
+            <div class="login-card bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-8">
                 <?php render_login_form($login_ctx, $site_title, $login_subtitle, $error, $success, $otp_step); ?>
             </div>
             <p class="text-center text-xs text-indigo-100 mt-6"><?= htmlspecialchars($footer_text) ?></p>

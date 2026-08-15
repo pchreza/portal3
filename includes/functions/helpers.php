@@ -559,6 +559,19 @@ function theme_styles(): string
 	.group:hover .group-hover\:border-indigo-500 { border-color: var(--tp-primary); }
 	.file\:bg-indigo-50::file-selector-button { background-color: var(--tp-primary-light); }
 	.file\:text-indigo-700::file-selector-button { color: var(--tp-primary-dark); }
+/* ---- تقویت کنتراست رنگ primary در حالت دارک ---- */
+html.dark {
+  --tp-primary: color-mix(in srgb, var(--tp-primary-orig, #4f46e5) 60%, #c7d2fe) !important;
+  --tp-primary-dark: color-mix(in srgb, var(--tp-primary-orig-dark, #4338ca) 50%, #a5b4fc) !important;
+}
+html.dark .text-indigo-600, html.dark .text-indigo-700,
+html.dark .hover\:text-indigo-600:hover, html.dark .hover\:text-indigo-700:hover { color: color-mix(in srgb, var(--tp-primary) 75%, white); }
+html.dark .text-violet-600, html.dark .text-violet-700,
+html.dark .hover\:text-violet-600:hover, html.dark .hover\:text-violet-700:hover { color: color-mix(in srgb, var(--tp-accent) 75%, white); }
+html.dark .bg-indigo-50, html.dark .bg-indigo-100 { background-color: color-mix(in srgb, var(--tp-primary) 18%, var(--portal-surface, #1f1f21)); }
+html.dark .bg-violet-50, html.dark .bg-violet-100 { background-color: color-mix(in srgb, var(--tp-accent) 18%, var(--portal-surface, #1f1f21)); }
+html.dark .badge-brand { background: color-mix(in srgb, var(--tp-primary) 22%, transparent); color: color-mix(in srgb, var(--tp-primary) 75%, white); }
+
 /* ---- سایدبار و بخش‌های تیره — هماهنگ با پالت رنگی ---- */
 .bg-slate-900 { background: var(--tp-sidebar); }
 .bg-slate-800, .hover\:bg-slate-800\/80:hover { background-color: var(--tp-sidebar-hover); }
